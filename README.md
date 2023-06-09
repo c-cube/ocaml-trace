@@ -1,6 +1,8 @@
 
 # Trace
 
+[![Build and Test](https://github.com/c-cube/trace/actions/workflows/main.yml/badge.svg)](https://github.com/c-cube/trace/actions/workflows/main.yml)
+
 This small library provides basic types that can be used to instrument
 a library or application, either by hand or via a ppx.
 

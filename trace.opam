@@ -8,7 +8,7 @@ tags: ["tracing" "observability" "profiling"]
 homepage: "https://github.com/c-cube/trace"
 bug-reports: "https://github.com/c-cube/trace/issues"
 depends: [
-  "ocaml" {>= "4.03"}
+  "ocaml" {>= "4.05"}
   "dune" {>= "2.9"}
   "odoc" {with-doc}
 ]

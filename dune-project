@@ -15,7 +15,7 @@
  (name trace)
  (synopsis "A stub for tracing/observability")
  (depends
-   (ocaml (>= 4.03))
+   (ocaml (>= 4.05))
    dune)
  (tags
   (tracing observability profiling)))

@@ -30,9 +30,8 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           dune-cache: true
 
-      - run: opam install -t trace --deps-only
-
-      - run: opam exec -- dune build '@install'
-
-      - run: opam exec -- dune runtest
+      - run: opam install -t trace trace-tef --deps-only
+      - run: opam exec -- dune build '@install' -p trace,trace-tef
+      - run: opam exec -- dune runtest -p trace
+      - run: opam exec -- dune runtest -p trace-tef
 

@@ -64,3 +64,7 @@ let shutdown () =
   match A.exchange collector None with
   | None -> ()
   | Some (module C) -> C.shutdown ()
+
+module Internal_ = struct
+  module Atomic_ = Atomic_
+end

@@ -18,6 +18,18 @@
    (ocaml (>= 4.05))
    dune)
  (tags
-  (tracing observability profiling)))
+  (trace tracing observability profiling)))
+
+(package
+ (name trace-tef)
+ (synopsis "A simple backend for trace")
+ (depends
+   (ocaml (>= 4.05))
+   (trace (= :version))
+   mtime
+   base-unix
+   dune)
+ (tags
+  (trace tracing catapult)))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

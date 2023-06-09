@@ -23,6 +23,8 @@ val with_ :
 val message :
   ?__FUNCTION__:string -> __FILE__:string -> __LINE__:int -> string -> unit
 
+(* TODO: counter/plot/metric *)
+
 val messagef :
   ?__FUNCTION__:string ->
   __FILE__:string ->
@@ -40,3 +42,12 @@ val setup_collector : collector -> unit
     collector. *)
 
 val shutdown : unit -> unit
+
+(**/**)
+
+(* no guarantee of stability *)
+module Internal_ : sig
+  module Atomic_ = Atomic_
+end
+
+(**/**)

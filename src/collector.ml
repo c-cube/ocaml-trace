@@ -11,12 +11,22 @@ let dummy_span : span = Int64.min_int
 
 module type S = sig
   val enter_span :
-    ?__FUNCTION__:string -> __FILE__:string -> __LINE__:int -> string -> span
+    ?__FUNCTION__:string ->
+    __FILE__:string ->
+    __LINE__:int ->
+    data:(string * user_data) list ->
+    string ->
+    span
 
   val exit_span : span -> unit
 
   val message :
-    ?__FUNCTION__:string -> __FILE__:string -> __LINE__:int -> string -> unit
+    ?__FUNCTION__:string ->
+    __FILE__:string ->
+    __LINE__:int ->
+    data:(string * user_data) list ->
+    string ->
+    unit
 
   val shutdown : unit -> unit
   (** Shutdown collector, possibly waiting for it to finish sending data. *)

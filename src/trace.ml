@@ -12,10 +12,16 @@ let[@inline] enabled () =
   | None -> false
   | Some _ -> true
 
-let[@inline] enter_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name : span =
+let enter_span_collector_ (module C : Collector.S) ?__FUNCTION__ ~__FILE__
+    ~__LINE__ ?(data = fun () -> []) name : span =
+  let data = data () in
+  C.enter_span ?__FUNCTION__ ~__FILE__ ~__LINE__ ~data name
+
+let[@inline] enter_span ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name : span =
   match A.get collector with
   | None -> Collector.dummy_span
-  | Some (module C) -> C.enter_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name
+  | Some coll ->
+    enter_span_collector_ coll ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name
 
 let[@inline] exit_span span : unit =
   match A.get collector with
@@ -23,8 +29,9 @@ let[@inline] exit_span span : unit =
   | Some (module C) -> C.exit_span span
 
 let with_span_collector_ (module C : Collector.S) ?__FUNCTION__ ~__FILE__
-    ~__LINE__ name f =
-  let sp = C.enter_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name in
+    ~__LINE__ ?(data = fun () -> []) name f =
+  let data = data () in
+  let sp = C.enter_span ?__FUNCTION__ ~__FILE__ ~__LINE__ ~data name in
   match f sp with
   | x ->
     C.exit_span sp;
@@ -34,26 +41,39 @@ let with_span_collector_ (module C : Collector.S) ?__FUNCTION__ ~__FILE__
     C.exit_span sp;
     Printexc.raise_with_backtrace exn bt
 
-let[@inline] with_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name f =
+let[@inline] with_span ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name f =
   match A.get collector with
   | None ->
     (* fast path: no collector, no span *)
     f Collector.dummy_span
   | Some collector ->
-    with_span_collector_ collector ?__FUNCTION__ ~__FILE__ ~__LINE__ name f
+    with_span_collector_ collector ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name
+      f
 
-let[@inline] message ?__FUNCTION__ ~__FILE__ ~__LINE__ msg : unit =
+let message_collector_ (module C : Collector.S) ?__FUNCTION__ ~__FILE__
+    ~__LINE__ ?(data = fun () -> []) msg : unit =
+  let data = data () in
+  C.message ?__FUNCTION__ ~__FILE__ ~__LINE__ ~data msg
+
+let[@inline] message ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data msg : unit =
   match A.get collector with
   | None -> ()
-  | Some (module C) -> C.message ?__FUNCTION__ ~__FILE__ ~__LINE__ msg
+  | Some coll ->
+    message_collector_ coll ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data msg
 
-let messagef ?__FUNCTION__ ~__FILE__ ~__LINE__ k =
+let messagef ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data k =
   match A.get collector with
   | None -> ()
   | Some (module C) ->
     k (fun fmt ->
         Format.kasprintf
-          (fun str -> C.message ?__FUNCTION__ ~__FILE__ ~__LINE__ str)
+          (fun str ->
+            let data =
+              match data with
+              | None -> []
+              | Some f -> f ()
+            in
+            C.message ?__FUNCTION__ ~__FILE__ ~__LINE__ ~data str)
           fmt)
 
 let setup_collector c : unit =

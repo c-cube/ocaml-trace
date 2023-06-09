@@ -42,6 +42,7 @@ type event =
       tid: int;
       msg: string;
       time_us: float;
+      data: (string * user_data) list;
     }
   | E_define_span of {
       (*
@@ -53,6 +54,7 @@ type event =
       name: string;
       time_us: float;
       id: span;
+      data: (string * user_data) list;
     }
   | E_exit_span of {
       id: span;
@@ -74,6 +76,7 @@ type span_info = {
   tid: int;
   name: string;
   start_us: float;
+  data: (string * user_data) list;
 }
 
 module Writer = struct
@@ -132,6 +135,12 @@ module Writer = struct
     String.iter encode_char s;
     char oc '"'
 
+  let pp_user_data_ out : user_data -> unit = function
+    | `None -> Printf.fprintf out "null"
+    | `Int i -> Printf.fprintf out "%d" i
+    | `Bool b -> Printf.fprintf out "%b" b
+    | `String s -> str_val out s
+
   (* emit args, if not empty. [ppv] is used to print values. *)
   let emit_args_o_ ppv oc args : unit =
     if args <> [] then (
@@ -150,14 +159,18 @@ module Writer = struct
     emit_sep_ self;
     Printf.fprintf self.oc
       {json|{"pid": %d,"cat":"","tid": %d,"dur": %.2f,"ts": %.2f,"name":%a,"ph":"X"%a}|json}
-      self.pid tid dur ts str_val name (emit_args_o_ str_val) args;
+      self.pid tid dur ts str_val name
+      (emit_args_o_ pp_user_data_)
+      args;
     ()
 
   let emit_instant_event ~tid ~name ~ts ~args (self : t) : unit =
     emit_sep_ self;
     Printf.fprintf self.oc
       {json|{"pid": %d,"cat":"","tid": %d,"ts": %.2f,"name":%a,"ph":"I"%a}|json}
-      self.pid tid ts str_val name (emit_args_o_ str_val) args;
+      self.pid tid ts str_val name
+      (emit_args_o_ pp_user_data_)
+      args;
     ()
 end
 
@@ -169,24 +182,29 @@ let bg_thread ~out (events : event B_queue.t) : unit =
   (* how to deal with an event *)
   let handle_ev (ev : event) : unit =
     match ev with
-    | E_message { (* __FUNCTION__; __FILE__; __LINE__; *) tid; msg; time_us } ->
-      Writer.emit_instant_event ~tid ~name:msg ~ts:time_us ~args:[] writer
+    | E_message
+        { (* __FUNCTION__; __FILE__; __LINE__; *) tid; msg; time_us; data } ->
+      Writer.emit_instant_event ~tid ~name:msg ~ts:time_us ~args:data writer
     | E_define_span
-        { (* __FUNCTION__; __FILE__; __LINE__; *) tid; name; id; time_us } ->
+        { (* __FUNCTION__; __FILE__; __LINE__; *) tid; name; id; time_us; data }
+      ->
       (* save the span so we find it at exit *)
       Span_tbl.add spans id
         {
           (* __FUNCTION__; __FILE__; __LINE__; *) tid;
           name;
           start_us = time_us;
+          data;
         }
     | E_exit_span { id; time_us = stop_us } ->
       (match Span_tbl.find_opt spans id with
       | None -> (* bug! TODO: emit warning *) ()
-      | Some { (* __FUNCTION__; __FILE__; __LINE__; *) tid; name; start_us } ->
+      | Some
+          { (* __FUNCTION__; __FILE__; __LINE__; *) tid; name; start_us; data }
+        ->
         Span_tbl.remove spans id;
         Writer.emit_duration_event ~tid ~name ~start:start_us ~end_:stop_us
-          ~args:[] writer)
+          ~args:data writer)
   in
 
   try
@@ -232,7 +250,7 @@ let collector ~out () : collector =
       else
         Thread.id (Thread.self ())
 
-    let enter_span ?__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ name : span =
+    let enter_span ?__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ ~data name : span =
       let span = Int64.of_int (A.fetch_and_add span_id_gen_ 1) in
       let tid = get_tid_ () in
       let time_us = now_us () in
@@ -243,6 +261,7 @@ let collector ~out () : collector =
              name;
              time_us;
              id = span;
+             data;
            });
       span
 
@@ -250,11 +269,12 @@ let collector ~out () : collector =
       let time_us = now_us () in
       B_queue.push events (E_exit_span { id = span; time_us })
 
-    let message ?__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ msg : unit =
+    let message ?__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ ~data msg : unit =
       let time_us = now_us () in
       let tid = get_tid_ () in
       B_queue.push events
-        (E_message { (* __FUNCTION__; __FILE__; __LINE__; *) tid; time_us; msg })
+        (E_message
+           { (* __FUNCTION__; __FILE__; __LINE__; *) tid; time_us; msg; data })
   end in
   (module M)
 

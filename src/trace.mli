@@ -12,7 +12,12 @@ val enabled : unit -> bool
     any span or message *)
 
 val enter_span :
-  ?__FUNCTION__:string -> __FILE__:string -> __LINE__:int -> string -> span
+  ?__FUNCTION__:string ->
+  __FILE__:string ->
+  __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
+  string ->
+  span
 
 val exit_span : span -> unit
 
@@ -20,12 +25,18 @@ val with_span :
   ?__FUNCTION__:string ->
   __FILE__:string ->
   __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
   string ->
   (span -> 'a) ->
   'a
 
 val message :
-  ?__FUNCTION__:string -> __FILE__:string -> __LINE__:int -> string -> unit
+  ?__FUNCTION__:string ->
+  __FILE__:string ->
+  __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
+  string ->
+  unit
 
 (* TODO: counter/plot/metric *)
 
@@ -33,6 +44,7 @@ val messagef :
   ?__FUNCTION__:string ->
   __FILE__:string ->
   __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
   ((('a, Format.formatter, unit, unit) format4 -> 'a) -> unit) ->
   unit
 

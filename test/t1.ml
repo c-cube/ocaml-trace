@@ -1,4 +1,6 @@
 let run () =
+  Trace.set_process_name "main";
+  Trace.set_thread_name "t1";
   for _i = 1 to 50 do
     Trace.with_span ~__FILE__ ~__LINE__ "outer.loop" @@ fun _sp ->
     for _j = 2 to 5 do

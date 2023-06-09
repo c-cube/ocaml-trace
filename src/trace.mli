@@ -1,6 +1,7 @@
 (** Trace. *)
 
 include module type of Types
+module Collector = Collector
 
 (** {2 Tracing} *)
 

@@ -1,5 +1,6 @@
 include Types
 module A = Atomic_
+module Collector = Collector
 
 type collector = (module Collector.S)
 

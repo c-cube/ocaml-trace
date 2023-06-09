@@ -22,19 +22,25 @@ let[@inline] exit_span span : unit =
   | None -> ()
   | Some (module C) -> C.exit_span span
 
-let with_ ?__FUNCTION__ ~__FILE__ ~__LINE__ name f =
+let with_collector_ (module C : Collector.S) ?__FUNCTION__ ~__FILE__ ~__LINE__
+    name f =
+  let sp = C.create_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name in
+  match f sp with
+  | x ->
+    C.exit_span sp;
+    x
+  | exception exn ->
+    let bt = Printexc.get_raw_backtrace () in
+    C.exit_span sp;
+    Printexc.raise_with_backtrace exn bt
+
+let[@inline] with_ ?__FUNCTION__ ~__FILE__ ~__LINE__ name f =
   match A.get collector with
-  | None -> f Collector.dummy_span
-  | Some (module C) ->
-    let sp = C.create_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name in
-    (match f sp with
-    | x ->
-      C.exit_span sp;
-      x
-    | exception exn ->
-      let bt = Printexc.get_raw_backtrace () in
-      C.exit_span sp;
-      Printexc.raise_with_backtrace exn bt)
+  | None ->
+    (* fast path: no collector, no span *)
+    f Collector.dummy_span
+  | Some collector ->
+    with_collector_ collector ?__FUNCTION__ ~__FILE__ ~__LINE__ name
 
 let[@inline] message ?__FUNCTION__ ~__FILE__ ~__LINE__ msg : unit =
   match A.get collector with

@@ -214,8 +214,6 @@ let collector ~out () : collector =
     (** generator for span ids *)
     let span_id_gen_ = A.make 0
 
-    let enabled () = true
-
     (* queue of messages to write *)
     let events : event B_queue.t = B_queue.create ()
 
@@ -234,7 +232,7 @@ let collector ~out () : collector =
       else
         Thread.id (Thread.self ())
 
-    let create_span ?__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ name : span =
+    let enter_span ?__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ name : span =
       let span = Int64.of_int (A.fetch_and_add span_id_gen_ 1) in
       let tid = get_tid_ () in
       let time_us = now_us () in

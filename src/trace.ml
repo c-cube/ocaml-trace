@@ -10,21 +10,21 @@ let collector : collector option A.t = A.make None
 let[@inline] enabled () =
   match A.get collector with
   | None -> false
-  | Some (module C) -> C.enabled ()
+  | Some _ -> true
 
-let[@inline] create_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name : span =
+let[@inline] enter_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name : span =
   match A.get collector with
   | None -> Collector.dummy_span
-  | Some (module C) -> C.create_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name
+  | Some (module C) -> C.enter_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name
 
 let[@inline] exit_span span : unit =
   match A.get collector with
   | None -> ()
   | Some (module C) -> C.exit_span span
 
-let with_collector_ (module C : Collector.S) ?__FUNCTION__ ~__FILE__ ~__LINE__
-    name f =
-  let sp = C.create_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name in
+let with_span_collector_ (module C : Collector.S) ?__FUNCTION__ ~__FILE__
+    ~__LINE__ name f =
+  let sp = C.enter_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name in
   match f sp with
   | x ->
     C.exit_span sp;
@@ -34,13 +34,13 @@ let with_collector_ (module C : Collector.S) ?__FUNCTION__ ~__FILE__ ~__LINE__
     C.exit_span sp;
     Printexc.raise_with_backtrace exn bt
 
-let[@inline] with_ ?__FUNCTION__ ~__FILE__ ~__LINE__ name f =
+let[@inline] with_span ?__FUNCTION__ ~__FILE__ ~__LINE__ name f =
   match A.get collector with
   | None ->
     (* fast path: no collector, no span *)
     f Collector.dummy_span
   | Some collector ->
-    with_collector_ collector ?__FUNCTION__ ~__FILE__ ~__LINE__ name f
+    with_span_collector_ collector ?__FUNCTION__ ~__FILE__ ~__LINE__ name f
 
 let[@inline] message ?__FUNCTION__ ~__FILE__ ~__LINE__ msg : unit =
   match A.get collector with

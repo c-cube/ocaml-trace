@@ -6,13 +6,17 @@ module Collector = Collector
 (** {2 Tracing} *)
 
 val enabled : unit -> bool
+(** Is there a collector?
+  
+    This is fast, so that the traced program can check it before creating
+    any span or message *)
 
-val create_span :
+val enter_span :
   ?__FUNCTION__:string -> __FILE__:string -> __LINE__:int -> string -> span
 
 val exit_span : span -> unit
 
-val with_ :
+val with_span :
   ?__FUNCTION__:string ->
   __FILE__:string ->
   __LINE__:int ->

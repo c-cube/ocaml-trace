@@ -10,12 +10,7 @@ open Types
 let dummy_span : span = Int64.min_int
 
 module type S = sig
-  val enabled : unit -> bool
-  (** Is the collector enabled? This should be extremely fast so that
-      the traced program can check it before creating any span or
-      message *)
-
-  val create_span :
+  val enter_span :
     ?__FUNCTION__:string -> __FILE__:string -> __LINE__:int -> string -> span
 
   val exit_span : span -> unit

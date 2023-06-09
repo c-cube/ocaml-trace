@@ -12,7 +12,7 @@ test:
 doc:
 	@dune build $(DUNE_OPTS) @doc
 
-WATCH?="@install @runtest"
+WATCH?= @install @runtest
 watch:
 	dune build $(DUNE_OPTS) -w $(WATCH)
 

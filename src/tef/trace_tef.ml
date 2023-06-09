@@ -182,8 +182,9 @@ let bg_thread ~out (events : event B_queue.t) : unit =
         }
     | E_exit_span { id; time_us = stop_us } ->
       (match Span_tbl.find_opt spans id with
-      | None -> (* bug! *) ()
+      | None -> (* bug! TODO: emit warning *) ()
       | Some { (* __FUNCTION__; __FILE__; __LINE__; *) tid; name; start_us } ->
+        Span_tbl.remove spans id;
         Writer.emit_duration_event ~tid ~name ~start:start_us ~end_:stop_us
           ~args:[] writer)
   in
@@ -193,7 +194,12 @@ let bg_thread ~out (events : event B_queue.t) : unit =
       let ev = B_queue.pop events in
       handle_ev ev
     done
-  with B_queue.Closed -> ()
+  with B_queue.Closed ->
+    (* warn if app didn't close all spans *)
+    if Span_tbl.length spans > 0 then
+      Printf.eprintf "trace-tef: warning: %d spans were not closed\n%!"
+        (Span_tbl.length spans);
+    ()
 
 type output =
   [ `Stdout
@@ -218,9 +224,7 @@ let collector ~out () : collector =
 
     let shutdown () =
       if A.exchange active false then (
-        Printf.eprintf "shutdown\n%!";
         B_queue.close events;
-        Printf.eprintf "wait\n%!";
         Thread.join t_write
       )
 

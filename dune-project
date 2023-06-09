@@ -26,7 +26,7 @@
  (depends
    (ocaml (>= 4.05))
    (trace (= :version))
-   mtime
+   (mtime (>= 2.0))
    base-unix
    dune)
  (tags

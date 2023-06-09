@@ -1,0 +1,6 @@
+
+(test
+  (name t1)
+  (package trace-tef)
+  (libraries trace trace-tef))
+

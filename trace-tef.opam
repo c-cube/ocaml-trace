@@ -8,9 +8,9 @@ tags: ["trace" "tracing" "catapult"]
 homepage: "https://github.com/c-cube/trace"
 bug-reports: "https://github.com/c-cube/trace/issues"
 depends: [
-  "ocaml" {>= "4.05"}
+  "ocaml" {>= "4.08"}
   "trace" {= version}
-  "mtime"
+  "mtime" {>= "2.0"}
   "base-unix"
   "dune" {>= "2.9"}
   "odoc" {with-doc}

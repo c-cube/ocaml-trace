@@ -15,7 +15,7 @@
  (name trace)
  (synopsis "A stub for tracing/observability")
  (depends
-   (ocaml (>= 4.05))
+   (ocaml (>= 4.08))
    dune)
  (tags
   (trace tracing observability profiling)))
@@ -24,7 +24,7 @@
  (name trace-tef)
  (synopsis "A simple backend for trace")
  (depends
-   (ocaml (>= 4.05))
+   (ocaml (>= 4.08))
    (trace (= :version))
    (mtime (>= 2.0))
    base-unix

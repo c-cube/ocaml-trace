@@ -28,6 +28,12 @@ module type S = sig
     string ->
     unit
 
+  val name_thread : string -> unit
+  (** Give a name to the current thread *)
+
+  val name_process : string -> unit
+  (** Give a name to the current process *)
+
   val shutdown : unit -> unit
   (** Shutdown collector, possibly waiting for it to finish sending data. *)
 end

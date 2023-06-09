@@ -76,6 +76,16 @@ let messagef ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data k =
             C.message ?__FUNCTION__ ~__FILE__ ~__LINE__ ~data str)
           fmt)
 
+let set_thread_name name : unit =
+  match A.get collector with
+  | None -> ()
+  | Some (module C) -> C.name_thread name
+
+let set_process_name name : unit =
+  match A.get collector with
+  | None -> ()
+  | Some (module C) -> C.name_process name
+
 let setup_collector c : unit =
   while
     let cur = A.get collector in

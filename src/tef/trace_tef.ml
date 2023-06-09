@@ -60,6 +60,11 @@ type event =
       id: span;
       time_us: float;
     }
+  | E_name_process of { name: string }
+  | E_name_thread of {
+      tid: int;
+      name: string;
+    }
 
 module Span_tbl = Hashtbl.Make (struct
   include Int64
@@ -172,6 +177,23 @@ module Writer = struct
       (emit_args_o_ pp_user_data_)
       args;
     ()
+
+  let emit_name_thread ~tid ~name (self : t) : unit =
+    emit_sep_ self;
+    Printf.fprintf self.oc
+      {json|{"pid": %d,"tid": %d,"name":"thread_name","ph":"M"%a}|json} self.pid
+      tid
+      (emit_args_o_ pp_user_data_)
+      [ "name", `String name ];
+    ()
+
+  let emit_name_process ~name (self : t) : unit =
+    emit_sep_ self;
+    Printf.fprintf self.oc
+      {json|{"pid": %d,"name":"process_name","ph":"M"%a}|json} self.pid
+      (emit_args_o_ pp_user_data_)
+      [ "name", `String name ];
+    ()
 end
 
 let bg_thread ~out (events : event B_queue.t) : unit =
@@ -205,6 +227,8 @@ let bg_thread ~out (events : event B_queue.t) : unit =
         Span_tbl.remove spans id;
         Writer.emit_duration_event ~tid ~name ~start:start_us ~end_:stop_us
           ~args:data writer)
+    | E_name_process { name } -> Writer.emit_name_process ~name writer
+    | E_name_thread { tid; name } -> Writer.emit_name_thread ~tid ~name writer
   in
 
   try
@@ -275,6 +299,12 @@ let collector ~out () : collector =
       B_queue.push events
         (E_message
            { (* __FUNCTION__; __FILE__; __LINE__; *) tid; time_us; msg; data })
+
+    let name_process name : unit = B_queue.push events (E_name_process { name })
+
+    let name_thread name : unit =
+      let tid = get_tid_ () in
+      B_queue.push events (E_name_thread { tid; name })
   end in
   (module M)
 

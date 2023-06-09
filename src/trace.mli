@@ -48,6 +48,12 @@ val messagef :
   ((('a, Format.formatter, unit, unit) format4 -> 'a) -> unit) ->
   unit
 
+val set_thread_name : string -> unit
+(** Give a name to the current thread. *)
+
+val set_process_name : string -> unit
+(** Give a name to the current process. *)
+
 (** {2 Collector} *)
 
 type collector = (module Collector.S)

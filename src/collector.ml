@@ -19,14 +19,7 @@ module type S = sig
     span
 
   val exit_span : span -> unit
-
-  val message :
-    ?__FUNCTION__:string ->
-    __FILE__:string ->
-    __LINE__:int ->
-    data:(string * user_data) list ->
-    string ->
-    unit
+  val message : ?span:span -> data:(string * user_data) list -> string -> unit
 
   val name_thread : string -> unit
   (** Give a name to the current thread *)

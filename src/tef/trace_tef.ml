@@ -293,7 +293,7 @@ let collector ~out () : collector =
       let time_us = now_us () in
       B_queue.push events (E_exit_span { id = span; time_us })
 
-    let message ?__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ ~data msg : unit =
+    let message ?span:_ ~data msg : unit =
       let time_us = now_us () in
       let tid = get_tid_ () in
       B_queue.push events

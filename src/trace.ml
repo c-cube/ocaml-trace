@@ -50,18 +50,17 @@ let[@inline] with_span ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name f =
     with_span_collector_ collector ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name
       f
 
-let message_collector_ (module C : Collector.S) ?__FUNCTION__ ~__FILE__
-    ~__LINE__ ?(data = fun () -> []) msg : unit =
+let message_collector_ (module C : Collector.S) ?span ?(data = fun () -> []) msg
+    : unit =
   let data = data () in
-  C.message ?__FUNCTION__ ~__FILE__ ~__LINE__ ~data msg
+  C.message ?span ~data msg
 
-let[@inline] message ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data msg : unit =
+let[@inline] message ?span ?data msg : unit =
   match A.get collector with
   | None -> ()
-  | Some coll ->
-    message_collector_ coll ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data msg
+  | Some coll -> message_collector_ coll ?span ?data msg
 
-let messagef ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data k =
+let messagef ?span ?data k =
   match A.get collector with
   | None -> ()
   | Some (module C) ->
@@ -73,7 +72,7 @@ let messagef ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data k =
               | None -> []
               | Some f -> f ()
             in
-            C.message ?__FUNCTION__ ~__FILE__ ~__LINE__ ~data str)
+            C.message ?span ~data str)
           fmt)
 
 let set_thread_name name : unit =

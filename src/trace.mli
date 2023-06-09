@@ -31,9 +31,7 @@ val with_span :
   'a
 
 val message :
-  ?__FUNCTION__:string ->
-  __FILE__:string ->
-  __LINE__:int ->
+  ?span:span ->
   ?data:(unit -> (string * user_data) list) ->
   string ->
   unit
@@ -41,9 +39,7 @@ val message :
 (* TODO: counter/plot/metric *)
 
 val messagef :
-  ?__FUNCTION__:string ->
-  __FILE__:string ->
-  __LINE__:int ->
+  ?span:span ->
   ?data:(unit -> (string * user_data) list) ->
   ((('a, Format.formatter, unit, unit) format4 -> 'a) -> unit) ->
   unit

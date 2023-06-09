@@ -5,7 +5,7 @@ let run () =
     Trace.with_span ~__FILE__ ~__LINE__ "outer.loop" @@ fun _sp ->
     for _j = 2 to 5 do
       Trace.with_span ~__FILE__ ~__LINE__ "inner.loop" @@ fun _sp ->
-      Trace.messagef ~__FILE__ ~__LINE__ (fun k -> k "hello %d %d" _i _j)
+      Trace.messagef (fun k -> k "hello %d %d" _i _j)
     done
   done
 

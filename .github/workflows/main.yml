@@ -33,5 +33,6 @@ jobs:
       - run: opam install -t trace trace-tef --deps-only
       - run: opam exec -- dune build '@install' -p trace,trace-tef
       - run: opam exec -- dune runtest -p trace
+      - run: opam install trace
       - run: opam exec -- dune runtest -p trace-tef
 

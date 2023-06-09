@@ -40,7 +40,7 @@ let[@inline] with_ ?__FUNCTION__ ~__FILE__ ~__LINE__ name f =
     (* fast path: no collector, no span *)
     f Collector.dummy_span
   | Some collector ->
-    with_collector_ collector ?__FUNCTION__ ~__FILE__ ~__LINE__ name
+    with_collector_ collector ?__FUNCTION__ ~__FILE__ ~__LINE__ name f
 
 let[@inline] message ?__FUNCTION__ ~__FILE__ ~__LINE__ msg : unit =
   match A.get collector with

@@ -8,5 +8,5 @@ let run () =
   done
 
 let () =
-  Trace_tef.Internal_.use_mock_mtime_ ();
+  Trace_tef.Internal_.mock_all_ ();
   Trace_tef.with_setup ~out:`Stdout @@ fun () -> run ()

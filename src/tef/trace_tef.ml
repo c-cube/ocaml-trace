@@ -1,7 +1,7 @@
 open Trace
 module A = Trace.Internal_.Atomic_
 
-module Mock_mtime_ = struct
+module Mock_ = struct
   let enabled = ref false
   let now = ref 0
 
@@ -15,8 +15,8 @@ let counter = Mtime_clock.counter ()
 
 (** Now, in microseconds *)
 let[@inline] now_us () : float =
-  if !Mock_mtime_.enabled then
-    Mock_mtime_.now_us ()
+  if !Mock_.enabled then
+    Mock_.now_us ()
   else (
     let t = Mtime_clock.count counter in
     Mtime.Span.to_float_ns t /. 1e3
@@ -91,7 +91,12 @@ module Writer = struct
       | `Stderr -> stderr, false
       | `File path -> open_out path, true
     in
-    let pid = Unix.getpid () in
+    let pid =
+      if !Mock_.enabled then
+        2
+      else
+        Unix.getpid ()
+    in
     output_char oc '[';
     { oc; first = true; pid; must_close }
 
@@ -219,7 +224,11 @@ let collector ~out () : collector =
         Thread.join t_write
       )
 
-    let[@inline] get_tid_ () : int = Thread.id (Thread.self ())
+    let[@inline] get_tid_ () : int =
+      if !Mock_.enabled then
+        3
+      else
+        Thread.id (Thread.self ())
 
     let create_span ?__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ name : span =
       let span = Int64.of_int (A.fetch_and_add span_id_gen_ 1) in
@@ -268,5 +277,5 @@ let with_setup ?out f =
   protect ~finally:Trace.shutdown f
 
 module Internal_ = struct
-  let use_mock_mtime_ () = Mock_mtime_.enabled := true
+  let mock_all_ () = Mock_.enabled := true
 end

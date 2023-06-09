@@ -83,7 +83,7 @@ let setup_collector c : unit =
     | Some _ -> invalid_arg "trace: collector already present"
     | None -> not (A.compare_and_set collector cur (Some c))
   do
-    Domain_.relax ()
+    ()
   done
 
 let shutdown () =

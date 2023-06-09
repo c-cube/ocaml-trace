@@ -45,25 +45,14 @@ let atomic_post_412 = {|
 include Atomic
 |}
 
-let domain_pre_5 = {|
-
-let relax () = Thread.yield ()
-|}
-
-let domain_post_5 = {|
-let relax = Domain.cpu_relax
-|}
-
 let p_version s = Scanf.sscanf s "%d.%d" (fun x y -> x, y)
 
 let () =
   let atomic = ref false in
-  let domain = ref false in
   let ocaml = ref Sys.ocaml_version in
   Arg.parse
     [
       "--atomic", Arg.Set atomic, " atomic";
-      "--domain", Arg.Set domain, " domain";
       "--ocaml", Arg.Set_string ocaml, " set ocaml version";
     ]
     ignore "";
@@ -76,14 +65,6 @@ let () =
         atomic_pre_412
       else
         atomic_post_412
-    in
-    print_endline code
-  ) else if !domain then (
-    let code =
-      if (major, minor) < (5, 0) then
-        domain_pre_5
-      else
-        domain_post_5
     in
     print_endline code
   )

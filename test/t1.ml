@@ -10,6 +10,7 @@ let run () =
       incr n;
       Trace.with_span ~__FILE__ ~__LINE__ "inner.loop" @@ fun _sp ->
       Trace.messagef (fun k -> k "hello %d %d" _i _j);
+      Trace.message "world";
       Trace.counter_int "n" !n
     done
   done

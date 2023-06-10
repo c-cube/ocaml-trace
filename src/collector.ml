@@ -27,6 +27,12 @@ module type S = sig
   val name_process : string -> unit
   (** Give a name to the current process *)
 
+  val counter_int : string -> int -> unit
+  (** Integer counter *)
+
+  val counter_float : string -> float -> unit
+  (** Float counter *)
+
   val shutdown : unit -> unit
   (** Shutdown collector, possibly waiting for it to finish sending data. *)
 end

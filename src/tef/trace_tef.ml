@@ -50,6 +50,12 @@ type event =
       id: span;
       time_us: float;
     }
+  | E_counter of {
+      name: string;
+      tid: int;
+      time_us: float;
+      n: float;
+    }
   | E_name_process of { name: string }
   | E_name_thread of {
       tid: int;
@@ -125,11 +131,12 @@ module Writer = struct
     String.iter encode_char s;
     char oc '"'
 
-  let pp_user_data_ out : user_data -> unit = function
+  let pp_user_data_ out : [< user_data | `Float of float ] -> unit = function
     | `None -> Printf.fprintf out "null"
     | `Int i -> Printf.fprintf out "%d" i
     | `Bool b -> Printf.fprintf out "%b" b
     | `String s -> str_val out s
+    | `Float f -> Printf.fprintf out "%f" f
 
   (* emit args, if not empty. [ppv] is used to print values. *)
   let emit_args_o_ ppv oc args : unit =
@@ -179,6 +186,15 @@ module Writer = struct
       (emit_args_o_ pp_user_data_)
       [ "name", `String name ];
     ()
+
+  let emit_counter ~name ~tid ~ts (self : t) f : unit =
+    emit_sep_ self;
+    Printf.fprintf self.oc
+      {json|{"pid":%d,"tid":%d,"ts":%.2f,"name":"c","ph":"C"%a}|json} self.pid
+      tid ts
+      (emit_args_o_ pp_user_data_)
+      [ name, `Float f ];
+    ()
 end
 
 let bg_thread ~out (events : event B_queue.t) : unit =
@@ -201,6 +217,8 @@ let bg_thread ~out (events : event B_queue.t) : unit =
         Span_tbl.remove spans id;
         Writer.emit_duration_event ~tid ~name ~start:start_us ~end_:stop_us
           ~args:data writer)
+    | E_counter { tid; name; time_us; n } ->
+      Writer.emit_counter ~name ~tid ~ts:time_us writer n
     | E_name_process { name } -> Writer.emit_name_process ~name writer
     | E_name_thread { tid; name } -> Writer.emit_name_thread ~tid ~name writer
   in
@@ -265,6 +283,12 @@ let collector ~out () : collector =
       let tid = get_tid_ () in
       B_queue.push events (E_message { tid; time_us; msg; data })
 
+    let counter_float name f =
+      let time_us = now_us () in
+      let tid = get_tid_ () in
+      B_queue.push events (E_counter { name; n = f; time_us; tid })
+
+    let counter_int name i = counter_float name (float_of_int i)
     let name_process name : unit = B_queue.push events (E_name_process { name })
 
     let name_thread name : unit =

@@ -31,10 +31,7 @@ val with_span :
   'a
 
 val message :
-  ?span:span ->
-  ?data:(unit -> (string * user_data) list) ->
-  string ->
-  unit
+  ?span:span -> ?data:(unit -> (string * user_data) list) -> string -> unit
 
 (* TODO: counter/plot/metric *)
 
@@ -49,6 +46,12 @@ val set_thread_name : string -> unit
 
 val set_process_name : string -> unit
 (** Give a name to the current process. *)
+
+val counter_int : string -> int -> unit
+(** Emit a counter (int) *)
+
+val counter_float : string -> float -> unit
+(** Emit a counter (float) *)
 
 (** {2 Collector} *)
 

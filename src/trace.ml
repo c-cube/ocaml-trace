@@ -75,6 +75,16 @@ let messagef ?span ?data k =
             C.message ?span ~data str)
           fmt)
 
+let counter_int name n : unit =
+  match A.get collector with
+  | None -> ()
+  | Some (module C) -> C.counter_int name n
+
+let counter_float name f : unit =
+  match A.get collector with
+  | None -> ()
+  | Some (module C) -> C.counter_float name f
+
 let set_thread_name name : unit =
   match A.get collector with
   | None -> ()

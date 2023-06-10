@@ -14,5 +14,10 @@ val pop : 'a t -> 'a
 (** [pop q] pops the next element in [q]. It might block until an element comes.
    @raise Closed if the queue was closed before a new element was available. *)
 
+val transfer : 'a t -> 'a Queue.t -> unit
+(** [transfer bq q2] transfers all items presently
+    in [bq] into [q2], and clears [bq].
+    It blocks if no element is in [bq]. *)
+
 val close : _ t -> unit
 (** Close the queue, meaning there won't be any more [push] allowed. *)

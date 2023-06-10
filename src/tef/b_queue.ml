@@ -51,3 +51,22 @@ let pop (self : 'a t) : 'a =
     )
   in
   loop ()
+
+let transfer (self : 'a t) q2 : unit =
+  Mutex.lock self.mutex;
+  while
+    if Queue.is_empty self.q then (
+      if self.closed then (
+        Mutex.unlock self.mutex;
+        raise Closed
+      );
+      Condition.wait self.cond self.mutex;
+      true
+    ) else (
+      Queue.transfer self.q q2;
+      Mutex.unlock self.mutex;
+      false
+    )
+  do
+    ()
+  done

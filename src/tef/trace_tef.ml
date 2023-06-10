@@ -155,7 +155,7 @@ module Writer = struct
     let ts = start in
     emit_sep_ self;
     Printf.fprintf self.oc
-      {json|{"pid": %d,"cat":"","tid": %d,"dur": %.2f,"ts": %.2f,"name":%a,"ph":"X"%a}|json}
+      {json|{"pid":%d,"cat":"","tid": %d,"dur": %.2f,"ts": %.2f,"name":%a,"ph":"X"%a}|json}
       self.pid tid dur ts str_val name
       (emit_args_o_ pp_user_data_)
       args;
@@ -164,7 +164,7 @@ module Writer = struct
   let emit_instant_event ~tid ~name ~ts ~args (self : t) : unit =
     emit_sep_ self;
     Printf.fprintf self.oc
-      {json|{"pid": %d,"cat":"","tid": %d,"ts": %.2f,"name":%a,"ph":"I"%a}|json}
+      {json|{"pid":%d,"cat":"","tid": %d,"ts": %.2f,"name":%a,"ph":"I"%a}|json}
       self.pid tid ts str_val name
       (emit_args_o_ pp_user_data_)
       args;
@@ -173,7 +173,7 @@ module Writer = struct
   let emit_name_thread ~tid ~name (self : t) : unit =
     emit_sep_ self;
     Printf.fprintf self.oc
-      {json|{"pid": %d,"tid": %d,"name":"thread_name","ph":"M"%a}|json} self.pid
+      {json|{"pid":%d,"tid": %d,"name":"thread_name","ph":"M"%a}|json} self.pid
       tid
       (emit_args_o_ pp_user_data_)
       [ "name", `String name ];
@@ -182,7 +182,7 @@ module Writer = struct
   let emit_name_process ~name (self : t) : unit =
     emit_sep_ self;
     Printf.fprintf self.oc
-      {json|{"pid": %d,"name":"process_name","ph":"M"%a}|json} self.pid
+      {json|{"pid":%d,"name":"process_name","ph":"M"%a}|json} self.pid
       (emit_args_o_ pp_user_data_)
       [ "name", `String name ];
     ()
@@ -201,6 +201,7 @@ let bg_thread ~out (events : event B_queue.t) : unit =
   let writer = Writer.create ~out () in
   protect ~finally:(fun () -> Writer.close writer) @@ fun () ->
   let spans : span_info Span_tbl.t = Span_tbl.create 32 in
+  let local_q = Queue.create () in
 
   (* how to deal with an event *)
   let handle_ev (ev : event) : unit =
@@ -225,8 +226,15 @@ let bg_thread ~out (events : event B_queue.t) : unit =
 
   try
     while true do
-      let ev = B_queue.pop events in
-      handle_ev ev
+      (* work on local events, already on this thread *)
+      while not (Queue.is_empty local_q) do
+        let ev = Queue.pop local_q in
+        handle_ev ev
+      done;
+
+      (* get all the events in the incoming blocking queue, in
+         one single critical section. *)
+      B_queue.transfer events local_q
     done
   with B_queue.Closed ->
     (* warn if app didn't close all spans *)

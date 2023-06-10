@@ -34,22 +34,12 @@ let protect ~finally f =
 
 type event =
   | E_message of {
-      (*
-      __FUNCTION__: string;
-      __FILE__: string;
-      __LINE__: int;
-      *)
       tid: int;
       msg: string;
       time_us: float;
       data: (string * user_data) list;
     }
   | E_define_span of {
-      (*
-      __FUNCTION__: string;
-      __FILE__: string;
-      __LINE__: int;
-      *)
       tid: int;
       name: string;
       time_us: float;
@@ -73,11 +63,6 @@ module Span_tbl = Hashtbl.Make (struct
 end)
 
 type span_info = {
-  (*
-  __FUNCTION__: string;
-  __FILE__: string;
-  __LINE__: int;
-  *)
   tid: int;
   name: string;
   start_us: float;
@@ -204,26 +189,15 @@ let bg_thread ~out (events : event B_queue.t) : unit =
   (* how to deal with an event *)
   let handle_ev (ev : event) : unit =
     match ev with
-    | E_message
-        { (* __FUNCTION__; __FILE__; __LINE__; *) tid; msg; time_us; data } ->
+    | E_message { tid; msg; time_us; data } ->
       Writer.emit_instant_event ~tid ~name:msg ~ts:time_us ~args:data writer
-    | E_define_span
-        { (* __FUNCTION__; __FILE__; __LINE__; *) tid; name; id; time_us; data }
-      ->
+    | E_define_span { tid; name; id; time_us; data } ->
       (* save the span so we find it at exit *)
-      Span_tbl.add spans id
-        {
-          (* __FUNCTION__; __FILE__; __LINE__; *) tid;
-          name;
-          start_us = time_us;
-          data;
-        }
+      Span_tbl.add spans id { tid; name; start_us = time_us; data }
     | E_exit_span { id; time_us = stop_us } ->
       (match Span_tbl.find_opt spans id with
       | None -> (* bug! TODO: emit warning *) ()
-      | Some
-          { (* __FUNCTION__; __FILE__; __LINE__; *) tid; name; start_us; data }
-        ->
+      | Some { tid; name; start_us; data } ->
         Span_tbl.remove spans id;
         Writer.emit_duration_event ~tid ~name ~start:start_us ~end_:stop_us
           ~args:data writer)
@@ -279,14 +253,7 @@ let collector ~out () : collector =
       let tid = get_tid_ () in
       let time_us = now_us () in
       B_queue.push events
-        (E_define_span
-           {
-             (* __FUNCTION__; __FILE__; __LINE__; *) tid;
-             name;
-             time_us;
-             id = span;
-             data;
-           });
+        (E_define_span { tid; name; time_us; id = span; data });
       span
 
     let exit_span span : unit =
@@ -296,9 +263,7 @@ let collector ~out () : collector =
     let message ?span:_ ~data msg : unit =
       let time_us = now_us () in
       let tid = get_tid_ () in
-      B_queue.push events
-        (E_message
-           { (* __FUNCTION__; __FILE__; __LINE__; *) tid; time_us; msg; data })
+      B_queue.push events (E_message { tid; time_us; msg; data })
 
     let name_process name : unit = B_queue.push events (E_name_process { name })
 

@@ -136,7 +136,7 @@ module Writer = struct
     | `Int i -> Printf.fprintf out "%d" i
     | `Bool b -> Printf.fprintf out "%b" b
     | `String s -> str_val out s
-    | `Float f -> Printf.fprintf out "%f" f
+    | `Float f -> Printf.fprintf out "%g" f
 
   (* emit args, if not empty. [ppv] is used to print values. *)
   let emit_args_o_ ppv oc args : unit =

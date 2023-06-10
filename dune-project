@@ -2,6 +2,7 @@
 
 (name trace)
 (generate_opam_files true)
+(version 0.1)
 
 (source
  (github c-cube/trace))

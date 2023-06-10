@@ -10,7 +10,7 @@ a library or application, either by hand or via a ppx.
 
 - [x] spans
 - [x] messages
-- [ ] counters
+- [x] counters
 - [ ] other metrics?
 
 ### Backends

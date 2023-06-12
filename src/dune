@@ -1,11 +1,6 @@
 (library
+ (name trace)
  (public_name trace)
  (synopsis "Lightweight stub for tracing")
- (name trace)
+ (libraries trace.core)
 )
-
-(rule
-  (targets atomic_.ml)
-  (action
-    (with-stdout-to %{targets}
-     (run ./gen/gen.exe --ocaml %{ocaml_version} --atomic))))

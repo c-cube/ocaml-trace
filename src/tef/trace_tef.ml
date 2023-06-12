@@ -316,12 +316,14 @@ let setup ?(out = `Env) () =
       let path = "trace.json" in
       let c = collector ~out:(`File path) () in
       Trace.setup_collector c
+    | Some "stdout" -> Trace.setup_collector @@ collector ~out:`Stdout ()
+    | Some "stderr" -> Trace.setup_collector @@ collector ~out:`Stderr ()
     | Some path ->
       let c = collector ~out:(`File path) () in
       Trace.setup_collector c
     | None -> ())
 
-let with_setup ?out f =
+let with_setup ?out () f =
   setup ?out ();
   protect ~finally:Trace.shutdown f
 

@@ -17,4 +17,4 @@ let run () =
 
 let () =
   Trace_tef.Internal_.mock_all_ ();
-  Trace_tef.with_setup ~out:`Stdout @@ fun () -> run ()
+  Trace_tef.with_setup ~out:`Stdout () @@ fun () -> run ()

@@ -9,6 +9,10 @@ open Types
 
 let dummy_span : span = Int64.min_int
 
+(** Signature for a collector.
+
+    This is only relevant to implementors of tracing backends; to instrument
+    your code you only need to look at the {!Trace} module. *)
 module type S = sig
   val enter_span :
     ?__FUNCTION__:string ->

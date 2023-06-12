@@ -1,5 +1,7 @@
 type span = int64
-(** A span identifier. *)
+(** A span identifier.
+
+    The meaning of the identifier depends on the collector. *)
 
 type user_data =
   [ `Int of int
@@ -7,4 +9,5 @@ type user_data =
   | `Bool of bool
   | `None
   ]
-(** User defined data, generally passed as key/value pairs *)
+(** User defined data, generally passed as key/value pairs to
+    whatever collector is installed (if any). *)

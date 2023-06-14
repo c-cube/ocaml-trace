@@ -2,7 +2,7 @@
 
 (name trace)
 (generate_opam_files true)
-(version 0.1)
+(version 0.2)
 
 (source
  (github c-cube/trace))
@@ -14,7 +14,7 @@
 
 (package
  (name trace)
- (synopsis "A stub for tracing/observability")
+ (synopsis "A stub for tracing/observability, agnostic in how data is collected")
  (depends
    (ocaml (>= 4.08))
    dune)
@@ -23,7 +23,7 @@
 
 (package
  (name trace-tef)
- (synopsis "A simple backend for trace")
+ (synopsis "A simple backend for trace, emitting Catapult JSON into a file")
  (depends
    (ocaml (>= 4.08))
    (trace (= :version))

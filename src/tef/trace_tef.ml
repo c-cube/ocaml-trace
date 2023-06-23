@@ -14,7 +14,7 @@ end
 let counter = Mtime_clock.counter ()
 
 (** Now, in microseconds *)
-let[@inline] now_us () : float =
+let now_us () : float =
   if !Mock_.enabled then
     Mock_.now_us ()
   else (
@@ -271,11 +271,12 @@ let collector ~out () : collector =
     (* queue of messages to write *)
     let events : event B_queue.t = B_queue.create ()
 
-    (* writer thread. It receives events and writes them to [oc]. *)
+    (** writer thread. It receives events and writes them to [oc]. *)
     let t_write : Thread.t = Thread.create (fun () -> bg_thread ~out events) ()
 
-    (* ticker thread, regularly sends a message to the writer thread *)
-    let t_tick : Thread.t = Thread.create (fun () -> tick_thread events) ()
+    (** ticker thread, regularly sends a message to the writer thread.
+         no need to join it. *)
+    let _t_tick : Thread.t = Thread.create (fun () -> tick_thread events) ()
 
     let shutdown () =
       if A.exchange active false then (
@@ -283,7 +284,7 @@ let collector ~out () : collector =
         Thread.join t_write
       )
 
-    let[@inline] get_tid_ () : int =
+    let get_tid_ () : int =
       if !Mock_.enabled then
         3
       else

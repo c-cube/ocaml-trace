@@ -5,7 +5,7 @@
 (version 0.2)
 
 (source
- (github c-cube/trace))
+ (github c-cube/ocaml-trace))
 (authors "Simon Cruanes")
 (maintainers "Simon Cruanes")
 (license MIT)

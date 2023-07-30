@@ -6,8 +6,8 @@ maintainer: ["Simon Cruanes"]
 authors: ["Simon Cruanes"]
 license: "MIT"
 tags: ["trace" "tracing" "catapult"]
-homepage: "https://github.com/c-cube/trace"
-bug-reports: "https://github.com/c-cube/trace/issues"
+homepage: "https://github.com/c-cube/ocaml-trace"
+bug-reports: "https://github.com/c-cube/ocaml-trace/issues"
 depends: [
   "ocaml" {>= "4.08"}
   "trace" {= version}
@@ -32,4 +32,4 @@ build: [
   ]
   ["dune" "install" "-p" name "--create-install-files" name]
 ]
-dev-repo: "git+https://github.com/c-cube/trace.git"
+dev-repo: "git+https://github.com/c-cube/ocaml-trace.git"

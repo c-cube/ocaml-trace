@@ -1,5 +1,5 @@
-open Trace
-module A = Trace.Internal_.Atomic_
+open Trace_core
+module A = Trace_core.Internal_.Atomic_
 
 module Mock_ = struct
   let enabled = ref false
@@ -323,25 +323,25 @@ let collector ~out () : collector =
 
 let setup ?(out = `Env) () =
   match out with
-  | `Stderr -> Trace.setup_collector @@ collector ~out:`Stderr ()
-  | `Stdout -> Trace.setup_collector @@ collector ~out:`Stdout ()
-  | `File path -> Trace.setup_collector @@ collector ~out:(`File path) ()
+  | `Stderr -> Trace_core.setup_collector @@ collector ~out:`Stderr ()
+  | `Stdout -> Trace_core.setup_collector @@ collector ~out:`Stdout ()
+  | `File path -> Trace_core.setup_collector @@ collector ~out:(`File path) ()
   | `Env ->
     (match Sys.getenv_opt "TRACE" with
     | Some "1" ->
       let path = "trace.json" in
       let c = collector ~out:(`File path) () in
-      Trace.setup_collector c
-    | Some "stdout" -> Trace.setup_collector @@ collector ~out:`Stdout ()
-    | Some "stderr" -> Trace.setup_collector @@ collector ~out:`Stderr ()
+      Trace_core.setup_collector c
+    | Some "stdout" -> Trace_core.setup_collector @@ collector ~out:`Stdout ()
+    | Some "stderr" -> Trace_core.setup_collector @@ collector ~out:`Stderr ()
     | Some path ->
       let c = collector ~out:(`File path) () in
-      Trace.setup_collector c
+      Trace_core.setup_collector c
     | None -> ())
 
 let with_setup ?out () f =
   setup ?out ();
-  protect ~finally:Trace.shutdown f
+  protect ~finally:Trace_core.shutdown f
 
 module Internal_ = struct
   let mock_all_ () = Mock_.enabled := true

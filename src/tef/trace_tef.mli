@@ -1,5 +1,5 @@
 val collector :
-  out:[ `File of string | `Stderr | `Stdout ] -> unit -> Trace.collector
+  out:[ `File of string | `Stderr | `Stdout ] -> unit -> Trace_core.collector
 (** Make a collector that writes into the given output.
     See {!setup} for more details. *)
 

@@ -1,6 +1,7 @@
 include Types
 module A = Atomic_
 module Collector = Collector
+module Meta_map = Meta_map
 
 type collector = (module Collector.S)
 
@@ -49,6 +50,26 @@ let[@inline] with_span ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name f =
   | Some collector ->
     with_span_collector_ collector ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name
       f
+
+let enter_explicit_span_collector_ (module C : Collector.S) ~surrounding
+    ?__FUNCTION__ ~__FILE__ ~__LINE__ ?(data = fun () -> []) name :
+    explicit_span =
+  let data = data () in
+  C.enter_explicit_span ~surrounding ?__FUNCTION__ ~__FILE__ ~__LINE__ ~data
+    name
+
+let[@inline] enter_explicit_span ~surrounding ?__FUNCTION__ ~__FILE__ ~__LINE__
+    ?data name : explicit_span =
+  match A.get collector with
+  | None -> Collector.dummy_explicit_span
+  | Some coll ->
+    enter_explicit_span_collector_ coll ~surrounding ?__FUNCTION__ ~__FILE__
+      ~__LINE__ ?data name
+
+let[@inline] exit_explicit_span espan : unit =
+  match A.get collector with
+  | None -> ()
+  | Some (module C) -> C.exit_explicit_span espan
 
 let message_collector_ (module C : Collector.S) ?span ?(data = fun () -> []) msg
     : unit =

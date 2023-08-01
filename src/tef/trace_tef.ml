@@ -51,6 +51,19 @@ type event =
       id: span;
       time_us: float;
     }
+  | E_enter_async_span of {
+      tid: int;
+      name: string;
+      time_us: float;
+      id: int;
+      data: (string * user_data) list;
+    }
+  | E_exit_async_span of {
+      tid: int;
+      name: string;
+      time_us: float;
+      id: int;
+    }
   | E_counter of {
       name: string;
       tid: int;
@@ -75,6 +88,11 @@ type span_info = {
   start_us: float;
   data: (string * user_data) list;
 }
+
+(** key used to carry a unique "id" for all spans in an async context *)
+let key_async_id : int Meta_map.Key.t = Meta_map.Key.create ()
+
+let key_async_name : string Meta_map.Key.t = Meta_map.Key.create ()
 
 module Writer = struct
   type t = {
@@ -164,6 +182,22 @@ module Writer = struct
       args;
     ()
 
+  let emit_async_begin ~tid ~name ~id ~ts ~args (self : t) : unit =
+    emit_sep_ self;
+    Printf.fprintf self.oc
+      {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"b"%a}|json}
+      self.pid id tid ts str_val name
+      (emit_args_o_ pp_user_data_)
+      args;
+    ()
+
+  let emit_async_end ~tid ~name ~id ~ts (self : t) : unit =
+    emit_sep_ self;
+    Printf.fprintf self.oc
+      {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"e"}|json}
+      self.pid id tid ts str_val name;
+    ()
+
   let emit_instant_event ~tid ~name ~ts ~args (self : t) : unit =
     emit_sep_ self;
     Printf.fprintf self.oc
@@ -222,6 +256,10 @@ let bg_thread ~out (events : event B_queue.t) : unit =
         Span_tbl.remove spans id;
         Writer.emit_duration_event ~tid ~name ~start:start_us ~end_:stop_us
           ~args:data writer)
+    | E_enter_async_span { tid; time_us; name; id; data } ->
+      Writer.emit_async_begin ~tid ~name ~id ~ts:time_us ~args:data writer
+    | E_exit_async_span { tid; time_us; name; id } ->
+      Writer.emit_async_end ~tid ~name ~id ~ts:time_us writer
     | E_counter { tid; name; time_us; n } ->
       Writer.emit_counter ~name ~tid ~ts:time_us writer n
     | E_name_process { name } -> Writer.emit_name_process ~name writer
@@ -301,6 +339,30 @@ let collector ~out () : collector =
     let exit_span span : unit =
       let time_us = now_us () in
       B_queue.push events (E_exit_span { id = span; time_us })
+
+    let enter_explicit_span ~(surrounding : explicit_span option)
+        ?__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ ~data name : explicit_span =
+      (* get the id, or make a new one *)
+      let id =
+        match surrounding with
+        | Some m -> Meta_map.find_exn key_async_id m.meta
+        | None -> A.fetch_and_add span_id_gen_ 1
+      in
+      let time_us = now_us () in
+      B_queue.push events
+        (E_enter_async_span { id; time_us; tid = get_tid_ (); data; name });
+      {
+        span = 0L;
+        meta =
+          Meta_map.(empty |> add key_async_id id |> add key_async_name name);
+      }
+
+    let exit_explicit_span (es : explicit_span) : unit =
+      let id = Meta_map.find_exn key_async_id es.meta in
+      let name = Meta_map.find_exn key_async_name es.meta in
+      let time_us = now_us () in
+      let tid = get_tid_ () in
+      B_queue.push events (E_exit_async_span { tid; id; name; time_us })
 
     let message ?span:_ ~data msg : unit =
       let time_us = now_us () in

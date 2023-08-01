@@ -2,6 +2,7 @@
 
 include module type of Types
 module Collector = Collector
+module Meta_map = Meta_map
 
 (** {2 Tracing} *)
 
@@ -47,7 +48,33 @@ val with_span :
     [sp] might be a dummy span if no collector is installed.
     When [f sp] returns or raises, the span [sp] is exited.
 
-    This is the recommended way to instrument most code. *)
+    This is the recommended way to instrument most code.
+
+    {b NOTE} an important restriction is that this is only supposed to
+    work for synchronous, direct style code. Monadic concurrency, Effect-based
+    fibers, etc. might not play well with this style of spans on some
+    or all backends. If you use cooperative concurrency,
+    see {!enter_explicit_span}.
+*)
+
+val enter_explicit_span :
+  surrounding:explicit_span option ->
+  ?__FUNCTION__:string ->
+  __FILE__:string ->
+  __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
+  string ->
+  explicit_span
+(** Like {!enter_span} but the caller is responsible for
+      providing the [surrounding] context, and carry the resulting
+      {!explicit_span} to  the matching {!exit_explicit_span}. 
+      @since NEXT_RELEASE *)
+
+val exit_explicit_span : explicit_span -> unit
+(** Exit an explicit span. This can be on another thread, in a
+    fiber or lightweight thread, etc. and will be supported by backends
+    nonetheless.
+    @since NEXT_RELEASE *)
 
 val message :
   ?span:span -> ?data:(unit -> (string * user_data) list) -> string -> unit

@@ -21,21 +21,26 @@ module type S = sig
     data:(string * user_data) list ->
     string ->
     span
+  (** Enter a new span. *)
 
   val exit_span : span -> unit
+  (** Exit given span. It can't be exited again. Spans must follow
+      a strict stack discipline on each thread. *)
+
   val message : ?span:span -> data:(string * user_data) list -> string -> unit
+  (** Emit a message with associated metadata. *)
 
   val name_thread : string -> unit
-  (** Give a name to the current thread *)
+  (** Give a name to the current thread. *)
 
   val name_process : string -> unit
-  (** Give a name to the current process *)
+  (** Give a name to the current process. *)
 
   val counter_int : string -> int -> unit
-  (** Integer counter *)
+  (** Integer counter. *)
 
   val counter_float : string -> float -> unit
-  (** Float counter *)
+  (** Float counter. *)
 
   val shutdown : unit -> unit
   (** Shutdown collector, possibly waiting for it to finish sending data. *)

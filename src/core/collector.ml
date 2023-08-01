@@ -9,6 +9,9 @@ open Types
 
 let dummy_span : span = Int64.min_int
 
+let dummy_explicit_span : explicit_span =
+  { span = dummy_span; meta = Meta_map.empty }
+
 (** Signature for a collector.
 
     This is only relevant to implementors of tracing backends; to instrument
@@ -26,6 +29,27 @@ module type S = sig
   val exit_span : span -> unit
   (** Exit given span. It can't be exited again. Spans must follow
       a strict stack discipline on each thread. *)
+
+  val enter_explicit_span :
+    surrounding:explicit_span option ->
+    ?__FUNCTION__:string ->
+    __FILE__:string ->
+    __LINE__:int ->
+    data:(string * user_data) list ->
+    string ->
+    explicit_span
+  (** Enter an explicit span. Surrounding scope is provided by [surrounding],
+      and this function can store as much metadata as it wants in the hmap
+      in the {!explicit_span}'s [meta] field.
+
+      This means that the collector doesn't need to implement contextual
+      storage mapping {!span} to scopes, metadata, etc. on its side;
+      everything can be transmitted in the {!explicit_span}.
+      @since NEXT_RELEASE *)
+
+  val exit_explicit_span : explicit_span -> unit
+  (** Exit an explicit span.
+      @since NEXT_RELEASE *)
 
   val message : ?span:span -> data:(string * user_data) list -> string -> unit
   (** Emit a message with associated metadata. *)

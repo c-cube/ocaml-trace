@@ -12,29 +12,6 @@ val enabled : unit -> bool
     This is fast, so that the traced program can check it before creating
     any span or message *)
 
-val enter_span :
-  ?__FUNCTION__:string ->
-  __FILE__:string ->
-  __LINE__:int ->
-  ?data:(unit -> (string * user_data) list) ->
-  string ->
-  span
-(** Enter a span. A span is a delimited period of time with
-    a start instant ("enter") and stop instant ("exit"), associated
-    with some metadata about the code entering/exiting some piece of code.
-
-    In particular the entrypoint comes with the location of the code
-    (you can use [__FILE__] and [__LINE__] directly in OCaml),
-    a mandatory name, and some optional metadata in a JSON-like representation.
-*)
-
-val exit_span : span -> unit
-(** Exit the span.
-
-    This should be called exactly once per span (even in case of exception).
-    Once this is called, a timestamp might be recorded,
-  and the span is considered finished and can't be used anymore *)
-
 val with_span :
   ?__FUNCTION__:string ->
   __FILE__:string ->

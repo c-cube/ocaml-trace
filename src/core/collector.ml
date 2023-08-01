@@ -17,18 +17,19 @@ let dummy_explicit_span : explicit_span =
     This is only relevant to implementors of tracing backends; to instrument
     your code you only need to look at the {!Trace} module. *)
 module type S = sig
-  val enter_span :
-    ?__FUNCTION__:string ->
+  val with_span :
+    __FUNCTION__:string option ->
     __FILE__:string ->
     __LINE__:int ->
     data:(string * user_data) list ->
     string ->
-    span
-  (** Enter a new span. *)
+    (span -> 'a) ->
+    'a
+  (** Run the function in a new span.
 
-  val exit_span : span -> unit
-  (** Exit given span. It can't be exited again. Spans must follow
-      a strict stack discipline on each thread. *)
+      This replaces the previous [enter_span] and [exit_span] which were too flexible
+      to be efficient to implement in async contexts.
+     @since NEXT_RELEASE *)
 
   val enter_explicit_span :
     surrounding:explicit_span option ->

@@ -33,7 +33,7 @@ module type S = sig
 
   val enter_manual_span :
     parent:explicit_span option ->
-    ?__FUNCTION__:string ->
+    __FUNCTION__:string option ->
     __FILE__:string ->
     __LINE__:int ->
     data:(string * user_data) list ->

@@ -342,7 +342,7 @@ let collector ~out () : collector =
 
       Fun.protect ~finally (fun () -> f span)
 
-    let enter_manual_span ~(parent : explicit_span option) ?__FUNCTION__:_
+    let enter_manual_span ~(parent : explicit_span option) ~__FUNCTION__:_
         ~__FILE__:_ ~__LINE__:_ ~data name : explicit_span =
       (* get the id, or make a new one *)
       let id =

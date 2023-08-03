@@ -43,7 +43,7 @@ val enter_manual_sub_span :
   string ->
   explicit_span
 (** Like {!with_span} but the caller is responsible for
-    providing the [parent] context, and carry the resulting
+    obtaining the [parent] span from their {e own} caller, and carry the resulting
     {!explicit_span} to  the matching {!exit_manual_span}. 
     @since NEXT_RELEASE *)
 

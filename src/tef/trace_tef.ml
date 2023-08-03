@@ -342,11 +342,11 @@ let collector ~out () : collector =
 
       Fun.protect ~finally (fun () -> f span)
 
-    let enter_explicit_span ~(surrounding : explicit_span option)
-        ?__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ ~data name : explicit_span =
+    let enter_manual_span ~(parent : explicit_span option) ?__FUNCTION__:_
+        ~__FILE__:_ ~__LINE__:_ ~data name : explicit_span =
       (* get the id, or make a new one *)
       let id =
-        match surrounding with
+        match parent with
         | Some m -> Meta_map.find_exn key_async_id m.meta
         | None -> A.fetch_and_add span_id_gen_ 1
       in
@@ -359,7 +359,7 @@ let collector ~out () : collector =
           Meta_map.(empty |> add key_async_id id |> add key_async_name name);
       }
 
-    let exit_explicit_span (es : explicit_span) : unit =
+    let exit_manual_span (es : explicit_span) : unit =
       let id = Meta_map.find_exn key_async_id es.meta in
       let name = Meta_map.find_exn key_async_name es.meta in
       let time_us = now_us () in

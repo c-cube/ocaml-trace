@@ -31,11 +31,11 @@ val with_span :
     work for synchronous, direct style code. Monadic concurrency, Effect-based
     fibers, etc. might not play well with this style of spans on some
     or all backends. If you use cooperative concurrency,
-    see {!enter_explicit_span}.
+    see {!enter_manual_span}.
 *)
 
-val enter_explicit_span :
-  surrounding:explicit_span option ->
+val enter_manual_sub_span :
+  parent:explicit_span ->
   ?__FUNCTION__:string ->
   __FILE__:string ->
   __LINE__:int ->
@@ -43,14 +43,28 @@ val enter_explicit_span :
   string ->
   explicit_span
 (** Like {!with_span} but the caller is responsible for
-      providing the [surrounding] context, and carry the resulting
-      {!explicit_span} to  the matching {!exit_explicit_span}. 
-      @since NEXT_RELEASE *)
+    providing the [parent] context, and carry the resulting
+    {!explicit_span} to  the matching {!exit_manual_span}. 
+    @since NEXT_RELEASE *)
 
-val exit_explicit_span : explicit_span -> unit
+val enter_manual_toplevel_span :
+  ?__FUNCTION__:string ->
+  __FILE__:string ->
+  __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
+  string ->
+  explicit_span
+(** Like {!with_span} but the caller is responsible for carrying this
+    [explicit_span] around until it's exited with {!exit_manual_span}.
+    The span can be used as a parent in {!enter_manual_sub_span}.
+    @since NEXT_RELEASE *)
+
+val exit_manual_span : explicit_span -> unit
 (** Exit an explicit span. This can be on another thread, in a
     fiber or lightweight thread, etc. and will be supported by backends
     nonetheless.
+    The span can be obtained via {!enter_manual_sub_span} or
+    {!enter_manual_toplevel_span}.
     @since NEXT_RELEASE *)
 
 val message :

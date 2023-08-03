@@ -31,15 +31,15 @@ module type S = sig
       to be efficient to implement in async contexts.
      @since NEXT_RELEASE *)
 
-  val enter_explicit_span :
-    surrounding:explicit_span option ->
+  val enter_manual_span :
+    parent:explicit_span option ->
     ?__FUNCTION__:string ->
     __FILE__:string ->
     __LINE__:int ->
     data:(string * user_data) list ->
     string ->
     explicit_span
-  (** Enter an explicit span. Surrounding scope is provided by [surrounding],
+  (** Enter an explicit span. Surrounding scope, if any, is provided by [parent],
       and this function can store as much metadata as it wants in the hmap
       in the {!explicit_span}'s [meta] field.
 
@@ -48,7 +48,7 @@ module type S = sig
       everything can be transmitted in the {!explicit_span}.
       @since NEXT_RELEASE *)
 
-  val exit_explicit_span : explicit_span -> unit
+  val exit_manual_span : explicit_span -> unit
   (** Exit an explicit span.
       @since NEXT_RELEASE *)
 

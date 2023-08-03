@@ -7,8 +7,7 @@ let run () =
   for _i = 1 to 50 do
     Trace.with_span ~__FILE__ ~__LINE__ "outer.loop" @@ fun _sp ->
     let pseudo_async_sp =
-      Trace.enter_explicit_span ~surrounding:None ~__FILE__ ~__LINE__
-        "fake_sleep"
+      Trace.enter_manual_toplevel_span ~__FILE__ ~__LINE__ "fake_sleep"
     in
 
     for _j = 2 to 5 do
@@ -21,14 +20,14 @@ let run () =
       if _j = 2 then (
         (* fake micro sleep *)
         let _sp =
-          Trace.enter_explicit_span ~surrounding:(Some pseudo_async_sp)
-            ~__FILE__ ~__LINE__ "sub-sleep"
+          Trace.enter_manual_sub_span ~parent:pseudo_async_sp ~__FILE__
+            ~__LINE__ "sub-sleep"
         in
         Thread.delay 0.005;
-        Trace.exit_explicit_span _sp
+        Trace.exit_manual_span _sp
       ) else if _j = 3 then
         (* pretend some task finished. Note that this is not well scoped wrt other spans. *)
-        Trace.exit_explicit_span pseudo_async_sp
+        Trace.exit_manual_span pseudo_async_sp
     done
   done
 

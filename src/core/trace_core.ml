@@ -27,25 +27,32 @@ let[@inline] with_span ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name f =
     with_span_collector_ collector ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name
       f
 
-let enter_explicit_span_collector_ (module C : Collector.S) ~surrounding
+let enter_explicit_span_collector_ (module C : Collector.S) ~parent
     ?__FUNCTION__ ~__FILE__ ~__LINE__ ?(data = fun () -> []) name :
     explicit_span =
   let data = data () in
-  C.enter_explicit_span ~surrounding ?__FUNCTION__ ~__FILE__ ~__LINE__ ~data
-    name
+  C.enter_manual_span ~parent ?__FUNCTION__ ~__FILE__ ~__LINE__ ~data name
 
-let[@inline] enter_explicit_span ~surrounding ?__FUNCTION__ ~__FILE__ ~__LINE__
+let[@inline] enter_manual_sub_span ~parent ?__FUNCTION__ ~__FILE__ ~__LINE__
     ?data name : explicit_span =
   match A.get collector with
   | None -> Collector.dummy_explicit_span
   | Some coll ->
-    enter_explicit_span_collector_ coll ~surrounding ?__FUNCTION__ ~__FILE__
+    enter_explicit_span_collector_ coll ~parent:(Some parent) ?__FUNCTION__
+      ~__FILE__ ~__LINE__ ?data name
+
+let[@inline] enter_manual_toplevel_span ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data
+    name : explicit_span =
+  match A.get collector with
+  | None -> Collector.dummy_explicit_span
+  | Some coll ->
+    enter_explicit_span_collector_ coll ~parent:None ?__FUNCTION__ ~__FILE__
       ~__LINE__ ?data name
 
-let[@inline] exit_explicit_span espan : unit =
+let[@inline] exit_manual_span espan : unit =
   match A.get collector with
   | None -> ()
-  | Some (module C) -> C.exit_explicit_span espan
+  | Some (module C) -> C.exit_manual_span espan
 
 let message_collector_ (module C : Collector.S) ?span ?(data = fun () -> []) msg
     : unit =

@@ -42,7 +42,7 @@ val enter_explicit_span :
   ?data:(unit -> (string * user_data) list) ->
   string ->
   explicit_span
-(** Like {!enter_span} but the caller is responsible for
+(** Like {!with_span} but the caller is responsible for
       providing the [surrounding] context, and carry the resulting
       {!explicit_span} to  the matching {!exit_explicit_span}. 
       @since NEXT_RELEASE *)

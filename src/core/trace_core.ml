@@ -31,7 +31,7 @@ let enter_explicit_span_collector_ (module C : Collector.S) ~parent
     ?__FUNCTION__ ~__FILE__ ~__LINE__ ?(data = fun () -> []) name :
     explicit_span =
   let data = data () in
-  C.enter_manual_span ~parent ?__FUNCTION__ ~__FILE__ ~__LINE__ ~data name
+  C.enter_manual_span ~parent ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name
 
 let[@inline] enter_manual_sub_span ~parent ?__FUNCTION__ ~__FILE__ ~__LINE__
     ?data name : explicit_span =

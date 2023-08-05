@@ -20,8 +20,13 @@ let run () =
       if _j = 2 then (
         (* fake micro sleep *)
         let _sp =
-          Trace.enter_manual_sub_span ~parent:pseudo_async_sp ~__FILE__
-            ~__LINE__ "sub-sleep"
+          Trace.enter_manual_sub_span ~parent:pseudo_async_sp
+            ~flavor:
+              (if _i mod 3 = 0 then
+                `Sync
+              else
+                `Async)
+            ~__FILE__ ~__LINE__ "sub-sleep"
         in
         Thread.delay 0.005;
         Trace.exit_manual_span _sp

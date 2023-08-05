@@ -36,6 +36,7 @@ val with_span :
 
 val enter_manual_sub_span :
   parent:explicit_span ->
+  ?flavor:[ `Sync | `Async ] ->
   ?__FUNCTION__:string ->
   __FILE__:string ->
   __LINE__:int ->
@@ -45,9 +46,15 @@ val enter_manual_sub_span :
 (** Like {!with_span} but the caller is responsible for
     obtaining the [parent] span from their {e own} caller, and carry the resulting
     {!explicit_span} to  the matching {!exit_manual_span}. 
+    @param flavor a description of the span that can be used by the {!Collector.S}
+      to decide how to represent the span. Typically, [`Sync] spans
+      start and stop on one thread, and are nested purely by their timestamp;
+      and [`Async] spans can overlap, migrate between threads, etc. (as happens in
+      Lwt, Eio, Async, etc.) which impacts how the collector might represent them.
     @since NEXT_RELEASE *)
 
 val enter_manual_toplevel_span :
+  ?flavor:[ `Sync | `Async ] ->
   ?__FUNCTION__:string ->
   __FILE__:string ->
   __LINE__:int ->
@@ -57,6 +64,7 @@ val enter_manual_toplevel_span :
 (** Like {!with_span} but the caller is responsible for carrying this
     [explicit_span] around until it's exited with {!exit_manual_span}.
     The span can be used as a parent in {!enter_manual_sub_span}.
+    @param flavor see {!enter_manual_sub_span} for more details.
     @since NEXT_RELEASE *)
 
 val exit_manual_span : explicit_span -> unit

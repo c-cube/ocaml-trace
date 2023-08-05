@@ -33,6 +33,7 @@ module type S = sig
 
   val enter_manual_span :
     parent:explicit_span option ->
+    flavor:[ `Sync | `Async ] option ->
     __FUNCTION__:string option ->
     __FILE__:string ->
     __LINE__:int ->

@@ -1,4 +1,11 @@
 
+# 0.3
+
+
+- add explicit spans, for more precise tracing
+- rename repo to ocaml-trace
+- trace-tef: add a ticker thread to ensure we flush the file regularly
+
 # 0.2
 
 - trace-tef: additional argument to `with_setup`; env for "stdout"/"stderr"

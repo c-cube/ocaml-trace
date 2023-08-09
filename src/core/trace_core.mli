@@ -51,7 +51,7 @@ val enter_manual_sub_span :
       start and stop on one thread, and are nested purely by their timestamp;
       and [`Async] spans can overlap, migrate between threads, etc. (as happens in
       Lwt, Eio, Async, etc.) which impacts how the collector might represent them.
-    @since NEXT_RELEASE *)
+    @since 0.3 *)
 
 val enter_manual_toplevel_span :
   ?flavor:[ `Sync | `Async ] ->
@@ -65,7 +65,7 @@ val enter_manual_toplevel_span :
     [explicit_span] around until it's exited with {!exit_manual_span}.
     The span can be used as a parent in {!enter_manual_sub_span}.
     @param flavor see {!enter_manual_sub_span} for more details.
-    @since NEXT_RELEASE *)
+    @since 0.3 *)
 
 val exit_manual_span : explicit_span -> unit
 (** Exit an explicit span. This can be on another thread, in a
@@ -73,7 +73,7 @@ val exit_manual_span : explicit_span -> unit
     nonetheless.
     The span can be obtained via {!enter_manual_sub_span} or
     {!enter_manual_toplevel_span}.
-    @since NEXT_RELEASE *)
+    @since 0.3 *)
 
 val message :
   ?span:span -> ?data:(unit -> (string * user_data) list) -> string -> unit

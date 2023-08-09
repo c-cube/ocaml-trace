@@ -29,7 +29,7 @@ module type S = sig
 
       This replaces the previous [enter_span] and [exit_span] which were too flexible
       to be efficient to implement in async contexts.
-     @since NEXT_RELEASE *)
+     @since 0.3 *)
 
   val enter_manual_span :
     parent:explicit_span option ->
@@ -47,11 +47,11 @@ module type S = sig
       This means that the collector doesn't need to implement contextual
       storage mapping {!span} to scopes, metadata, etc. on its side;
       everything can be transmitted in the {!explicit_span}.
-      @since NEXT_RELEASE *)
+      @since 0.3 *)
 
   val exit_manual_span : explicit_span -> unit
   (** Exit an explicit span.
-      @since NEXT_RELEASE *)
+      @since 0.3 *)
 
   val message : ?span:span -> data:(string * user_data) list -> string -> unit
   (** Emit a message with associated metadata. *)

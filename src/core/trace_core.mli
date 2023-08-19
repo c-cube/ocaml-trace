@@ -8,9 +8,9 @@ module Meta_map = Meta_map
 
 val enabled : unit -> bool
 (** Is there a collector?
-  
+
     This is fast, so that the traced program can check it before creating
-    any span or message *)
+    any span or message. *)
 
 val with_span :
   ?__FUNCTION__:string ->

@@ -45,6 +45,7 @@ type event =
       name: string;
       time_us: float;
       id: span;
+      fun_name: string option;
       data: (string * user_data) list;
     }
   | E_exit_span of {
@@ -57,6 +58,7 @@ type event =
       time_us: float;
       id: int;
       flavor: [ `Sync | `Async ] option;
+      fun_name: string option;
       data: (string * user_data) list;
     }
   | E_exit_manual_span of {
@@ -250,14 +252,22 @@ let bg_thread ~out (events : event B_queue.t) : unit =
   let spans : span_info Span_tbl.t = Span_tbl.create 32 in
   let local_q = Queue.create () in
 
+  (* add function name, if provided, to the metadata *)
+  let add_fun_name_ fun_name data : _ list =
+    match fun_name with
+    | None -> data
+    | Some f -> ("function", `String f) :: data
+  in
+
   (* how to deal with an event *)
   let handle_ev (ev : event) : unit =
     match ev with
     | E_tick -> Writer.flush writer
     | E_message { tid; msg; time_us; data } ->
       Writer.emit_instant_event ~tid ~name:msg ~ts:time_us ~args:data writer
-    | E_define_span { tid; name; id; time_us; data } ->
+    | E_define_span { tid; name; id; time_us; fun_name; data } ->
       (* save the span so we find it at exit *)
+      let data = add_fun_name_ fun_name data in
       Span_tbl.add spans id { tid; name; start_us = time_us; data }
     | E_exit_span { id; time_us = stop_us } ->
       (match Span_tbl.find_opt spans id with
@@ -266,7 +276,8 @@ let bg_thread ~out (events : event B_queue.t) : unit =
         Span_tbl.remove spans id;
         Writer.emit_duration_event ~tid ~name ~start:start_us ~end_:stop_us
           ~args:data writer)
-    | E_enter_manual_span { tid; time_us; name; id; data; flavor } ->
+    | E_enter_manual_span { tid; time_us; name; id; data; fun_name; flavor } ->
+      let data = add_fun_name_ fun_name data in
       Writer.emit_manual_begin ~tid ~name ~id ~ts:time_us ~args:data ~flavor
         writer
     | E_exit_manual_span { tid; time_us; name; id; flavor } ->
@@ -339,12 +350,12 @@ let collector ~out () : collector =
       else
         Thread.id (Thread.self ())
 
-    let with_span ~__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ ~data name f =
+    let with_span ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name f =
       let span = Int64.of_int (A.fetch_and_add span_id_gen_ 1) in
       let tid = get_tid_ () in
       let time_us = now_us () in
       B_queue.push events
-        (E_define_span { tid; name; time_us; id = span; data });
+        (E_define_span { tid; name; time_us; id = span; fun_name; data });
 
       let finally () =
         let time_us = now_us () in
@@ -354,7 +365,8 @@ let collector ~out () : collector =
       Fun.protect ~finally (fun () -> f span)
 
     let enter_manual_span ~(parent : explicit_span option) ~flavor
-        ~__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ ~data name : explicit_span =
+        ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name :
+        explicit_span =
       (* get the id, or make a new one *)
       let id =
         match parent with
@@ -364,7 +376,7 @@ let collector ~out () : collector =
       let time_us = now_us () in
       B_queue.push events
         (E_enter_manual_span
-           { id; time_us; tid = get_tid_ (); data; name; flavor });
+           { id; time_us; tid = get_tid_ (); data; name; fun_name; flavor });
       {
         span = 0L;
         meta =

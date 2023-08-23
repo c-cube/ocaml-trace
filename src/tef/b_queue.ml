@@ -29,8 +29,9 @@ let push (self : _ t) x : unit =
     Mutex.unlock self.mutex;
     raise Closed
   ) else (
+    let was_empty = Queue.is_empty self.q in
     Queue.push x self.q;
-    Condition.signal self.cond;
+    if was_empty then Condition.signal self.cond;
     Mutex.unlock self.mutex
   )
 

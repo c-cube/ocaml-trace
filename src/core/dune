@@ -9,17 +9,3 @@
   (with-stdout-to
    %{targets}
    (run ./gen/gen.exe --ocaml %{ocaml_version} --atomic))))
-
-(rule
- (targets type_.ml)
- (action
-  (with-stdout-to
-   %{targets}
-   (run ./gen/gen.exe --ocaml %{ocaml_version} --type-ml))))
-
-(rule
- (targets type_.mli)
- (action
-  (with-stdout-to
-   %{targets}
-   (run ./gen/gen.exe --ocaml %{ocaml_version} --type-mli))))

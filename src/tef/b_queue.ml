@@ -31,7 +31,7 @@ let push (self : _ t) x : unit =
   ) else (
     let was_empty = Queue.is_empty self.q in
     Queue.push x self.q;
-    if was_empty then Condition.signal self.cond;
+    if was_empty then Condition.broadcast self.cond;
     Mutex.unlock self.mutex
   )
 

@@ -17,8 +17,10 @@ let run () =
       Trace.message "world";
       Trace.counter_int "n" !n;
 
+      Trace.add_data_to_span _sp [ "i", `Int _i ];
+
       if _j = 2 then (
-        (* fake micro sleep *)
+        Trace.add_data_to_span _sp [ "j", `Int _j ];
         let _sp =
           Trace.enter_manual_sub_span ~parent:pseudo_async_sp
             ~flavor:
@@ -28,6 +30,8 @@ let run () =
                 `Async)
             ~__FILE__ ~__LINE__ "sub-sleep"
         in
+
+        (* fake micro sleep *)
         Thread.delay 0.005;
         Trace.exit_manual_span _sp
       ) else if _j = 3 then

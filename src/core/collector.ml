@@ -53,6 +53,10 @@ module type S = sig
   (** Exit an explicit span.
       @since 0.3 *)
 
+  val add_data_to_span : span -> (string * user_data) list -> unit
+  (** @since Adds data to the given span.
+      NEXT_RELEASE *)
+
   val message : ?span:span -> data:(string * user_data) list -> string -> unit
   (** Emit a message with associated metadata. *)
 

@@ -55,6 +55,16 @@ let[@inline] exit_manual_span espan : unit =
   | None -> ()
   | Some (module C) -> C.exit_manual_span espan
 
+let[@inline] add_data_to_span (span : span) data : unit =
+  if data <> [] then (
+    match A.get collector with
+    | None -> ()
+    | Some (module C) -> C.add_data_to_span span data
+  )
+
+let[@inline] add_data_to_explicit_span esp data : unit =
+  add_data_to_span esp.span data
+
 let message_collector_ (module C : Collector.S) ?span ?(data = fun () -> []) msg
     : unit =
   let data = data () in

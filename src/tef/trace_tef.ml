@@ -32,6 +32,8 @@ let protect ~finally f =
     finally ();
     Printexc.raise_with_backtrace exn bt
 
+let on_tracing_error = ref (fun s -> Printf.eprintf "trace-tef error: %s\n%!" s)
+
 type event =
   | E_tick
   | E_message of {
@@ -51,6 +53,10 @@ type event =
   | E_exit_span of {
       id: span;
       time_us: float;
+    }
+  | E_add_data_to_span of {
+      id: span;
+      data: (string * user_data) list;
     }
   | E_enter_manual_span of {
       tid: int;
@@ -90,7 +96,7 @@ type span_info = {
   tid: int;
   name: string;
   start_us: float;
-  data: (string * user_data) list;
+  mutable data: (string * user_data) list;
 }
 
 (** key used to carry a unique "id" for all spans in an async context *)
@@ -282,11 +288,15 @@ let bg_thread ~out (events : event B_queue.t) : unit =
       Span_tbl.add spans id { tid; name; start_us = time_us; data }
     | E_exit_span { id; time_us = stop_us } ->
       (match Span_tbl.find_opt spans id with
-      | None -> (* bug! TODO: emit warning *) ()
+      | None -> !on_tracing_error (Printf.sprintf "cannot find span %Ld" id)
       | Some { tid; name; start_us; data } ->
         Span_tbl.remove spans id;
         Writer.emit_duration_event ~tid ~name ~start:start_us ~end_:stop_us
           ~args:data writer)
+    | E_add_data_to_span { id; data } ->
+      (match Span_tbl.find_opt spans id with
+      | None -> !on_tracing_error (Printf.sprintf "cannot find span %Ld" id)
+      | Some span_info -> span_info.data <- List.rev_append data span_info.data)
     | E_enter_manual_span { tid; time_us; name; id; data; fun_name; flavor } ->
       let data = add_fun_name_ fun_name data in
       Writer.emit_manual_begin ~tid ~name ~id ~ts:time_us ~args:data ~flavor
@@ -379,6 +389,10 @@ let collector ~out () : collector =
 
       Fun.protect ~finally (fun () -> f span)
 
+    let add_data_to_span (span : span) data =
+      if data <> [] then
+        B_queue.push events (E_add_data_to_span { id = span; data })
+
     let enter_manual_span ~(parent : explicit_span option) ~flavor
         ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name :
         explicit_span =
@@ -450,4 +464,5 @@ let with_setup ?out () f =
 
 module Internal_ = struct
   let mock_all_ () = Mock_.enabled := true
+  let on_tracing_error = on_tracing_error
 end

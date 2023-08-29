@@ -80,3 +80,27 @@ module type S = sig
   val shutdown : unit -> unit
   (** Shutdown collector, possibly waiting for it to finish sending data. *)
 end
+
+(** Default implementation that does nothing. Collectors that wish to
+    be more resilient in the face of futures additions to {!S}
+    can start with [include Trace.Collector.Default]. *)
+module Default : S = struct
+  let _fail what =
+    failwith (Printf.sprintf "not implemented: Trace.Collector.%s" what)
+
+  let with_span ~__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ ~data:_ _ =
+    _fail "with_span"
+
+  let enter_manual_span ~parent:_ ~flavor:_ ~__FUNCTION__:_ ~__FILE__:_
+      ~__LINE__:_ ~data:_ _ =
+    _fail "enter_manual_span"
+
+  let exit_manual_span _ = _fail "exit_manual_span"
+  let add_data_to_span _ _ = _fail "add_data_to_span"
+  let message ?span:_ ~data:_ = _fail "message"
+  let name_thread _ = _fail "name_thread"
+  let name_process _ = _fail "name_process"
+  let counter_int _ _ = _fail "counter_int"
+  let counter_float _ _ = _fail "counter_float"
+  let shutdown = ignore
+end

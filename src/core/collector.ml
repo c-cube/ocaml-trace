@@ -54,7 +54,7 @@ module type S = sig
       @since 0.3 *)
 
   val add_data : (string * user_data) list -> unit
-  (** @since Adds data to the ambient span.
+  (** @since Adds data to the current, implicit span.
       NEXT_RELEASE *)
 
   val add_data_to_manual_span :

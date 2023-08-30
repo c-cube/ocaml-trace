@@ -29,7 +29,7 @@ module type S = sig
 
       This replaces the previous [enter_span] and [exit_span] which were too flexible
       to be efficient to implement in async contexts.
-     @since 0.3 *)
+      @since 0.3 *)
 
   val enter_manual_span :
     parent:explicit_span option ->
@@ -96,7 +96,8 @@ module Default : S = struct
     _fail "enter_manual_span"
 
   let exit_manual_span _ = _fail "exit_manual_span"
-  let add_data_to_span _ _ = _fail "add_data_to_span"
+  let add_data _ = _fail "add_data"
+  let add_data_to_manual_span _ = _fail "add_data_to_manual_span"
   let message ?span:_ ~data:_ = _fail "message"
   let name_thread _ = _fail "name_thread"
   let name_process _ = _fail "name_process"

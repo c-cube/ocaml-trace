@@ -418,7 +418,7 @@ let setup ?(out = `Env) () =
   | `File path -> Trace_core.setup_collector @@ collector ~out:(`File path) ()
   | `Env ->
     (match Sys.getenv_opt "TRACE" with
-    | Some "1" ->
+    | Some ("1" | "true") ->
       let path = "trace.json" in
       let c = collector ~out:(`File path) () in
       Trace_core.setup_collector c

@@ -34,8 +34,9 @@ val with_span :
     see {!enter_manual_span}.
 *)
 
-val add_data_to_span : span -> (string * user_data) list -> unit
-(** Add structured data to the given span.
+val add_data : (string * user_data) list -> unit
+(** Add structured data to the current span (the ambient {!with_span}).
+    Behavior is not specified if there is no current span.
     @since NEXT_RELEASE *)
 
 val enter_manual_sub_span :
@@ -79,10 +80,9 @@ val exit_manual_span : explicit_span -> unit
     {!enter_manual_toplevel_span}.
     @since 0.3 *)
 
-val add_data_to_explicit_span :
-  explicit_span -> (string * user_data) list -> unit
-(** [add_data_explicit esp data] is [add_data_to_span esp.span data], ie. it adds
-    the pairs [k:v] from [data] to the span inside [esp].
+val add_data_to_manual_span : explicit_span -> (string * user_data) list -> unit
+(** [add_data_explicit esp data] adds [data] to the span [esp].
+      The behavior is not specified is the span has been exited already.
     @since NEXT_RELEASE *)
 
 val message :

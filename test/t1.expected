@@ -20,7 +20,7 @@
 {"pid":2,"cat":"","tid": 3,"ts": 22.00,"name":"world","ph":"I"},
 {"pid":2,"tid":3,"ts":23.00,"name":"c","ph":"C","args": {"n":4}},
 {"pid":2,"cat":"","tid": 3,"dur": 4.00,"ts": 20.00,"name":"inner.loop","ph":"X","args": {"i":1}},
-{"pid":2,"cat":"","tid": 3,"dur": 25.00,"ts": 0.00,"name":"outer.loop","ph":"X"},
+{"pid":2,"cat":"","tid": 3,"dur": 25.00,"ts": 0.00,"name":"outer.loop","ph":"X","args": {"slept":true}},
 {"pid":2,"cat":"trace","id":7,"tid": 3,"ts": 27.00,"name":"fake_sleep","ph":"b"},
 {"pid":2,"cat":"","tid": 3,"ts": 29.00,"name":"hello 2 2","ph":"I"},
 {"pid":2,"cat":"","tid": 3,"ts": 30.00,"name":"world","ph":"I"},

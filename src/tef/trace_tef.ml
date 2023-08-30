@@ -58,10 +58,6 @@ type event =
       tid: int;
       data: (string * user_data) list;
     }
-  | E_add_data_to_span of {
-      id: span;
-      data: (string * user_data) list;
-    }
   | E_enter_manual_span of {
       tid: int;
       name: string;
@@ -76,6 +72,7 @@ type event =
       name: string;
       time_us: float;
       flavor: [ `Sync | `Async ] option;
+      data: (string * user_data) list;
       id: int;
     }
   | E_counter of {
@@ -114,6 +111,9 @@ type span_info = {
 let key_async_id : int Meta_map.Key.t = Meta_map.Key.create ()
 
 let key_async_data : (string * [ `Sync | `Async ] option) Meta_map.Key.t =
+  Meta_map.Key.create ()
+
+let key_data : (string * user_data) list ref Meta_map.Key.t =
   Meta_map.Key.create ()
 
 (** Writer: knows how to write entries to a file in TEF format *)
@@ -223,14 +223,16 @@ module Writer = struct
       args;
     ()
 
-  let emit_manual_end ~tid ~name ~id ~ts ~flavor (self : t) : unit =
+  let emit_manual_end ~tid ~name ~id ~ts ~flavor ~args (self : t) : unit =
     emit_sep_ self;
     Printf.fprintf self.oc
-      {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"}|json}
+      {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
       self.pid id tid ts str_val name
       (match flavor with
       | None | Some `Async -> 'e'
-      | Some `Sync -> 'E');
+      | Some `Sync -> 'E')
+      (emit_args_o_ pp_user_data_)
+      args;
 
     ()
 
@@ -315,16 +317,13 @@ let bg_thread ~out (events : event B_queue.t) : unit =
         !on_tracing_error
           (Printf.sprintf "cannot find ambient span for thread %d" tid)
       | Some info -> info.data <- List.rev_append data info.data)
-    | E_add_data_to_span { id; data } ->
-      (match Span_tbl.find_opt spans id with
-      | None -> !on_tracing_error (Printf.sprintf "cannot find span %Ld" id)
-      | Some span_info -> span_info.data <- List.rev_append data span_info.data)
     | E_enter_manual_span { tid; time_us; name; id; data; fun_name; flavor } ->
       let data = add_fun_name_ fun_name data in
       Writer.emit_manual_begin ~tid ~name ~id ~ts:time_us ~args:data ~flavor
         writer
-    | E_exit_manual_span { tid; time_us; name; id; flavor } ->
-      Writer.emit_manual_end ~tid ~name ~id ~ts:time_us ~flavor writer
+    | E_exit_manual_span { tid; time_us; name; id; flavor; data } ->
+      Writer.emit_manual_end ~tid ~name ~id ~ts:time_us ~flavor ~args:data
+        writer
     | E_counter { tid; name; time_us; n } ->
       Writer.emit_counter ~name ~tid ~ts:time_us writer n
     | E_name_process { name } -> Writer.emit_name_process ~name writer
@@ -440,14 +439,24 @@ let collector ~out () : collector =
     let exit_manual_span (es : explicit_span) : unit =
       let id = Meta_map.find_exn key_async_id es.meta in
       let name, flavor = Meta_map.find_exn key_async_data es.meta in
+      let data =
+        try !(Meta_map.find_exn key_data es.meta) with Not_found -> []
+      in
       let time_us = now_us () in
       let tid = get_tid_ () in
       B_queue.push events
-        (E_exit_manual_span { tid; id; name; time_us; flavor })
+        (E_exit_manual_span { tid; id; name; time_us; data; flavor })
 
     let add_data_to_manual_span (es : explicit_span) data =
-      if data <> [] then
-        B_queue.push events (E_add_data_to_span { id = es.span; data })
+      if data <> [] then (
+        let data_ref, add =
+          try Meta_map.find_exn key_data es.meta, false
+          with Not_found -> ref [], true
+        in
+        let new_data = List.rev_append data !data_ref in
+        data_ref := new_data;
+        if add then es.meta <- Meta_map.add key_data data_ref es.meta
+      )
 
     let message ?span:_ ~data msg : unit =
       let time_us = now_us () in

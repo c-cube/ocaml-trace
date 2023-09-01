@@ -16,6 +16,6 @@ type explicit_span = {
   span: span;
       (** Identifier for this span. Several explicit spans might share the same
       identifier since we can differentiate between them via [meta]. *)
-  meta: Meta_map.t;  (** Metadata for this span (and its context) *)
+  mutable meta: Meta_map.t;  (** Metadata for this span (and its context) *)
 }
 (** Explicit span, with collector-specific metadata *)

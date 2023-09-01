@@ -34,6 +34,11 @@ val with_span :
     see {!enter_manual_span}.
 *)
 
+val add_data : (string * user_data) list -> unit
+(** Add structured data to the current, implicit span (see {!with_span}).
+    Behavior is not specified if there is no current span.
+    @since NEXT_RELEASE *)
+
 val enter_manual_sub_span :
   parent:explicit_span ->
   ?flavor:[ `Sync | `Async ] ->
@@ -74,6 +79,11 @@ val exit_manual_span : explicit_span -> unit
     The span can be obtained via {!enter_manual_sub_span} or
     {!enter_manual_toplevel_span}.
     @since 0.3 *)
+
+val add_data_to_manual_span : explicit_span -> (string * user_data) list -> unit
+(** [add_data_explicit esp data] adds [data] to the span [esp].
+      The behavior is not specified is the span has been exited already.
+    @since NEXT_RELEASE *)
 
 val message :
   ?span:span -> ?data:(unit -> (string * user_data) list) -> string -> unit

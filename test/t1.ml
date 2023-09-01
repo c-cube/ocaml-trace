@@ -17,10 +17,10 @@ let run () =
       Trace.message "world";
       Trace.counter_int "n" !n;
 
-      Trace.add_data [ "i", `Int _i ];
+      Trace.add_data_to_current_span [ "i", `Int _i ];
 
       if _j = 2 then (
-        Trace.add_data [ "j", `Int _j ];
+        Trace.add_data_to_current_span [ "j", `Int _j ];
         let _sp =
           Trace.enter_manual_sub_span ~parent:pseudo_async_sp
             ~flavor:

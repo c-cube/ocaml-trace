@@ -53,7 +53,7 @@ module type S = sig
   (** Exit an explicit span.
       @since 0.3 *)
 
-  val add_data : (string * user_data) list -> unit
+  val add_data_to_current_span : (string * user_data) list -> unit
   (** @since Adds data to the current, implicit span.
       NEXT_RELEASE *)
 

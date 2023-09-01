@@ -34,7 +34,7 @@ val with_span :
     see {!enter_manual_span}.
 *)
 
-val add_data : (string * user_data) list -> unit
+val add_data_to_current_span : (string * user_data) list -> unit
 (** Add structured data to the current, implicit span (see {!with_span}).
     Behavior is not specified if there is no current span.
     @since NEXT_RELEASE *)

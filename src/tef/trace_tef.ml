@@ -410,7 +410,7 @@ let collector ~out () : collector =
 
       Fun.protect ~finally (fun () -> f span)
 
-    let add_data data =
+    let add_data_to_current_span data =
       if data <> [] then (
         let tid = get_tid_ () in
         B_queue.push events (E_add_data { tid; data })

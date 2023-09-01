@@ -55,11 +55,11 @@ let[@inline] exit_manual_span espan : unit =
   | None -> ()
   | Some (module C) -> C.exit_manual_span espan
 
-let[@inline] add_data data : unit =
+let[@inline] add_data_to_current_span data : unit =
   if data <> [] then (
     match A.get collector with
     | None -> ()
-    | Some (module C) -> C.add_data data
+    | Some (module C) -> C.add_data_to_current_span data
   )
 
 let[@inline] add_data_to_manual_span esp data : unit =

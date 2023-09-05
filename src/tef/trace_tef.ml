@@ -174,7 +174,7 @@ module Writer = struct
     String.iter encode_char s;
     char oc '"'
 
-  let pp_user_data_ out : [< user_data | `Float of float ] -> unit = function
+  let pp_user_data_ out : [< user_data ] -> unit = function
     | `None -> Printf.fprintf out "null"
     | `Int i -> Printf.fprintf out "%d" i
     | `Bool b -> Printf.fprintf out "%b" b

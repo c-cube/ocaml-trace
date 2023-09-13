@@ -1,0 +1,7 @@
+
+
+(test
+  (name t1)
+  (package trace-lwt)
+  (libraries trace trace-tef trace-lwt lwt lwt.unix))
+

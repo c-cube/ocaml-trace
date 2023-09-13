@@ -55,7 +55,7 @@ type event =
       time_us: float;
     }
   | E_add_data of {
-      tid: int;
+      id: span;
       data: (string * user_data) list;
     }
   | E_enter_manual_span of {
@@ -90,13 +90,6 @@ type event =
 module Span_tbl = Hashtbl.Make (struct
   include Int64
 
-  let hash : t -> int = Hashtbl.hash
-end)
-
-module Int_tbl = Hashtbl.Make (struct
-  type t = int
-
-  let equal : t -> t -> bool = ( = )
   let hash : t -> int = Hashtbl.hash
 end)
 
@@ -280,7 +273,6 @@ let bg_thread ~out (events : event B_queue.t) : unit =
   Writer.with_ ~out @@ fun writer ->
   (* local state, to keep track of span information and implicit stack context *)
   let spans : span_info Span_tbl.t = Span_tbl.create 32 in
-  let ambient_span : span_info Int_tbl.t = Int_tbl.create 16 in
   let local_q = Queue.create () in
 
   (* add function name, if provided, to the metadata *)
@@ -299,8 +291,6 @@ let bg_thread ~out (events : event B_queue.t) : unit =
     | E_define_span { tid; name; id; time_us; fun_name; data } ->
       let data = add_fun_name_ fun_name data in
       let info = { tid; name; start_us = time_us; data } in
-      (* make this span the "ambient" one for the given thread *)
-      Int_tbl.add ambient_span tid info;
       (* save the span so we find it at exit *)
       Span_tbl.add spans id info
     | E_exit_span { id; time_us = stop_us } ->
@@ -308,14 +298,11 @@ let bg_thread ~out (events : event B_queue.t) : unit =
       | None -> !on_tracing_error (Printf.sprintf "cannot find span %Ld" id)
       | Some { tid; name; start_us; data } ->
         Span_tbl.remove spans id;
-        Int_tbl.remove ambient_span tid;
         Writer.emit_duration_event ~tid ~name ~start:start_us ~end_:stop_us
           ~args:data writer)
-    | E_add_data { tid; data } ->
-      (match Int_tbl.find_opt ambient_span tid with
-      | None ->
-        !on_tracing_error
-          (Printf.sprintf "cannot find ambient span for thread %d" tid)
+    | E_add_data { id; data } ->
+      (match Span_tbl.find_opt spans id with
+      | None -> !on_tracing_error (Printf.sprintf "cannot find span %Ld" id)
       | Some info -> info.data <- List.rev_append data info.data)
     | E_enter_manual_span { tid; time_us; name; id; data; fun_name; flavor } ->
       let data = add_fun_name_ fun_name data in
@@ -410,11 +397,8 @@ let collector ~out () : collector =
 
       Fun.protect ~finally (fun () -> f span)
 
-    let add_data_to_current_span data =
-      if data <> [] then (
-        let tid = get_tid_ () in
-        B_queue.push events (E_add_data { tid; data })
-      )
+    let add_data_to_span span data =
+      if data <> [] then B_queue.push events (E_add_data { id = span; data })
 
     let enter_manual_span ~(parent : explicit_span option) ~flavor
         ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name :

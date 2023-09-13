@@ -33,4 +33,12 @@
  (tags
   (trace tracing catapult)))
 
+(package
+  (name trace-lwt)
+  (synopsis "Helpers to use Trace from Lwt")
+  (depends
+    (trace (= :version))
+    lwt)
+  (tags (trace lwt asynchronous)))
+
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

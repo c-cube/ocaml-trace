@@ -1,0 +1,7 @@
+
+
+(library
+  (name trace_lwt)
+  (public_name trace-lwt)
+  (synopsis "Helpers to use Trace from Lwt")
+  (libraries trace.core lwt))

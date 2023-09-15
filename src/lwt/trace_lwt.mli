@@ -1,4 +1,3 @@
-
 (** Wrapper for tracing with Lwt.
 
     @since NEXT_RELEASE. *)
@@ -6,6 +5,7 @@
 include module type of Trace_core
 
 val with_span_lwt :
+  ?parent:explicit_span ->
   ?force_toplevel:bool ->
   ?__FUNCTION__:string ->
   __FILE__:string ->
@@ -22,5 +22,6 @@ val with_span_lwt :
     @param force_toplevel if true, this span will not have a parent even if
       there is one in the implicit context; ie it create a new
       {!Trace_core.enter_manual_toplevel_span} in any  case.
+    @param parent an explicit parent, which bypasses the implicit context.
 
     @since NEXT_RELEASE *)

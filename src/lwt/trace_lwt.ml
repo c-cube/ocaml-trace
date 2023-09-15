@@ -2,9 +2,14 @@ include Trace_core
 
 let k_parent : explicit_span Lwt.key = Lwt.new_key ()
 
-let[@inline never] with_span_lwt_real_ ?(force_toplevel = false) ?__FUNCTION__
-    ~__FILE__ ~__LINE__ ?data name f =
-  let parent = Lwt.get k_parent in
+let[@inline never] with_span_lwt_real_ ?parent ?(force_toplevel = false)
+    ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name f =
+  let parent =
+    match parent with
+    | Some _ as p -> p
+    | None -> Lwt.get k_parent
+  in
+
   let espan =
     match parent, force_toplevel with
     | _, true | None, _ ->
@@ -21,10 +26,10 @@ let[@inline never] with_span_lwt_real_ ?(force_toplevel = false) ?__FUNCTION__
 
       fut)
 
-let[@inline] with_span_lwt ?force_toplevel ?__FUNCTION__ ~__FILE__ ~__LINE__
-    ?data name f : _ Lwt.t =
+let[@inline] with_span_lwt ?parent ?force_toplevel ?__FUNCTION__ ~__FILE__
+    ~__LINE__ ?data name f : _ Lwt.t =
   if enabled () then
-    with_span_lwt_real_ ?force_toplevel ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data
-      name f
+    with_span_lwt_real_ ?parent ?force_toplevel ?__FUNCTION__ ~__FILE__
+      ~__LINE__ ?data name f
   else
     f 0L

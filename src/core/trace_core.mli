@@ -110,12 +110,16 @@ val set_process_name : string -> unit
     This might be used by the collector
     to display traces in a more informative way. *)
 
-val counter_int : string -> int -> unit
+val counter_int :
+  ?data:(unit -> (string * user_data) list) -> string -> int -> unit
 (** Emit a counter of type [int]. Counters represent the evolution of some quantity
-    over time. *)
+    over time.
+    @param data metadata for this metric (since NEXT_RELEASE) *)
 
-val counter_float : string -> float -> unit
-(** Emit a counter of type [float]. See {!counter_int} for more details. *)
+val counter_float :
+  ?data:(unit -> (string * user_data) list) -> string -> float -> unit
+(** Emit a counter of type [float]. See {!counter_int} for more details.
+    @param data metadata for this metric (since NEXT_RELEASE) *)
 
 (** {2 Collector} *)
 

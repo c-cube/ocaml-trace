@@ -71,10 +71,10 @@ module type S = sig
   val name_process : string -> unit
   (** Give a name to the current process. *)
 
-  val counter_int : string -> int -> unit
+  val counter_int : data:(string * user_data) list -> string -> int -> unit
   (** Integer counter. *)
 
-  val counter_float : string -> float -> unit
+  val counter_float : data:(string * user_data) list -> string -> float -> unit
   (** Float counter. *)
 
   val shutdown : unit -> unit

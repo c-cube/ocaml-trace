@@ -8,13 +8,15 @@ type collector = (module Collector.S)
 (** Global collector. *)
 let collector : collector option A.t = A.make None
 
+let data_empty_build_ () = []
+
 let[@inline] enabled () =
   match A.get collector with
   | None -> false
   | Some _ -> true
 
 let with_span_collector_ (module C : Collector.S) ?__FUNCTION__ ~__FILE__
-    ~__LINE__ ?(data = fun () -> []) name f =
+    ~__LINE__ ?(data = data_empty_build_) name f =
   let data = data () in
   C.with_span ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name f
 
@@ -28,7 +30,7 @@ let[@inline] with_span ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name f =
       f
 
 let enter_explicit_span_collector_ (module C : Collector.S) ~parent ~flavor
-    ?__FUNCTION__ ~__FILE__ ~__LINE__ ?(data = fun () -> []) name :
+    ?__FUNCTION__ ~__FILE__ ~__LINE__ ?(data = data_empty_build_) name :
     explicit_span =
   let data = data () in
   C.enter_manual_span ~parent ~flavor ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data
@@ -69,8 +71,8 @@ let[@inline] add_data_to_manual_span esp data : unit =
     | Some (module C) -> C.add_data_to_manual_span esp data
   )
 
-let message_collector_ (module C : Collector.S) ?span ?(data = fun () -> []) msg
-    : unit =
+let message_collector_ (module C : Collector.S) ?span
+    ?(data = data_empty_build_) msg : unit =
   let data = data () in
   C.message ?span ~data msg
 
@@ -94,15 +96,19 @@ let messagef ?span ?data k =
             C.message ?span ~data str)
           fmt)
 
-let counter_int name n : unit =
+let counter_int ?(data = data_empty_build_) name n : unit =
   match A.get collector with
   | None -> ()
-  | Some (module C) -> C.counter_int name n
+  | Some (module C) ->
+    let data = data () in
+    C.counter_int ~data name n
 
-let counter_float name f : unit =
+let counter_float ?(data = data_empty_build_) name f : unit =
   match A.get collector with
   | None -> ()
-  | Some (module C) -> C.counter_float name f
+  | Some (module C) ->
+    let data = data () in
+    C.counter_float ~data name f
 
 let set_thread_name name : unit =
   match A.get collector with

@@ -447,12 +447,12 @@ let collector ~out () : collector =
       let tid = get_tid_ () in
       B_queue.push events (E_message { tid; time_us; msg; data })
 
-    let counter_float name f =
+    let counter_float ~data:_ name f =
       let time_us = now_us () in
       let tid = get_tid_ () in
       B_queue.push events (E_counter { name; n = f; time_us; tid })
 
-    let counter_int name i = counter_float name (float_of_int i)
+    let counter_int ~data name i = counter_float ~data name (float_of_int i)
     let name_process name : unit = B_queue.push events (E_name_process { name })
 
     let name_thread name : unit =

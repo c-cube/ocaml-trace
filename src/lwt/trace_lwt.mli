@@ -38,7 +38,8 @@ val with_span :
   'a
 (** [with_span ~__FILE__ ~__LINE__ name f] calls [f span]
     where [span] is a new span named with [name]. The span is
-    traced as being synchronous.
+    traced as being asynchronous, so each collector might represent
+    it differently.
 
     If [f] returns an ['a Lwt.t] future, use [with_span_lwt] instead.
 

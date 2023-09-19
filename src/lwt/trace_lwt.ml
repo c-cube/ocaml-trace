@@ -45,10 +45,10 @@ let[@inline never] with_span_real_ ?parent ?(force_toplevel = false)
   let espan =
     match parent, force_toplevel with
     | _, true | None, _ ->
-      enter_manual_toplevel_span ~flavor:`Sync ?__FUNCTION__ ~__FILE__ ~__LINE__
-        ?data name
+      enter_manual_toplevel_span ~flavor:`Async ?__FUNCTION__ ~__FILE__
+        ~__LINE__ ?data name
     | Some parent, _ ->
-      enter_manual_sub_span ~parent ~flavor:`Sync ?__FUNCTION__ ~__FILE__
+      enter_manual_sub_span ~parent ~flavor:`Async ?__FUNCTION__ ~__FILE__
         ~__LINE__ ?data name
   in
 

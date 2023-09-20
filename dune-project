@@ -2,7 +2,7 @@
 
 (name trace)
 (generate_opam_files true)
-(version 0.3)
+(version 0.4)
 
 (source
  (github c-cube/ocaml-trace))
@@ -23,7 +23,7 @@
 
 (package
  (name trace-tef)
- (synopsis "A simple backend for trace, emitting Catapult JSON into a file")
+ (synopsis "A simple backend for trace, emitting Catapult/TEF JSON into a file")
  (depends
    (ocaml (>= 4.08))
    (trace (= :version))

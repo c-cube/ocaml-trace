@@ -1,6 +1,17 @@
 
-# 0.3
+# 0.4
 
+- add `?data` to `counter_int` and `counter_float`
+- add `float` to user data
+- add `add_data_to_current_span` and `add_data_to_manual_span`
+- make `explicit_span.meta` mutable
+- trace-tef: write to `trace.json` if env variable `TRACE` is either 1 or true
+- trace-tef: emit function name, if provided, as a metadata key/value pair
+- re-export trace.core in trace
+
+- perf: in trace-tef, use broadcast instead of signal in the job queue
+
+# 0.3
 
 - add explicit spans, for more precise tracing
 - rename repo to ocaml-trace

@@ -1,5 +1,6 @@
 (library
  (name trace)
  (public_name trace)
- (synopsis "Lightweight stub for tracing")
+ (synopsis "Lightweight stub for tracing (use `Trace_core` in code)")
+ (wrapped false)
  (libraries (re_export trace.core)))

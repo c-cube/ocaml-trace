@@ -71,3 +71,18 @@ let transfer (self : 'a t) q2 : unit =
   do
     ()
   done
+
+let transfer_into q (self : _ t) : unit =
+  if not (Queue.is_empty q) then (
+    Mutex.lock self.mutex;
+
+    if self.closed then (
+      Mutex.unlock self.mutex;
+      raise Closed
+    );
+
+    let was_empty = Queue.is_empty self.q in
+    Queue.transfer q self.q;
+    if was_empty then Condition.broadcast self.cond;
+    Mutex.unlock self.mutex
+  )

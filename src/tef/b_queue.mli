@@ -19,5 +19,8 @@ val transfer : 'a t -> 'a Queue.t -> unit
     in [bq] into [q2], and clears [bq].
     It blocks if no element is in [bq]. *)
 
+val transfer_into : 'a Queue.t -> 'a t -> unit
+(** [transfer q bq] transfers all items from [q] to [bq]. *)
+
 val close : _ t -> unit
 (** Close the queue, meaning there won't be any more [push] allowed. *)

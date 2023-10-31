@@ -1,0 +1,4 @@
+
+(executable
+  (name trace1)
+  (libraries trace.core trace-tef))

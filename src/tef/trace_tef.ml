@@ -1,5 +1,6 @@
 open Trace_core
 module A = Trace_core.Internal_.Atomic_
+module TLS = Thread_local_storage
 
 module Mock_ = struct
   let enabled = ref false
@@ -336,12 +337,16 @@ let bg_thread ~out (events : event B_queue.t) : unit =
         (Span_tbl.length spans);
     ()
 
+(** Current tick. *)
+let cur_tick_ : int A.t = A.make 0
+
 (** Thread that simply regularly "ticks", sending events to
     the background thread so it has a chance to write to the file *)
 let tick_thread events : unit =
   try
     while true do
       Thread.delay 0.5;
+      A.incr cur_tick_;
       B_queue.push events E_tick
     done
   with B_queue.Closed -> ()
@@ -351,6 +356,16 @@ type output =
   | `Stderr
   | `File of string
   ]
+
+type 'a batch = {
+  mutable last_tick: int;
+  batch: 'a Queue.t;
+}
+
+(** Key to access the batch for the current thread *)
+let k_tls_batch : event batch TLS.key =
+  TLS.new_key (fun () ->
+      { last_tick = A.get cur_tick_; batch = Queue.create () })
 
 let collector ~out () : collector =
   let module M = struct
@@ -371,6 +386,8 @@ let collector ~out () : collector =
 
     let shutdown () =
       if A.exchange active false then (
+        (* FIXME: how do we make sure all batches are emptied
+           before we close [events]? *)
         B_queue.close events;
         (* wait for writer thread to be done. The writer thread will exit
            after processing remaining events because the queue is now closed *)

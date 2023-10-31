@@ -273,7 +273,6 @@ let bg_thread ~out (events : event B_queue.t) : unit =
   Writer.with_ ~out @@ fun writer ->
   (* local state, to keep track of span information and implicit stack context *)
   let spans : span_info Span_tbl.t = Span_tbl.create 32 in
-  let local_q = Queue.create () in
 
   (* add function name, if provided, to the metadata *)
   let add_fun_name_ fun_name data : _ list =
@@ -319,15 +318,10 @@ let bg_thread ~out (events : event B_queue.t) : unit =
 
   try
     while true do
-      (* work on local events, already on this thread *)
-      while not (Queue.is_empty local_q) do
-        let ev = Queue.pop local_q in
-        handle_ev ev
-      done;
-
       (* get all the events in the incoming blocking queue, in
          one single critical section. *)
-      B_queue.transfer events local_q
+      let local = B_queue.pop_all events in
+      List.iter handle_ev local
     done
   with B_queue.Closed ->
     (* warn if app didn't close all spans *)

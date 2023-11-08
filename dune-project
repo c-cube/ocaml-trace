@@ -29,6 +29,7 @@
    (trace (= :version))
    (mtime (>= 2.0))
    base-unix
+   atomic
    dune)
  (tags
   (trace tracing catapult)))

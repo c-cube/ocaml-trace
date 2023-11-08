@@ -3,4 +3,7 @@
   (name trace_tef)
   (public_name trace-tef)
   (synopsis "Simple and lightweight tracing using TEF/Catapult format, in-process")
-  (libraries trace.core mtime mtime.clock.os atomic unix threads))
+  (libraries trace.core mtime mtime.clock.os atomic unix threads
+             (select relax_.ml from
+                     (base-domain -> relax_.real.ml)
+                     ( -> relax_.dummy.ml))))

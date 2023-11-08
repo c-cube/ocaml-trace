@@ -18,7 +18,7 @@ module Backoff = struct
   let once (b : t) : t =
     let actual_b = b + Random.int 4 in
     for _i = 1 to actual_b do
-      Domain.cpu_relax ()
+      Relax_.cpu_relax ()
     done;
     min (b * 2) 256
 end

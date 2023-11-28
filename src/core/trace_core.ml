@@ -110,6 +110,23 @@ let counter_float ?(data = data_empty_build_) name f : unit =
     let data = data () in
     C.counter_float ~data name f
 
+let[@inline] enter_context name : unit =
+  match A.get collector with
+  | None -> ()
+  | Some (module C) -> C.enter_context name
+
+let[@inline] exit_context name : unit =
+  match A.get collector with
+  | None -> ()
+  | Some (module C) -> C.exit_context name
+
+let[@inline] with_context name f =
+  match A.get collector with
+  | None -> f ()
+  | Some (module C) ->
+    C.enter_context name;
+    Fun.protect ~finally:(fun () -> C.exit_context name) f
+
 let set_thread_name name : unit =
   match A.get collector with
   | None -> ()

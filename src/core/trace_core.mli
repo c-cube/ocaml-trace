@@ -121,6 +121,26 @@ val counter_float :
 (** Emit a counter of type [float]. See {!counter_int} for more details.
     @param data metadata for this metric (since 0.4) *)
 
+val enter_context : string -> unit
+(** [enter_context name] enters a local context with the
+    given name. The name must be a static string.
+
+    The exact semantic of contexts depends on your collector:
+      for TEF it might actually use contexts, for Tracy it
+      might use traces, for OTEL it might be ignored, etc.
+
+    @since NEXT_RELEASE *)
+
+val exit_context : string -> unit
+(** Exit a context. This must come after the corresponding
+    {!enter_context}, ideally on the same thread.
+    @since NEXT_RELEASE *)
+
+val with_context : string -> (unit -> 'a) -> 'a
+(** [with_context name f] enters the context, calls [f()],
+    and exits the context.
+    @since NEXT_RELEASE *)
+
 (** {2 Collector} *)
 
 type collector = (module Collector.S)

@@ -1,3 +1,5 @@
+let ( let@ ) = ( @@ )
+
 let run () =
   Trace.set_process_name "main";
   Trace.set_thread_name "t1";
@@ -20,6 +22,7 @@ let run () =
       Trace.add_data_to_span _sp [ "i", `Int _i ];
 
       if _j = 2 then (
+        let@ () = Trace.with_context "LocalFrame" in
         Trace.add_data_to_span _sp [ "j", `Int _j ];
         let _sp =
           Trace.enter_manual_sub_span ~parent:pseudo_async_sp

@@ -11,8 +11,8 @@ let work ~n () : unit =
     for _k = 1 to 10 do
       let@ _sp = Trace.with_span ~__FILE__ ~__LINE__ "inner" in
       ()
-    done;
-    Thread.delay 1e-6
+    done
+    (* Thread.delay 1e-6 *)
   done
 
 let main ~n ~j () : unit =

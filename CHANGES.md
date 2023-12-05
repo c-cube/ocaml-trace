@@ -1,4 +1,9 @@
 
+# 0.5
+
+- perf: reduce overhead in trace-tef
+- perf: add Mpsc_queue, adapted from picos, to trace-tef
+
 # 0.4
 
 - add `?data` to `counter_int` and `counter_float`

@@ -1,9 +1,9 @@
 type 'a t = {
   mutex: Mutex.t;
   cond: Condition.t;
-  q: 'a Mpsc_queue.t;
+  q: 'a Mpsc_bag.t;
   mutable closed: bool;
-  mutable consumer_waiting: bool;
+  consumer_waiting: bool Atomic.t;
 }
 
 exception Closed
@@ -12,9 +12,9 @@ let create () : _ t =
   {
     mutex = Mutex.create ();
     cond = Condition.create ();
-    q = Mpsc_queue.create ();
+    q = Mpsc_bag.create ();
     closed = false;
-    consumer_waiting = false;
+    consumer_waiting = Atomic.make false;
   }
 
 let close (self : _ t) =
@@ -27,35 +27,23 @@ let close (self : _ t) =
 
 let push (self : _ t) x : unit =
   if self.closed then raise Closed;
-  Mpsc_queue.enqueue self.q x;
+  Mpsc_bag.add self.q x;
   if self.closed then raise Closed;
-  if self.consumer_waiting then (
+  if Atomic.get self.consumer_waiting then (
     (* wakeup consumer *)
     Mutex.lock self.mutex;
     Condition.broadcast self.cond;
     Mutex.unlock self.mutex
   )
 
-let rec pop (self : 'a t) : 'a =
-  match Mpsc_queue.dequeue self.q with
-  | x -> x
-  | exception Mpsc_queue.Empty ->
-    if self.closed then raise Closed;
-    Mutex.lock self.mutex;
-    self.consumer_waiting <- true;
-    Condition.wait self.cond self.mutex;
-    self.consumer_waiting <- false;
-    Mutex.unlock self.mutex;
-    pop self
-
 let rec pop_all (self : 'a t) : 'a list =
-  match Mpsc_queue.dequeue_all self.q with
-  | l -> l
-  | exception Mpsc_queue.Empty ->
+  match Mpsc_bag.pop_all self.q with
+  | l -> List.rev l
+  | exception Mpsc_bag.Empty ->
     if self.closed then raise Closed;
     Mutex.lock self.mutex;
-    self.consumer_waiting <- true;
+    Atomic.set self.consumer_waiting true;
     Condition.wait self.cond self.mutex;
-    self.consumer_waiting <- false;
+    Atomic.set self.consumer_waiting false;
     Mutex.unlock self.mutex;
     pop_all self

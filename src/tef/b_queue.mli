@@ -10,13 +10,9 @@ val push : 'a t -> 'a -> unit
 (** [push q x] pushes [x] into [q], and returns [()].
     @raise Closed if [close q] was previously called.*)
 
-val pop : 'a t -> 'a
-(** [pop q] pops the next element in [q]. It might block until an element comes.
-   @raise Closed if the queue was closed before a new element was available. *)
-
 val pop_all : 'a t -> 'a list
-(** [transfer bq q2] transfers all items presently
-    in [bq] into [q2], and clears [bq].
+(** [pop_all bq] returns all items presently
+    in [bq], in the same order, and clears [bq].
     It blocks if no element is in [bq]. *)
 
 val close : _ t -> unit

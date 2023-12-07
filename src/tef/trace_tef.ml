@@ -328,6 +328,11 @@ let bg_thread ~out (events : event B_queue.t) : unit =
       List.iter handle_ev local
     done
   with B_queue.Closed ->
+    (* write a message about us closing *)
+    Writer.emit_instant_event ~name:"tef-worker.exit"
+      ~tid:(Thread.id @@ Thread.self ())
+      ~ts:(now_us ()) ~args:[] writer;
+
     (* warn if app didn't close all spans *)
     if Span_tbl.length spans > 0 then
       Printf.eprintf "trace-tef: warning: %d spans were not closed\n%!"

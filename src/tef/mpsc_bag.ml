@@ -24,9 +24,7 @@ let rec add backoff t x =
 
 let[@inline] add t x = add Backoff.default t x
 
-exception Empty
-
-let[@inline] pop_all t : _ list =
+let[@inline] pop_all t : _ list option =
   match Atomic.exchange t.bag [] with
-  | [] -> raise_notrace Empty
-  | l -> l
+  | [] -> None
+  | l -> Some (List.rev l)

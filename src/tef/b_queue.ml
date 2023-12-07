@@ -38,12 +38,26 @@ let push (self : _ t) x : unit =
 
 let rec pop_all (self : 'a t) : 'a list =
   match Mpsc_bag.pop_all self.q with
-  | l -> List.rev l
-  | exception Mpsc_bag.Empty ->
+  | Some l -> l
+  | None ->
     if self.closed then raise Closed;
     Mutex.lock self.mutex;
     Atomic.set self.consumer_waiting true;
-    Condition.wait self.cond self.mutex;
-    Atomic.set self.consumer_waiting false;
-    Mutex.unlock self.mutex;
-    pop_all self
+    (* check again, a producer might have pushed an element since we
+       last checked. However if we still find
+       nothing, because this comes after [consumer_waiting:=true],
+       any producer arriving after that will know to wake us up. *)
+    (match Mpsc_bag.pop_all self.q with
+    | Some l ->
+      Atomic.set self.consumer_waiting false;
+      Mutex.unlock self.mutex;
+      l
+    | None ->
+      if self.closed then (
+        Mutex.unlock self.mutex;
+        raise Closed
+      );
+      Condition.wait self.cond self.mutex;
+      Atomic.set self.consumer_waiting false;
+      Mutex.unlock self.mutex;
+      pop_all self)

@@ -4,6 +4,9 @@
   (public_name trace-tef)
   (synopsis "Simple and lightweight tracing using TEF/Catapult format, in-process")
   (libraries trace.core mtime mtime.clock.os atomic unix threads
+             (select on_gc_.ml from
+                     (runtime_events -> on_gc_.real.ml)
+                     (-> on_gc_.dummy.ml))
              (select relax_.ml from
                      (base-domain -> relax_.real.ml)
                      ( -> relax_.dummy.ml))))

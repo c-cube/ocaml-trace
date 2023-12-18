@@ -11,15 +11,13 @@ module Mock_ = struct
     float_of_int x
 end
 
-let counter = Mtime_clock.counter ()
-
 (** Now, in microseconds *)
 let now_us () : float =
   if !Mock_.enabled then
     Mock_.now_us ()
   else (
-    let t = Mtime_clock.count counter in
-    Mtime.Span.to_float_ns t /. 1e3
+    let t = Mtime_clock.elapsed_ns () in
+    Int64.to_float t /. 1e3
   )
 
 let protect ~finally f =
@@ -388,7 +386,7 @@ type output =
   | `File of string
   ]
 
-let collector ~out () : collector =
+let collector ~capture_gc ~out () : collector =
   let module M = struct
     let active = A.make true
 
@@ -418,6 +416,37 @@ let collector ~out () : collector =
         3
       else
         Thread.id (Thread.self ())
+
+    let _t_gc : Thread.t option =
+      if capture_gc && On_gc_.is_real then (
+        (* use initial tid for all events *)
+        let tid = get_tid_ () in
+
+        let on_gc_major ts_start ts_stop : unit =
+          let name = "gc_major" in
+          try
+            B_queue.push events
+              (E_enter_context
+                 {
+                   tid;
+                   name;
+                   time_us = Int64.to_float ts_start /. 1e3;
+                   data = [];
+                 });
+            B_queue.push events
+              (E_exit_context
+                 {
+                   tid;
+                   name;
+                   time_us = Int64.to_float ts_stop /. 1e3;
+                   data = [];
+                 })
+          with B_queue.Closed -> On_gc_.shutdown ()
+        in
+        let th = Thread.create (On_gc_.run_poll ~on_gc_major) () in
+        Some th
+      ) else
+        None
 
     let with_span ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name f =
       let span = Int64.of_int (A.fetch_and_add span_id_gen_ 1) in
@@ -507,26 +536,31 @@ let collector ~out () : collector =
   end in
   (module M)
 
-let setup ?(out = `Env) () =
+let setup ?(capture_gc = true) ?(out = `Env) () =
   match out with
-  | `Stderr -> Trace_core.setup_collector @@ collector ~out:`Stderr ()
-  | `Stdout -> Trace_core.setup_collector @@ collector ~out:`Stdout ()
-  | `File path -> Trace_core.setup_collector @@ collector ~out:(`File path) ()
+  | `Stderr ->
+    Trace_core.setup_collector @@ collector ~capture_gc ~out:`Stderr ()
+  | `Stdout ->
+    Trace_core.setup_collector @@ collector ~capture_gc ~out:`Stdout ()
+  | `File path ->
+    Trace_core.setup_collector @@ collector ~capture_gc ~out:(`File path) ()
   | `Env ->
     (match Sys.getenv_opt "TRACE" with
     | Some ("1" | "true") ->
       let path = "trace.json" in
-      let c = collector ~out:(`File path) () in
+      let c = collector ~capture_gc ~out:(`File path) () in
       Trace_core.setup_collector c
-    | Some "stdout" -> Trace_core.setup_collector @@ collector ~out:`Stdout ()
-    | Some "stderr" -> Trace_core.setup_collector @@ collector ~out:`Stderr ()
+    | Some "stdout" ->
+      Trace_core.setup_collector @@ collector ~capture_gc ~out:`Stdout ()
+    | Some "stderr" ->
+      Trace_core.setup_collector @@ collector ~capture_gc ~out:`Stderr ()
     | Some path ->
-      let c = collector ~out:(`File path) () in
+      let c = collector ~capture_gc ~out:(`File path) () in
       Trace_core.setup_collector c
     | None -> ())
 
-let with_setup ?out () f =
-  setup ?out ();
+let with_setup ?capture_gc ?out () f =
+  setup ?capture_gc ?out ();
   protect ~finally:Trace_core.shutdown f
 
 module Internal_ = struct

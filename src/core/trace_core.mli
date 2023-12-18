@@ -121,7 +121,7 @@ val counter_float :
 (** Emit a counter of type [float]. See {!counter_int} for more details.
     @param data metadata for this metric (since 0.4) *)
 
-val enter_context : string -> unit
+val enter_context : ?data:(unit -> (string * user_data) list) -> string -> unit
 (** [enter_context name] enters a local context with the
     given name. The name must be a static string.
 
@@ -131,12 +131,13 @@ val enter_context : string -> unit
 
     @since NEXT_RELEASE *)
 
-val exit_context : string -> unit
+val exit_context : ?data:(unit -> (string * user_data) list) -> string -> unit
 (** Exit a context. This must come after the corresponding
     {!enter_context}, ideally on the same thread.
     @since NEXT_RELEASE *)
 
-val with_context : string -> (unit -> 'a) -> 'a
+val with_context :
+  ?data:(unit -> (string * user_data) list) -> string -> (unit -> 'a) -> 'a
 (** [with_context name f] enters the context, calls [f()],
     and exits the context.
     @since NEXT_RELEASE *)

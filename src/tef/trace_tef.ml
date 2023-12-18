@@ -257,18 +257,18 @@ module Writer = struct
      Hints: https://docs.google.com/document/d/15BB-suCb9j-nFt55yCFJBJCGzLg2qUm3WaSOPb8APtI/
   *)
   let emit_enter_context ~tid ~name ~ts (self : t) : unit =
-    emit_sep_ self;
-    Printf.fprintf self.oc
+    emit_sep_and_start_ self;
+    Printf.bprintf self.buf
       {json|{"pid":%d,"tid":%d,"ts":%.2f,"name":%a,"ph":"b"}|json} self.pid tid
       ts str_val name;
-    ()
+    Buffer.output_buffer self.oc self.buf
 
   let emit_exit_context ~tid ~name ~ts (self : t) : unit =
-    emit_sep_ self;
-    Printf.fprintf self.oc
+    emit_sep_and_start_ self;
+    Printf.bprintf self.buf
       {json|{"pid":%d,"tid":%d,"ts":%.2f,"name":%a,"ph":"e"}|json} self.pid tid
       ts str_val name;
-    ()
+    Buffer.output_buffer self.oc self.buf
 
   let emit_name_thread ~tid ~name (self : t) : unit =
     emit_sep_and_start_ self;

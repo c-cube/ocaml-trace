@@ -58,11 +58,13 @@ type event =
       tid: int;
       name: string;
       time_us: float;
+      data: (string * user_data) list;
     }
   | E_exit_context of {
       tid: int;
       name: string;
       time_us: float;
+      data: (string * user_data) list;
     }
   | E_add_data of {
       id: span;
@@ -256,18 +258,22 @@ module Writer = struct
      in the chrome tracing viewer to actually see _frames_, but it's poorly documented.
      Hints: https://docs.google.com/document/d/15BB-suCb9j-nFt55yCFJBJCGzLg2qUm3WaSOPb8APtI/
   *)
-  let emit_enter_context ~tid ~name ~ts (self : t) : unit =
+  let emit_enter_context ~tid ~name ~ts ~args (self : t) : unit =
     emit_sep_and_start_ self;
     Printf.bprintf self.buf
-      {json|{"pid":%d,"tid":%d,"ts":%.2f,"name":%a,"ph":"b"}|json} self.pid tid
-      ts str_val name;
+      {json|{"pid":%d,"tid":%d,"ts":%.2f,"name":%a,"ph":"b"%a}|json} self.pid
+      tid ts str_val name
+      (emit_args_o_ pp_user_data_)
+      args;
     Buffer.output_buffer self.oc self.buf
 
-  let emit_exit_context ~tid ~name ~ts (self : t) : unit =
+  let emit_exit_context ~tid ~name ~ts ~args (self : t) : unit =
     emit_sep_and_start_ self;
     Printf.bprintf self.buf
-      {json|{"pid":%d,"tid":%d,"ts":%.2f,"name":%a,"ph":"e"}|json} self.pid tid
-      ts str_val name;
+      {json|{"pid":%d,"tid":%d,"ts":%.2f,"name":%a,"ph":"e"%a}|json} self.pid
+      tid ts str_val name
+      (emit_args_o_ pp_user_data_)
+      args;
     Buffer.output_buffer self.oc self.buf
 
   let emit_name_thread ~tid ~name (self : t) : unit =
@@ -335,10 +341,10 @@ let bg_thread ~out (events : event B_queue.t) : unit =
       (match Span_tbl.find_opt spans id with
       | None -> !on_tracing_error (Printf.sprintf "cannot find span %Ld" id)
       | Some info -> info.data <- List.rev_append data info.data)
-    | E_enter_context { name; time_us; tid } ->
-      Writer.emit_enter_context ~name ~ts:time_us ~tid writer
-    | E_exit_context { name; time_us; tid } ->
-      Writer.emit_exit_context ~name ~ts:time_us ~tid writer
+    | E_enter_context { name; time_us; tid; data } ->
+      Writer.emit_enter_context ~name ~ts:time_us ~tid ~args:data writer
+    | E_exit_context { name; time_us; tid; data } ->
+      Writer.emit_exit_context ~name ~ts:time_us ~tid ~args:data writer
     | E_enter_manual_span { tid; time_us; name; id; data; fun_name; flavor } ->
       let data = add_fun_name_ fun_name data in
       Writer.emit_manual_begin ~tid ~name ~id ~ts:time_us ~args:data ~flavor
@@ -485,15 +491,15 @@ let collector ~out () : collector =
     let counter_int ~data name i = counter_float ~data name (float_of_int i)
     let name_process name : unit = B_queue.push events (E_name_process { name })
 
-    let enter_context name : unit =
+    let enter_context ~data name : unit =
       let time_us = now_us () in
       let tid = get_tid_ () in
-      B_queue.push events (E_enter_context { name; tid; time_us })
+      B_queue.push events (E_enter_context { name; tid; time_us; data })
 
-    let exit_context name : unit =
+    let exit_context ~data name : unit =
       let time_us = now_us () in
       let tid = get_tid_ () in
-      B_queue.push events (E_exit_context { name; tid; time_us })
+      B_queue.push events (E_exit_context { name; tid; time_us; data })
 
     let name_thread name : unit =
       let tid = get_tid_ () in

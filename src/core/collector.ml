@@ -77,11 +77,11 @@ module type S = sig
   val counter_float : data:(string * user_data) list -> string -> float -> unit
   (** Float counter. *)
 
-  val enter_context : string -> unit
+  val enter_context : data:(string * user_data) list -> string -> unit
   (** Enter a local context (or frame)
       @since NEXT_RELEASE *)
 
-  val exit_context : string -> unit
+  val exit_context : data:(string * user_data) list -> string -> unit
   (** Exit a local context. @since NEXT_RELEASE *)
 
   val shutdown : unit -> unit

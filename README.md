@@ -12,6 +12,7 @@ a library or application, either by hand or via a ppx.
 - [x] messages
 - [x] counters
 - [ ] other metrics?
+- [x] ppx to help instrumentation
 
 ### Usage
 
@@ -73,6 +74,51 @@ After running this, the file "trace.json" will contain something like:
 Opening it in https://ui.perfetto.dev we get something like this:
 
 ![screenshot of perfetto UI](media/ui.png)
+
+## ppx_trace
+
+On OCaml >= 4.12, and with `ppxlib` installed, you can install `ppx_trace`.
+This is a preprocessor that will rewrite like so:
+
+```ocaml
+let%trace f x y z =
+  do_sth x;
+  do_sth y;
+  begin
+    let%trace () = "sub-span" in
+    do_sth z
+  end
+```
+
+This more or less corresponds to:
+
+```ocaml
+let f x y z =
+  let _trace_span = Trace_core.enter_span ~__FILE__ ~__LINE__ "Foo.f" in
+  try
+    do_sth x;
+    do_sth y;
+    begin
+      let _trace_span = Trace_core.enter_span ~__FILE__ ~__LINE__ "sub-span" in
+      try
+        let _res = do_sth z in
+        Trace_core.exit_span _trace_span;
+        _res
+      with e ->
+        Trace_core.exit_span _trace_span
+        raise e
+    end;
+    Trace_core.exit_span _trace_span
+  with e ->
+    Trace_core.exit_span _trace_span
+    raise e
+```
+
+### Dune configuration
+
+In your `library` or `executable` stanza, add: `(preprocess (pps ppx_trace))`.
+The dependency on `trace.core` is automatically added. You still need to
+configure a backend to actually do collection.
 
 ### Backends
 

@@ -25,7 +25,7 @@
  (name ppx_trace)
  (synopsis "ppx-based instrumentation for trace")
  (depends
-   (ocaml (>= 4.08))
+   (ocaml (>= 4.12)) ; we use __FUNCTION__
    ppxlib
    (trace (= :version))
    (trace-tef (and (= :version) :with-test))

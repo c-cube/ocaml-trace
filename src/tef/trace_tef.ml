@@ -386,8 +386,7 @@ let collector ~out () : collector =
       else
         Thread.id (Thread.self ())
 
-    let enter_span ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name :
-        span =
+    let[@inline] enter_span_ ~fun_name ~data name : span =
       let span = Int64.of_int (A.fetch_and_add span_id_gen_ 1) in
       let tid = get_tid_ () in
       let time_us = now_us () in
@@ -395,23 +394,26 @@ let collector ~out () : collector =
         (E_define_span { tid; name; time_us; id = span; fun_name; data });
       span
 
+    let enter_span ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name :
+        span =
+      enter_span_ ~fun_name ~data name
+
     let exit_span span : unit =
       let time_us = now_us () in
       B_queue.push events (E_exit_span { id = span; time_us })
 
+    (* re-raise exception with its backtrace *)
+    external reraise : exn -> 'a = "%reraise"
+
     let with_span ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name f =
-      let span = Int64.of_int (A.fetch_and_add span_id_gen_ 1) in
-      let tid = get_tid_ () in
-      let time_us = now_us () in
-      B_queue.push events
-        (E_define_span { tid; name; time_us; id = span; fun_name; data });
-
-      let finally () =
-        let time_us = now_us () in
-        B_queue.push events (E_exit_span { id = span; time_us })
-      in
-
-      Fun.protect ~finally (fun () -> f span)
+      let span = enter_span_ ~fun_name ~data name in
+      try
+        let x = f span in
+        exit_span span;
+        x
+      with exn ->
+        exit_span span;
+        reraise exn
 
     let add_data_to_span span data =
       if data <> [] then B_queue.push events (E_add_data { id = span; data })

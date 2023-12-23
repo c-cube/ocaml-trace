@@ -2,5 +2,12 @@
 (test
   (name t1)
   (package trace-tef)
+  (modules t1)
   (libraries trace trace-tef))
 
+(test
+  (name t2)
+  (package ppx_trace)
+  (modules t2)
+  (preprocess (pps ppx_trace))
+  (libraries trace-tef))

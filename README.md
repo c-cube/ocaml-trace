@@ -100,11 +100,11 @@ let f x y z =
     do_sth y;
     begin
       let _trace_span = Trace_core.enter_span ~__FILE__ ~__LINE__ "sub-span" in
-      try
-        let _res = do_sth z in
+      match do_sth z with
+      | res ->
         Trace_core.exit_span _trace_span;
-        _res
-      with e ->
+        res
+      | exception e ->
         Trace_core.exit_span _trace_span
         raise e
     end;

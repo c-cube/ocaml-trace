@@ -9,7 +9,7 @@ tags: ["trace" "tracing" "observability" "profiling" "ppx"]
 homepage: "https://github.com/c-cube/ocaml-trace"
 bug-reports: "https://github.com/c-cube/ocaml-trace/issues"
 depends: [
-  "ocaml" {>= "4.08"}
+  "ocaml" {>= "4.12"}
   "ppxlib"
   "trace" {= version}
   "trace-tef" {= version & with-test}

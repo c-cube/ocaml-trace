@@ -52,13 +52,14 @@ let expand_top_let ~ctxt rec_flag (vbs : _ list) =
           let _trace_span =
             Trace_core.enter_span ~__FILE__ ~__LINE__ __FUNCTION__
           in
-          try
-            let _trace_ppx_res = [%e e] in
+          match [%e e] with
+          | res ->
             Trace_core.exit_span _trace_span;
-            __trace_ppx_res
-          with exn ->
+            res
+          | exception exn ->
+            let bt = Printexc.get_raw_backtrace () in
             Trace_core.exit_span _trace_span;
-            raise exn]
+            Printexc.raise_with_backtrace exn bt]
     in
 
     let tr_vb (vb : value_binding) : value_binding =

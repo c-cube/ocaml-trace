@@ -34,6 +34,16 @@ val with_span :
     see {!enter_manual_span}.
 *)
 
+val enter_span :
+  ?__FUNCTION__:string ->
+  __FILE__:string ->
+  __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
+  string ->
+  span
+
+val exit_span : span -> unit
+
 val add_data_to_span : span -> (string * user_data) list -> unit
 (** Add structured data to the given active span (see {!with_span}).
     Behavior is not specified if the span has been exited.

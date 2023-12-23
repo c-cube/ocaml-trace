@@ -29,6 +29,19 @@ let[@inline] with_span ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name f =
     with_span_collector_ collector ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name
       f
 
+let[@inline] enter_span ?__FUNCTION__ ~__FILE__ ~__LINE__
+    ?(data = data_empty_build_) name : span =
+  match A.get collector with
+  | None -> Collector.dummy_span
+  | Some (module C) ->
+    let data = data () in
+    C.enter_span ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name
+
+let[@inline] exit_span sp : unit =
+  match A.get collector with
+  | None -> ()
+  | Some (module C) -> C.exit_span sp
+
 let enter_explicit_span_collector_ (module C : Collector.S) ~parent ~flavor
     ?__FUNCTION__ ~__FILE__ ~__LINE__ ?(data = data_empty_build_) name :
     explicit_span =

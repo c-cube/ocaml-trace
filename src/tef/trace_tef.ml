@@ -386,6 +386,19 @@ let collector ~out () : collector =
       else
         Thread.id (Thread.self ())
 
+    let enter_span ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name :
+        span =
+      let span = Int64.of_int (A.fetch_and_add span_id_gen_ 1) in
+      let tid = get_tid_ () in
+      let time_us = now_us () in
+      B_queue.push events
+        (E_define_span { tid; name; time_us; id = span; fun_name; data });
+      span
+
+    let exit_span span : unit =
+      let time_us = now_us () in
+      B_queue.push events (E_exit_span { id = span; time_us })
+
     let with_span ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name f =
       let span = Int64.of_int (A.fetch_and_add span_id_gen_ 1) in
       let tid = get_tid_ () in

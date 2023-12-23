@@ -95,7 +95,7 @@ This more or less corresponds to:
 ```ocaml
 let f x y z =
   let _trace_span = Trace_core.enter_span ~__FILE__ ~__LINE__ "Foo.f" in
-  try
+  match
     do_sth x;
     do_sth y;
     begin
@@ -108,8 +108,11 @@ let f x y z =
         Trace_core.exit_span _trace_span
         raise e
     end;
+  with
+  | res ->
     Trace_core.exit_span _trace_span
-  with e ->
+    res
+  | exception e ->
     Trace_core.exit_span _trace_span
     raise e
 ```

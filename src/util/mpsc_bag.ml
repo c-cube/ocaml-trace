@@ -11,7 +11,7 @@ module Backoff = struct
 
   let once (b : t) : t =
     for _i = 1 to b do
-      Relax_.cpu_relax ()
+      Cpu_relax.cpu_relax ()
     done;
     min (b * 2) 256
 end

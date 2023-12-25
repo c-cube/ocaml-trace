@@ -1,4 +1,5 @@
 open Trace_core
+open Trace_private_util
 module A = Trace_core.Internal_.Atomic_
 
 module Mock_ = struct
@@ -14,23 +15,13 @@ end
 let counter = Mtime_clock.counter ()
 
 (** Now, in microseconds *)
-let now_us () : float =
+let[@inline] now_us () : float =
   if !Mock_.enabled then
     Mock_.now_us ()
   else (
     let t = Mtime_clock.count counter in
     Mtime.Span.to_float_ns t /. 1e3
   )
-
-let protect ~finally f =
-  try
-    let x = f () in
-    finally ();
-    x
-  with exn ->
-    let bt = Printexc.get_raw_backtrace () in
-    finally ();
-    Printexc.raise_with_backtrace exn bt
 
 let on_tracing_error = ref (fun s -> Printf.eprintf "trace-tef error: %s\n%!" s)
 
@@ -144,7 +135,7 @@ module Writer = struct
 
   let with_ ~out f =
     let writer = create ~out () in
-    protect ~finally:(fun () -> close writer) (fun () -> f writer)
+    Fun.protect ~finally:(fun () -> close writer) (fun () -> f writer)
 
   let[@inline] flush (self : t) : unit = flush self.oc
 
@@ -499,7 +490,7 @@ let setup ?(out = `Env) () =
 
 let with_setup ?out () f =
   setup ?out ();
-  protect ~finally:Trace_core.shutdown f
+  Fun.protect ~finally:Trace_core.shutdown f
 
 module Internal_ = struct
   let mock_all_ () = Mock_.enabled := true

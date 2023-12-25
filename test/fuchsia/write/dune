@@ -1,0 +1,4 @@
+
+(tests
+  (names t1 t2)
+  (libraries trace-fuchsia.write))

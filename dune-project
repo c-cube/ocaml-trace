@@ -46,4 +46,17 @@
  (tags
   (trace tracing catapult)))
 
+(package
+ (name trace-fuchsia)
+ (synopsis "A high-performance backend for trace, emitting a Fuchsia trace into a file")
+ (depends
+   (ocaml (>= 4.08))
+   (trace (= :version))
+   (mtime (>= 2.0))
+   base-unix
+   atomic
+   dune)
+ (tags
+  (trace tracing fuchsia)))
+
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

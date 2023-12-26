@@ -43,7 +43,9 @@ type state = {
   bg_thread: Thread.t;
   buf_pool: Buf_pool.t;
   next_thread_ref: int A.t;  (** in [0x01 .. 0xff], to allocate thread refs *)
-  threads: per_thread_state Int_map.t A.t;
+  per_thread: per_thread_state Int_map.t A.t;
+      (** the state keeps tabs on thread-local state, so it can flush writers
+      at the end *)
 }
 
 let key_thread_local_st : per_thread_state TLS.key =
@@ -60,15 +62,7 @@ let key_thread_local_st : per_thread_state TLS.key =
 
 let out_of_st (st : state) : Output.t =
   FWrite.Output.create () ~buf_pool:st.buf_pool ~send_buf:(fun buf ->
-      if A.get st.active then (
-        try B_queue.push st.events (E_write_buf buf) with B_queue.Closed -> ()
-      ))
-
-let flush_all_ (st : state) =
-  let outs = A.get st.threads in
-
-  Int_map.iter (fun _tid (tls : per_thread_state) -> ()) outs;
-  ()
+      try B_queue.push st.events (E_write_buf buf) with B_queue.Closed -> ())
 
 module C (St : sig
   val st : state
@@ -94,12 +88,24 @@ struct
 
     (* add to [st]'s list of threads *)
     while
-      let old = A.get st.threads in
-      not (A.compare_and_set st.threads old (Int_map.add self.tid self old))
+      let old = A.get st.per_thread in
+      not (A.compare_and_set st.per_thread old (Int_map.add self.tid self old))
     do
       ()
     done;
 
+    let on_exit _ =
+      while
+        let old = A.get st.per_thread in
+        not (A.compare_and_set st.per_thread old (Int_map.remove self.tid old))
+      do
+        ()
+      done;
+      Option.iter Output.flush self.out
+    in
+
+    (* after thread exits, flush output and remove from global list *)
+    Gc.finalise on_exit (Thread.self ());
     ()
 
   (** Obtain the output for the current thread *)
@@ -111,7 +117,15 @@ struct
   let shutdown () =
     if A.exchange st.active false then (
       (* flush all outputs *)
-      flush_all_ st;
+      let tls_l = A.get st.per_thread in
+
+      (* FIXME: there's a potential race condition here. How to fix it
+         without overhead on every regular event? *)
+      Int_map.iter
+        (fun _tid (tls : per_thread_state) ->
+          Printf.eprintf "flush for %d\n%!" tls.tid;
+          Option.iter Output.flush tls.out)
+        tls_l;
 
       B_queue.close st.events;
       (* wait for writer thread to be done. The writer thread will exit
@@ -248,14 +262,11 @@ let create ~out () : collector =
       events;
       span_id_gen = A.make 0;
       next_thread_ref = A.make 1;
-      threads = A.make Int_map.empty;
+      per_thread = A.make Int_map.empty;
     }
   in
 
-  let _tick_thread =
-    Thread.create (fun () ->
-        Bg_thread.tick_thread events ~f:(fun () -> flush_all_ st))
-  in
+  let _tick_thread = Thread.create (fun () -> Bg_thread.tick_thread events) in
 
   (* write header *)
   let out = out_of_st st in

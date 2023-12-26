@@ -4,6 +4,6 @@
   (synopsis "internal utilities for trace. No guarantees of stability.")
   (name trace_private_util)
   (libraries trace.core mtime mtime.clock.os atomic unix threads
-             (select cpu_relax.ml from
-                     (base-domain -> cpu_relax.real.ml)
-                     ( -> cpu_relax.dummy.ml))))
+             (select domain_util.ml from
+                     (base-domain -> domain_util.real.ml)
+                     ( -> domain_util.dummy.ml))))

@@ -40,36 +40,50 @@ module Str_ = struct
     Bytes.unsafe_to_string res
 end
 
+let with_buf_output (f : Output.t -> unit) : string =
+  let buf_pool = Buf_pool.create () in
+  let buffer = Buffer.create 32 in
+  let out = Output.into_buffer ~buf_pool buffer in
+  f out;
+  Output.flush out;
+  Buffer.contents buffer
+
 let () = pf "first trace\n"
 
 let () =
-  let buf = Buf.create 128 in
-  Metadata.Magic_record.encode buf;
-  Thread_record.encode buf ~as_ref:5 ~pid:1 ~tid:86 ();
-  Event.Instant.encode buf ~name:"hello" ~time_ns:1234_5678L
-    ~t_ref:(Thread_ref.Ref 5)
-    ~args:[ "x", `Int 42 ]
-    ();
-  pf "%s\n" (Buf.to_string buf |> Str_.to_hex)
+  let str =
+    with_buf_output (fun out ->
+        Metadata.Magic_record.encode out;
+        Thread_record.encode out ~as_ref:5 ~pid:1 ~tid:86 ();
+        Event.Instant.encode out ~name:"hello" ~time_ns:1234_5678L
+          ~t_ref:(Thread_ref.Ref 5)
+          ~args:[ "x", `Int 42 ]
+          ())
+  in
+  pf "%s\n" (Str_.to_hex str)
 
 let () = pf "second trace\n"
 
 let () =
-  let buf = Buf.create 512 in
-  Metadata.Magic_record.encode buf;
-  Metadata.Initialization_record.(
-    encode buf ~ticks_per_secs:default_ticks_per_sec ());
-  Thread_record.encode buf ~as_ref:5 ~pid:1 ~tid:86 ();
-  Metadata.Provider_info.encode buf ~id:1 ~name:"ocaml-trace" ();
-  Event.Duration_complete.encode buf ~name:"outer" ~t_ref:(Thread_ref.Ref 5)
-    ~time_ns:100_000L ~end_time_ns:5_000_000L ~args:[] ();
-  Event.Duration_complete.encode buf ~name:"inner" ~t_ref:(Thread_ref.Ref 5)
-    ~time_ns:180_000L ~end_time_ns:4_500_000L ~args:[] ();
-  Event.Instant.encode buf ~name:"hello" ~time_ns:1_234_567L
-    ~t_ref:(Thread_ref.Ref 5)
-    ~args:[ "x", `Int 42 ]
-    ();
+  let str =
+    with_buf_output (fun out ->
+        Metadata.Magic_record.encode out;
+        Metadata.Initialization_record.(
+          encode out ~ticks_per_secs:default_ticks_per_sec ());
+        Thread_record.encode out ~as_ref:5 ~pid:1 ~tid:86 ();
+        Metadata.Provider_info.encode out ~id:1 ~name:"ocaml-trace" ();
+        Event.Duration_complete.encode out ~name:"outer"
+          ~t_ref:(Thread_ref.Ref 5) ~time_ns:100_000L ~end_time_ns:5_000_000L
+          ~args:[] ();
+        Event.Duration_complete.encode out ~name:"inner"
+          ~t_ref:(Thread_ref.Ref 5) ~time_ns:180_000L ~end_time_ns:4_500_000L
+          ~args:[] ();
+        Event.Instant.encode out ~name:"hello" ~time_ns:1_234_567L
+          ~t_ref:(Thread_ref.Ref 5)
+          ~args:[ "x", `Int 42 ]
+          ())
+  in
   (let oc = open_out "foo.fxt" in
-   output_string oc (Buf.to_string buf);
+   output_string oc str;
    close_out oc);
-  pf "%s\n" (Buf.to_string buf |> Str_.to_hex)
+  pf "%s\n" (Str_.to_hex str)

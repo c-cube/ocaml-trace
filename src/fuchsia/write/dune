@@ -3,4 +3,7 @@
   (name trace_fuchsia_write)
   (public_name trace-fuchsia.write)
   (synopsis "Serialization part of trace-fuchsia")
+  (ocamlopt_flags :standard -S
+                  ;-dlambda
+                  )
   (libraries trace.core atomic threads))

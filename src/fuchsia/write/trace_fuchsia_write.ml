@@ -2,52 +2,16 @@
 
 Reference: https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format *)
 
-module B = Bytes
+module Util = Util
+module Buf = Buf
+module Output = Output
+module Buf_pool = Buf_pool
 
 open struct
   let spf = Printf.sprintf
 end
 
-module Util = struct
-  (** How many bytes are missing for [n] to be a multiple of 8 *)
-  let[@inline] missing_to_round (n : int) : int = lnot (n - 1) land 0b111
-
-  (** Round up to a multiple of 8 *)
-  let[@inline] round_to_word (n : int) : int = n + (lnot (n - 1) land 0b111)
-end
-
 open Util
-
-module Buf = struct
-  type t = {
-    buf: bytes;
-    mutable offset: int;
-  }
-
-  let create (n : int) : t =
-    let buf = Bytes.create (round_to_word n) in
-    { buf; offset = 0 }
-
-  let[@inline] clear self = self.offset <- 0
-
-  let[@inline] add_i64 (self : t) (i : int64) : unit =
-    (* NOTE: we use LE, most systems are this way, even though fuchsia
-       says we should use the system's native endianess *)
-    Bytes.set_int64_le self.buf self.offset i;
-    self.offset <- self.offset + 8
-
-  let add_string (self : t) (s : string) : unit =
-    let len = String.length s in
-    Bytes.blit_string s 0 self.buf self.offset len;
-    self.offset <- self.offset + len;
-
-    (* add 0-padding *)
-    let missing = missing_to_round len in
-    Bytes.fill self.buf self.offset missing '\x00';
-    self.offset <- self.offset + missing
-
-  let to_string (self : t) : string = Bytes.sub_string self.buf 0 self.offset
-end
 
 type user_data = Trace_core.user_data
 
@@ -85,6 +49,8 @@ module Thread_ref = struct
         tid: int;
       }
 
+  let inline ~pid ~tid : t = Inline { pid; tid }
+
   let ref x : t =
     if x = 0 || x > 255 then
       invalid_arg "fuchsia: thread inline ref must be >0 < 256";
@@ -108,7 +74,10 @@ module Metadata = struct
   module Magic_record = struct
     let value = 0x0016547846040010L
     let size_word = 1
-    let encode (buf : Buf.t) = Buf.add_i64 buf value
+
+    let encode (out : Output.t) =
+      let buf = Output.get_buf out ~available_word:size_word in
+      Buf.add_i64 buf value
   end
 
   module Initialization_record = struct
@@ -117,7 +86,8 @@ module Metadata = struct
     (** Default: 1 tick = 1 ns *)
     let default_ticks_per_sec = 1_000_000_000L
 
-    let encode (buf : Buf.t) ~ticks_per_secs () : unit =
+    let encode (out : Output.t) ~ticks_per_secs () : unit =
+      let buf = Output.get_buf out ~available_word:size_word in
       let hd = I64.(1L lor (of_int size_word lsl 4)) in
       Buf.add_i64 buf hd;
       Buf.add_i64 buf ticks_per_secs
@@ -126,8 +96,9 @@ module Metadata = struct
   module Provider_info = struct
     let size_word ~name () = 1 + (round_to_word (String.length name) lsr 3)
 
-    let encode buf ~(id : int) ~name () : unit =
+    let encode (out : Output.t) ~(id : int) ~name () : unit =
       let size = size_word ~name () in
+      let buf = Output.get_buf out ~available_word:size in
       let hd =
         I64.(
           (of_int size lsl 4)
@@ -216,17 +187,30 @@ end
 module Arguments = struct
   type t = Argument.t list
 
+  let[@inline] len (self : t) : int =
+    match self with
+    | [] -> 0
+    | [ _ ] -> 1
+    | _ :: _ :: tl -> 2 + List.length tl
+
   let check_valid (self : t) =
-    let len = List.length self in
+    let len = len self in
     if len > 15 then
       invalid_arg (spf "fuchsia: can have at most 15 args, got %d" len);
     List.iter Argument.check_valid self;
     ()
 
   let[@inline] size_word (self : t) =
-    List.fold_left (fun n arg -> n + Argument.size_word arg) 0 self
+    match self with
+    | [] -> 0
+    | [ a ] -> Argument.size_word a
+    | a :: b :: tl ->
+      List.fold_left
+        (fun n arg -> n + Argument.size_word arg)
+        (Argument.size_word a + Argument.size_word b)
+        tl
 
-  let encode (buf : Buf.t) (self : t) =
+  let[@inline] encode (buf : Buf.t) (self : t) =
     let rec aux buf l =
       match l with
       | [] -> ()
@@ -234,7 +218,13 @@ module Arguments = struct
         Argument.encode buf x;
         aux buf tl
     in
-    aux buf self
+
+    match self with
+    | [] -> ()
+    | [ x ] -> Argument.encode buf x
+    | x :: tl ->
+      Argument.encode buf x;
+      aux buf tl
 end
 
 (** record type = 3 *)
@@ -242,9 +232,12 @@ module Thread_record = struct
   let size_word : int = 3
 
   (** Record that [Thread_ref.ref as_ref] represents the pair [pid, tid] *)
-  let encode (buf : Buf.t) ~as_ref ~pid ~tid () : unit =
+  let encode (out : Output.t) ~as_ref ~pid ~tid () : unit =
     if as_ref <= 0 || as_ref > 255 then
       invalid_arg "fuchsia: thread_record: invalid ref";
+
+    let buf = Output.get_buf out ~available_word:size_word in
+
     let hd = I64.(3L lor (of_int size_word lsl 4) lor (of_int as_ref lsl 16)) in
     Buf.add_i64 buf hd;
     Buf.add_i64 buf (I64.of_int pid);
@@ -253,21 +246,24 @@ end
 
 (** record type = 4 *)
 module Event = struct
+  (** type=0 *)
   module Instant = struct
     let size_word ~name ~t_ref ~args () : int =
       1 + Thread_ref.size_word t_ref + 1
       (* timestamp *) + (round_to_word (String.length name) / 8)
       + Arguments.size_word args
 
-    let encode (buf : Buf.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args () :
-        unit =
+    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
+        : unit =
       let size = size_word ~name ~t_ref ~args () in
+      let buf = Output.get_buf out ~available_word:size in
+
       (* set category = 0 *)
       let hd =
         I64.(
           4L
           lor (of_int size lsl 4)
-          lor (of_int (List.length args) lsl 20)
+          lor (of_int (Arguments.len args) lsl 20)
           lor (of_int (Thread_ref.as_i8 t_ref) lsl 24)
           lor (of_int (Str_ref.inline (String.length name)) lsl 48))
       in
@@ -285,22 +281,132 @@ module Event = struct
       ()
   end
 
+  (** type=1 *)
+  module Counter = struct
+    let size_word ~name ~t_ref ~args () : int =
+      1 + Thread_ref.size_word t_ref + 1
+      (* timestamp *) + (round_to_word (String.length name) lsr 3)
+      + Arguments.size_word args + 1 (* counter id *)
+
+    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
+        : unit =
+      let size = size_word ~name ~t_ref ~args () in
+      let buf = Output.get_buf out ~available_word:size in
+
+      let hd =
+        I64.(
+          4L
+          lor (of_int size lsl 4)
+          lor (1L lsl 16)
+          lor (of_int (Arguments.len args) lsl 20)
+          lor (of_int (Thread_ref.as_i8 t_ref) lsl 24)
+          lor (of_int (Str_ref.inline (String.length name)) lsl 48))
+      in
+      Buf.add_i64 buf hd;
+      Buf.add_i64 buf time_ns;
+
+      (match t_ref with
+      | Thread_ref.Inline { pid; tid } ->
+        Buf.add_i64 buf (I64.of_int pid);
+        Buf.add_i64 buf (I64.of_int tid)
+      | Thread_ref.Ref _ -> ());
+
+      Buf.add_string buf name;
+      Arguments.encode buf args;
+      (* just use 0 as counter id *)
+      Buf.add_i64 buf 0L;
+      ()
+  end
+
+  (** type=2 *)
+  module Duration_begin = struct
+    let size_word ~name ~t_ref ~args () : int =
+      1 + Thread_ref.size_word t_ref + 1
+      (* timestamp *) + (round_to_word (String.length name) lsr 3)
+      + Arguments.size_word args
+
+    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
+        : unit =
+      let size = size_word ~name ~t_ref ~args () in
+      let buf = Output.get_buf out ~available_word:size in
+
+      let hd =
+        I64.(
+          4L
+          lor (of_int size lsl 4)
+          lor (2L lsl 16)
+          lor (of_int (Arguments.len args) lsl 20)
+          lor (of_int (Thread_ref.as_i8 t_ref) lsl 24)
+          lor (of_int (Str_ref.inline (String.length name)) lsl 48))
+      in
+      Buf.add_i64 buf hd;
+      Buf.add_i64 buf time_ns;
+
+      (match t_ref with
+      | Thread_ref.Inline { pid; tid } ->
+        Buf.add_i64 buf (I64.of_int pid);
+        Buf.add_i64 buf (I64.of_int tid)
+      | Thread_ref.Ref _ -> ());
+
+      Buf.add_string buf name;
+      Arguments.encode buf args;
+      ()
+  end
+
+  (** type=3 *)
+  module Duration_end = struct
+    let size_word ~name ~t_ref ~args () : int =
+      1 + Thread_ref.size_word t_ref + 1
+      (* timestamp *) + (round_to_word (String.length name) lsr 3)
+      + Arguments.size_word args
+
+    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
+        : unit =
+      let size = size_word ~name ~t_ref ~args () in
+      let buf = Output.get_buf out ~available_word:size in
+
+      let hd =
+        I64.(
+          4L
+          lor (of_int size lsl 4)
+          lor (3L lsl 16)
+          lor (of_int (Arguments.len args) lsl 20)
+          lor (of_int (Thread_ref.as_i8 t_ref) lsl 24)
+          lor (of_int (Str_ref.inline (String.length name)) lsl 48))
+      in
+      Buf.add_i64 buf hd;
+      Buf.add_i64 buf time_ns;
+
+      (match t_ref with
+      | Thread_ref.Inline { pid; tid } ->
+        Buf.add_i64 buf (I64.of_int pid);
+        Buf.add_i64 buf (I64.of_int tid)
+      | Thread_ref.Ref _ -> ());
+
+      Buf.add_string buf name;
+      Arguments.encode buf args;
+      ()
+  end
+
+  (** type=4 *)
   module Duration_complete = struct
     let size_word ~name ~t_ref ~args () : int =
       1 + Thread_ref.size_word t_ref + 1
       (* timestamp *) + (round_to_word (String.length name) lsr 3)
       + Arguments.size_word args + 1 (* end timestamp *)
 
-    let encode (buf : Buf.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~end_time_ns
-        ~args () : unit =
+    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
+        ~end_time_ns ~args () : unit =
       let size = size_word ~name ~t_ref ~args () in
+      let buf = Output.get_buf out ~available_word:size in
+
       (* set category = 0 *)
       let hd =
         I64.(
           4L
           lor (of_int size lsl 4)
           lor (4L lsl 16)
-          lor (of_int (List.length args) lsl 20)
+          lor (of_int (Arguments.len args) lsl 20)
           lor (of_int (Thread_ref.as_i8 t_ref) lsl 24)
           lor (of_int (Str_ref.inline (String.length name)) lsl 48))
       in

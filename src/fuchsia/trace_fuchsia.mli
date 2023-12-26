@@ -40,9 +40,6 @@ val with_setup : ?out:[ output | `Env ] -> unit -> (unit -> 'a) -> 'a
 (**/**)
 
 module Internal_ : sig
-  val mock_all_ : unit -> unit
-  (** use fake, deterministic timestamps, TID, PID *)
-
   val on_tracing_error : (string -> unit) ref
 end
 

@@ -64,11 +64,13 @@ let bg_thread ~buf_pool ~out ~(events : event B_queue.t) () : unit =
 *)
 
 (** Thread that simply regularly "ticks", sending events to
-       the background thread so it has a chance to write to the file *)
-let tick_thread events : unit =
+     the background thread so it has a chance to write to the file,
+     and call [f()] *)
+let tick_thread events ~f : unit =
   try
     while true do
       Thread.delay 0.5;
-      B_queue.push events E_tick
+      B_queue.push events E_tick;
+      f ()
     done
   with B_queue.Closed -> ()

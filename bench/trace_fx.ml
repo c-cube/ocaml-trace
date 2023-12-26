@@ -3,6 +3,7 @@ module Trace = Trace_core
 let ( let@ ) = ( @@ )
 
 let work ~dom_idx ~n () : unit =
+  Trace_core.set_thread_name (Printf.sprintf "worker%d" dom_idx);
   for _i = 1 to n do
     let%trace _sp = "outer" in
     Trace_core.add_data_to_span _sp [ "i", `Int _i ];
@@ -23,10 +24,15 @@ let main ~n ~j () : unit =
   let domains =
     Array.init j (fun dom_idx -> Domain.spawn (fun () -> work ~dom_idx ~n ()))
   in
+
+  let%trace () = "join" in
   Array.iter Domain.join domains
 
 let () =
   let@ () = Trace_fuchsia.with_setup () in
+  Trace_core.set_process_name "trace_fxt";
+
+  let%trace () = "main" in
 
   let n = ref 10_000 in
   let j = ref 4 in

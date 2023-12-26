@@ -424,4 +424,111 @@ module Event = struct
       Buf.add_i64 buf end_time_ns;
       ()
   end
+
+  (** type=5 *)
+  module Async_begin = struct
+    let size_word ~name ~t_ref ~args () : int =
+      1 + Thread_ref.size_word t_ref + 1
+      (* timestamp *) + (round_to_word (String.length name) lsr 3)
+      + Arguments.size_word args + 1 (* async id *)
+
+    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
+        ~(async_id : int) ~args () : unit =
+      let size = size_word ~name ~t_ref ~args () in
+      let buf = Output.get_buf out ~available_word:size in
+
+      let hd =
+        I64.(
+          4L
+          lor (of_int size lsl 4)
+          lor (5L lsl 16)
+          lor (of_int (Arguments.len args) lsl 20)
+          lor (of_int (Thread_ref.as_i8 t_ref) lsl 24)
+          lor (of_int (Str_ref.inline (String.length name)) lsl 48))
+      in
+      Buf.add_i64 buf hd;
+      Buf.add_i64 buf time_ns;
+
+      (match t_ref with
+      | Thread_ref.Inline { pid; tid } ->
+        Buf.add_i64 buf (I64.of_int pid);
+        Buf.add_i64 buf (I64.of_int tid)
+      | Thread_ref.Ref _ -> ());
+
+      Buf.add_string buf name;
+      Arguments.encode buf args;
+      Buf.add_i64 buf (I64.of_int async_id);
+      ()
+  end
+
+  (** type=7 *)
+  module Async_end = struct
+    let size_word ~name ~t_ref ~args () : int =
+      1 + Thread_ref.size_word t_ref + 1
+      (* timestamp *) + (round_to_word (String.length name) lsr 3)
+      + Arguments.size_word args + 1 (* async id *)
+
+    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
+        ~(async_id : int) ~args () : unit =
+      let size = size_word ~name ~t_ref ~args () in
+      let buf = Output.get_buf out ~available_word:size in
+
+      let hd =
+        I64.(
+          4L
+          lor (of_int size lsl 4)
+          lor (7L lsl 16)
+          lor (of_int (Arguments.len args) lsl 20)
+          lor (of_int (Thread_ref.as_i8 t_ref) lsl 24)
+          lor (of_int (Str_ref.inline (String.length name)) lsl 48))
+      in
+      Buf.add_i64 buf hd;
+      Buf.add_i64 buf time_ns;
+
+      (match t_ref with
+      | Thread_ref.Inline { pid; tid } ->
+        Buf.add_i64 buf (I64.of_int pid);
+        Buf.add_i64 buf (I64.of_int tid)
+      | Thread_ref.Ref _ -> ());
+
+      Buf.add_string buf name;
+      Arguments.encode buf args;
+      Buf.add_i64 buf (I64.of_int async_id);
+      ()
+  end
+end
+
+(** record type = 7 *)
+module Kernel_object = struct
+  let size_word ~name ~args () : int =
+    1 + 1
+    (* id *) + (round_to_word (String.length name) lsr 3)
+    + Arguments.size_word args
+
+  (* see:
+     https://cs.opensource.google/fuchsia/fuchsia/+/main:zircon/system/public/zircon/types.h;l=441?q=ZX_OBJ_TYPE&ss=fuchsia%2Ffuchsia
+  *)
+
+  type ty = int
+
+  let ty_process : ty = 1
+  let ty_thread : ty = 2
+
+  let encode (out : Output.t) ~name ~(ty : ty) ~(kid : int) ~args () : unit =
+    let size = size_word ~name ~args () in
+    let buf = Output.get_buf out ~available_word:size in
+
+    let hd =
+      I64.(
+        7L
+        lor (of_int size lsl 4)
+        lor (of_int ty lsl 16)
+        lor (of_int (Arguments.len args) lsl 40)
+        lor (of_int (Str_ref.inline (String.length name)) lsl 24))
+    in
+    Buf.add_i64 buf hd;
+    Buf.add_i64 buf (I64.of_int kid);
+    Buf.add_string buf name;
+    Arguments.encode buf args;
+    ()
 end

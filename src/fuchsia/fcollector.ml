@@ -1,17 +1,9 @@
 open Trace_core
 open Common_
 module TLS = Thread_local_storage
+module Int_map = Map.Make (Int)
 
 let pid = Unix.getpid ()
-
-type state = {
-  active: bool A.t;
-  events: Bg_thread.event B_queue.t;
-  span_id_gen: int A.t;  (** Used for async spans *)
-  bg_thread: Thread.t;
-  buf_pool: Buf_pool.t;
-  next_thread_ref: int A.t;  (** in [0x01 .. 0xff], to allocate thread refs *)
-}
 
 type span_info = {
   start_time_ns: int64;
@@ -19,16 +11,14 @@ type span_info = {
   mutable data: (string * user_data) list;
 }
 
-(* TODO:
-   (** key used to carry a unique "id" for all spans in an async context *)
-   let key_async_id : int Meta_map.Key.t = Meta_map.Key.create ()
+type async_span_info = {
+  async_id: int;
+  flavor: [ `Sync | `Async ] option;
+  name: string;
+  mutable data: (string * user_data) list;
+}
 
-   let key_async_data : (string * [ `Sync | `Async ] option) Meta_map.Key.t =
-     Meta_map.Key.create ()
-
-   let key_data : (string * user_data) list ref Meta_map.Key.t =
-     Meta_map.Key.create ()
-*)
+let key_async_data : async_span_info Meta_map.Key.t = Meta_map.Key.create ()
 
 open struct
   let state_id_ = A.make 0
@@ -44,6 +34,16 @@ type per_thread_state = {
   mutable thread_ref: FWrite.Thread_ref.t;
   mutable out: Output.t option;
   spans: span_info Span_tbl.t;  (** In-flight spans *)
+}
+
+type state = {
+  active: bool A.t;
+  events: Bg_thread.event B_queue.t;
+  span_id_gen: int A.t;  (** Used for async spans *)
+  bg_thread: Thread.t;
+  buf_pool: Buf_pool.t;
+  next_thread_ref: int A.t;  (** in [0x01 .. 0xff], to allocate thread refs *)
+  threads: per_thread_state Int_map.t A.t;
 }
 
 let key_thread_local_st : per_thread_state TLS.key =
@@ -63,6 +63,12 @@ let out_of_st (st : state) : Output.t =
       if A.get st.active then (
         try B_queue.push st.events (E_write_buf buf) with B_queue.Closed -> ()
       ))
+
+let flush_all_ (st : state) =
+  let outs = A.get st.threads in
+
+  Int_map.iter (fun _tid (tls : per_thread_state) -> ()) outs;
+  ()
 
 module C (St : sig
   val st : state
@@ -85,16 +91,28 @@ struct
       self.thread_ref <- FWrite.Thread_ref.ref th_ref;
       FWrite.Thread_record.encode out ~as_ref:th_ref ~tid:self.tid ~pid ()
     );
+
+    (* add to [st]'s list of threads *)
+    while
+      let old = A.get st.threads in
+      not (A.compare_and_set st.threads old (Int_map.add self.tid self old))
+    do
+      ()
+    done;
+
     ()
 
   (** Obtain the output for the current thread *)
   let[@inline] get_thread_output () : Output.t * per_thread_state =
-    let st = TLS.get key_thread_local_st in
-    if st.state_id != state_id || st.out == None then update_local_state st;
-    Option.get st.out, st
+    let tls = TLS.get key_thread_local_st in
+    if tls.state_id != state_id || tls.out == None then update_local_state tls;
+    Option.get tls.out, tls
 
   let shutdown () =
     if A.exchange st.active false then (
+      (* flush all outputs *)
+      flush_all_ st;
+
       B_queue.close st.events;
       (* wait for writer thread to be done. The writer thread will exit
          after processing remaining events because the queue is now closed *)
@@ -147,54 +165,40 @@ struct
     | None -> !on_tracing_error (spf "unknown span %Ld" span)
     | Some info -> info.data <- List.rev_append data info.data
 
-  let enter_manual_span ~(parent : explicit_span option) ~flavor
-      ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name : explicit_span
-      =
-    assert false
-  (* TODO:
-     (* get the id, or make a new one *)
-     let id =
-       match parent with
-       | Some m -> Meta_map.find_exn key_async_id m.meta
-       | None -> A.fetch_and_add span_id_gen_ 1
-     in
-     let time_us = now_us () in
-     B_queue.push events
-       (E_enter_manual_span
-          { id; time_us; tid = get_tid_ (); data; name; fun_name; flavor });
-     {
-       span = 0L;
-       meta =
-         Meta_map.(
-           empty |> add key_async_id id |> add key_async_data (name, flavor));
-     }
-  *)
+  let enter_manual_span ~(parent : explicit_span option) ~flavor ~__FUNCTION__:_
+      ~__FILE__:_ ~__LINE__:_ ~data name : explicit_span =
+    let out, tls = get_thread_output () in
+    let time_ns = Time.now_ns () in
 
-  let exit_manual_span (es : explicit_span) : unit = assert false
-  (* TODO:
-     let id = Meta_map.find_exn key_async_id es.meta in
-     let name, flavor = Meta_map.find_exn key_async_data es.meta in
-     let data =
-       try !(Meta_map.find_exn key_data es.meta) with Not_found -> []
-     in
-     let time_us = now_us () in
-     let tid = get_tid_ () in
-     B_queue.push events
-       (E_exit_manual_span { tid; id; name; time_us; data; flavor })
-  *)
+    (* get the id, or make a new one *)
+    let async_id =
+      match parent with
+      | Some m -> (Meta_map.find_exn key_async_data m.meta).async_id
+      | None -> A.fetch_and_add st.span_id_gen 1
+    in
 
-  let add_data_to_manual_span (es : explicit_span) data = assert false
-  (* TODO:
-     if data <> [] then (
-       let data_ref, add =
-         try Meta_map.find_exn key_data es.meta, false
-         with Not_found -> ref [], true
-       in
-       let new_data = List.rev_append data !data_ref in
-       data_ref := new_data;
-       if add then es.meta <- Meta_map.add key_data data_ref es.meta
-     )
-  *)
+    FWrite.Event.Async_begin.encode out ~name ~args:data ~t_ref:tls.thread_ref
+      ~time_ns ~async_id ();
+    {
+      span = 0L;
+      meta =
+        Meta_map.(
+          empty |> add key_async_data { async_id; name; flavor; data = [] });
+    }
+
+  let exit_manual_span (es : explicit_span) : unit =
+    let { async_id; name; data; flavor = _ } =
+      Meta_map.find_exn key_async_data es.meta
+    in
+    let out, tls = get_thread_output () in
+    let time_ns = Time.now_ns () in
+
+    FWrite.Event.Async_end.encode out ~name ~t_ref:tls.thread_ref ~time_ns
+      ~args:data ~async_id ()
+
+  let add_data_to_manual_span (es : explicit_span) data =
+    let m = Meta_map.find_exn key_async_data es.meta in
+    m.data <- List.rev_append data m.data
 
   let message ?span:_ ~data msg : unit =
     let out, tls = get_thread_output () in
@@ -216,14 +220,16 @@ struct
       ~args:((name, `Int i) :: data)
       ()
 
-  let name_process name : unit = ()
-  (* TODO: B_queue.push events (E_name_process { name }) *)
+  let name_process name : unit =
+    let out, tls = get_thread_output () in
+    FWrite.Kernel_object.(encode out ~name ~ty:ty_process ~kid:pid ~args:[] ())
 
-  let name_thread name : unit = ()
-  (* TODO:
-     let tid = get_tid_ () in
-     B_queue.push events (E_name_thread { tid; name })
-  *)
+  let name_thread name : unit =
+    let out, tls = get_thread_output () in
+    FWrite.Kernel_object.(
+      encode out ~name ~ty:ty_thread ~kid:tls.tid
+        ~args:[ "process", `Int pid ]
+        ())
 end
 
 let create ~out () : collector =
@@ -233,7 +239,6 @@ let create ~out () : collector =
   let bg_thread =
     Thread.create (Bg_thread.bg_thread ~buf_pool ~out ~events) ()
   in
-  let _tick_thread = Thread.create Bg_thread.tick_thread events in
 
   let st =
     {
@@ -243,7 +248,13 @@ let create ~out () : collector =
       events;
       span_id_gen = A.make 0;
       next_thread_ref = A.make 1;
+      threads = A.make Int_map.empty;
     }
+  in
+
+  let _tick_thread =
+    Thread.create (fun () ->
+        Bg_thread.tick_thread events ~f:(fun () -> flush_all_ st))
   in
 
   (* write header *)

@@ -1,5 +1,5 @@
 open struct
-  module A = Atomic
+  module A = Trace_core.Internal_.Atomic_
 
   exception Got_buf of Buf.t
 end

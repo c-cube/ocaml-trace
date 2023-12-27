@@ -6,4 +6,4 @@
   (ocamlopt_flags :standard -S
                   ;-dlambda
                   )
-  (libraries trace.core atomic threads))
+  (libraries trace.core threads))

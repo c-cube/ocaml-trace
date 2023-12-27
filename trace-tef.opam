@@ -14,7 +14,6 @@ depends: [
   "trace" {= version}
   "mtime" {>= "2.0"}
   "base-unix"
-  "atomic"
   "dune" {>= "2.9"}
   "odoc" {with-doc}
 ]

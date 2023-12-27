@@ -29,7 +29,7 @@ let[@inline] add_string (self : t) (s : string) : unit =
   let missing = missing_to_round len in
 
   (* bound check *)
-  assert (len + missing + self.offset < Bytes.length self.buf);
+  assert (len + missing + self.offset <= Bytes.length self.buf);
   Bytes.unsafe_blit_string s 0 self.buf self.offset len;
   self.offset <- self.offset + len;
 

@@ -51,18 +51,6 @@ let bg_thread ~buf_pool ~out ~(events : event B_queue.t) () : unit =
   let st = { oc; buf_pool; events } in
   bg_loop st
 
-(* TODO:
-   (* write a message about us closing *)
-   Writer.emit_instant_event ~name:"tef-worker.exit"
-     ~tid:(Thread.id @@ Thread.self ())
-     ~ts:(now_us ()) ~args:[] writer;
-
-   (* warn if app didn't close all spans *)
-   if Span_tbl.length spans > 0 then
-     Printf.eprintf "trace-tef: warning: %d spans were not closed\n%!"
-       (Span_tbl.length spans);
-*)
-
 (** Thread that simply regularly "ticks", sending events to
      the background thread so it has a chance to write to the file,
      and call [f()] *)

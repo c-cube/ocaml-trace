@@ -52,6 +52,7 @@
    (ocaml (>= 4.08))
    (trace (= :version))
    (mtime (>= 2.0))
+   base-bigarray
    base-unix
    dune)
  (tags

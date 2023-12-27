@@ -10,10 +10,20 @@ let create ~(buf_pool : Buf_pool.t) ~send_buf () : t =
   { buf; send_buf; buf_pool }
 
 open struct
+  (* NOTE: there is a potential race condition if an output is
+     flushed from the main thread upon closing, while
+     the local thread is blissfully writing new records to it
+     as we're winding down the collector. This is trying to reduce
+     the likelyhood of a race happening. *)
+  let[@poll error] replace_buf_ (self : t) (new_buf : Buf.t) : Buf.t =
+    let old_buf = self.buf in
+    self.buf <- new_buf;
+    old_buf
+
   let flush_ (self : t) : unit =
-    self.send_buf self.buf;
-    let buf = Buf_pool.alloc self.buf_pool in
-    self.buf <- buf
+    let new_buf = Buf_pool.alloc self.buf_pool in
+    let old_buf = replace_buf_ self new_buf in
+    self.send_buf old_buf
 
   let[@inline never] cycle_buf (self : t) ~available : Buf.t =
     flush_ self;

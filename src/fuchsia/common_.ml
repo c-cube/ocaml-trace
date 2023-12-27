@@ -5,12 +5,6 @@ module Buf = FWrite.Buf
 module Buf_pool = FWrite.Buf_pool
 module Output = FWrite.Output
 
-module Span_tbl = Hashtbl.Make (struct
-  include Int64
-
-  let hash : t -> int = Hashtbl.hash
-end)
-
 let on_tracing_error =
   ref (fun s -> Printf.eprintf "trace-fuchsia error: %s\n%!" s)
 

@@ -14,6 +14,7 @@ let work ~dom_idx ~n () : unit =
 
     (* Thread.delay 1e-6 *)
     if dom_idx = 0 && _i mod 4096 = 0 then (
+      Trace_core.message "gc stats";
       let stat = Gc.quick_stat () in
       Trace_core.counter_float "gc.minor" (8. *. stat.minor_words);
       Trace_core.counter_float "gc.major" (8. *. stat.major_words)

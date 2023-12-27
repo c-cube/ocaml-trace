@@ -36,13 +36,15 @@ end = struct
     mutable data: (string * user_data) list array;
   }
 
+  let init_size_ = 1
+
   let create () : t =
     {
       len = 0;
-      span = BA1.create BA.Int64 BA.C_layout 64;
-      start_time_ns = BA1.create BA.Int64 BA.C_layout 64;
-      name = Array.make 64 "";
-      data = Array.make 64 [];
+      span = BA1.create BA.Int64 BA.C_layout init_size_;
+      start_time_ns = BA1.create BA.Int64 BA.C_layout init_size_;
+      name = Array.make init_size_ "";
+      data = Array.make init_size_ [];
     }
 
   let[@inline] cap self = Array.length self.name

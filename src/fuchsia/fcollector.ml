@@ -242,7 +242,7 @@ struct
     let out, tls = get_thread_output () in
     FWrite.Kernel_object.(
       encode out ~name ~ty:ty_thread ~kid:tls.tid
-        ~args:[ "process", `Int pid ]
+        ~args:[ "process", `Kid pid ]
         ())
 end
 

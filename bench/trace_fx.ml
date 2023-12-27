@@ -30,7 +30,8 @@ let main ~n ~j () : unit =
 
 let () =
   let@ () = Trace_fuchsia.with_setup () in
-  Trace_core.set_process_name "trace_fxt";
+  Trace_core.set_process_name "trace_fxt1";
+  Trace_core.set_thread_name "main";
 
   let%trace () = "main" in
 

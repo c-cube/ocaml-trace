@@ -115,14 +115,14 @@ module Metadata = struct
 end
 
 module Argument = struct
-  type t = string * user_data
+  type 'a t = string * ([< user_data | `Kid of int ] as 'a)
 
   let check_valid _ = ()
   (* TODO: check string length *)
 
   let[@inline] is_i32_ (i : int) : bool = Int32.(to_int (of_int i) = i)
 
-  let size_word (self : t) =
+  let size_word (self : _ t) =
     let name, data = self in
     match data with
     | `None | `Bool _ -> 1 + (round_to_word (String.length name) lsr 3)
@@ -133,12 +133,13 @@ module Argument = struct
       1
       + (round_to_word (String.length s) lsr 3)
       + (round_to_word (String.length name) lsr 3)
+    | `Kid _ -> 2 + (round_to_word (String.length name) lsr 3)
 
   open struct
     external int_of_bool : bool -> int = "%identity"
   end
 
-  let encode (buf : Buf.t) (self : t) : unit =
+  let encode (buf : Buf.t) (self : _ t) : unit =
     let name, data = self in
     let size = size_word self in
 
@@ -182,25 +183,31 @@ module Argument = struct
       let hd = I64.(9L lor hd_arg_size lor (of_int (int_of_bool b) lsl 16)) in
       Buf.add_i64 buf hd;
       Buf.add_string buf name
+    | `Kid kid ->
+      (* int64 *)
+      let hd = I64.(8L lor hd_arg_size) in
+      Buf.add_i64 buf hd;
+      Buf.add_string buf name;
+      Buf.add_i64 buf (I64.of_int kid)
 end
 
 module Arguments = struct
-  type t = Argument.t list
+  type 'a t = 'a Argument.t list
 
-  let[@inline] len (self : t) : int =
+  let[@inline] len (self : _ t) : int =
     match self with
     | [] -> 0
     | [ _ ] -> 1
     | _ :: _ :: tl -> 2 + List.length tl
 
-  let check_valid (self : t) =
+  let check_valid (self : _ t) =
     let len = len self in
     if len > 15 then
       invalid_arg (spf "fuchsia: can have at most 15 args, got %d" len);
     List.iter Argument.check_valid self;
     ()
 
-  let[@inline] size_word (self : t) =
+  let[@inline] size_word (self : _ t) =
     match self with
     | [] -> 0
     | [ a ] -> Argument.size_word a
@@ -210,7 +217,7 @@ module Arguments = struct
         (Argument.size_word a + Argument.size_word b)
         tl
 
-  let[@inline] encode (buf : Buf.t) (self : t) =
+  let[@inline] encode (buf : Buf.t) (self : _ t) =
     let rec aux buf l =
       match l with
       | [] -> ()
@@ -502,7 +509,7 @@ end
 module Kernel_object = struct
   let size_word ~name ~args () : int =
     1 + 1
-    (* id *) + (round_to_word (String.length name) lsr 3)
+    + (round_to_word (String.length name) lsr 3)
     + Arguments.size_word args
 
   (* see:

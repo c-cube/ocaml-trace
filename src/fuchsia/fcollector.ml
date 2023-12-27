@@ -235,7 +235,7 @@ struct
       ()
 
   let name_process name : unit =
-    let out, tls = get_thread_output () in
+    let out, _tls = get_thread_output () in
     FWrite.Kernel_object.(encode out ~name ~ty:ty_process ~kid:pid ~args:[] ())
 
   let name_thread name : unit =

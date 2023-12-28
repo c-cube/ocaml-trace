@@ -1,7 +1,9 @@
-type 'a t = { bag: 'a list Atomic.t } [@@unboxed]
+module A = Trace_core.Internal_.Atomic_
+
+type 'a t = { bag: 'a list A.t } [@@unboxed]
 
 let create () =
-  let bag = Atomic.make [] in
+  let bag = A.make [] in
   { bag }
 
 module Backoff = struct
@@ -17,14 +19,14 @@ module Backoff = struct
 end
 
 let rec add backoff t x =
-  let before = Atomic.get t.bag in
+  let before = A.get t.bag in
   let after = x :: before in
-  if not (Atomic.compare_and_set t.bag before after) then
+  if not (A.compare_and_set t.bag before after) then
     add (Backoff.once backoff) t x
 
 let[@inline] add t x = add Backoff.default t x
 
 let[@inline] pop_all t : _ list option =
-  match Atomic.exchange t.bag [] with
+  match A.exchange t.bag [] with
   | [] -> None
   | l -> Some (List.rev l)

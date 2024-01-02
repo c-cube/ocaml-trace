@@ -1,4 +1,0 @@
-(** A bit of global state that can be reached
-    from each thread without too much overhead *)
-
-open Common_

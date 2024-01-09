@@ -2,17 +2,18 @@
 opam-version: "2.0"
 version: "0.5"
 synopsis:
-  "A simple backend for trace, emitting Catapult/TEF JSON into a file"
+  "A high-performance backend for trace, emitting a Fuchsia trace into a file"
 maintainer: ["Simon Cruanes"]
 authors: ["Simon Cruanes"]
 license: "MIT"
-tags: ["trace" "tracing" "catapult"]
+tags: ["trace" "tracing" "fuchsia"]
 homepage: "https://github.com/c-cube/ocaml-trace"
 bug-reports: "https://github.com/c-cube/ocaml-trace/issues"
 depends: [
   "ocaml" {>= "4.08"}
   "trace" {= version}
   "mtime" {>= "2.0"}
+  "base-bigarray"
   "base-unix"
   "dune" {>= "2.9"}
   "odoc" {with-doc}

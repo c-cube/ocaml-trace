@@ -1,4 +1,4 @@
 
 (env
-  (_ (flags :standard -strict-sequence -warn-error -a+8+26+27 -w +a-4-40-70)))
+  (_ (flags :standard -strict-sequence -warn-error -a+8+26+27 -w +a-4-40-42-44-70)))
 

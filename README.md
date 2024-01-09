@@ -117,6 +117,21 @@ let f x y z =
     raise e
 ```
 
+Alternatively, a name can be provided for the span, which is useful if you want
+to access it and use functions like `Trace.add_data_to_span`:
+
+
+```ocaml
+let%trace f x y z =
+  do_sth x;
+  do_sth y;
+  begin
+    let%trace _sp = "sub-span" in
+    do_sth z;
+    Trace.add_data_to_span _sp ["x", `Int 42]
+  end
+```
+
 ### Dune configuration
 
 In your `library` or `executable` stanza, add: `(preprocess (pps ppx_trace))`.

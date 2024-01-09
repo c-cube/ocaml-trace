@@ -1,0 +1,9 @@
+
+
+(library
+  (name trace_fuchsia)
+  (public_name trace-fuchsia)
+  (synopsis "A high-performance backend for trace, emitting a Fuchsia trace into a file")
+  (libraries trace.core trace.private.util thread-local-storage
+             (re_export trace-fuchsia.write) bigarray
+             mtime mtime.clock.os atomic unix threads))

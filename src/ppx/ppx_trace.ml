@@ -8,19 +8,30 @@ let location_errorf ~loc fmt =
 
 (** {2 let expression} *)
 
-let expand_let ~ctxt (name : string) body =
+let expand_let ~ctxt (var : [ `Var of label loc | `Unit ]) (name : string) body
+    =
   let loc = Expansion_context.Extension.extension_point_loc ctxt in
   Ast_builder.Default.(
+    let var_pat =
+      match var with
+      | `Var v -> ppat_var ~loc:v.loc v
+      | `Unit -> ppat_var ~loc { loc; txt = "_trace_span" }
+    in
+    let var_exp =
+      match var with
+      | `Var v -> pexp_ident ~loc:v.loc { txt = lident v.txt; loc = v.loc }
+      | `Unit -> [%expr _trace_span]
+    in
     [%expr
-      let _trace_span =
+      let [%p var_pat] =
         Trace_core.enter_span ~__FILE__ ~__LINE__ [%e estring ~loc name]
       in
       try
         let res = [%e body] in
-        Trace_core.exit_span _trace_span;
+        Trace_core.exit_span [%e var_exp];
         res
       with exn ->
-        Trace_core.exit_span _trace_span;
+        Trace_core.exit_span [%e var_exp];
         raise exn])
 
 let extension_let =
@@ -29,7 +40,13 @@ let extension_let =
     single_expr_payload
       (pexp_let nonrecursive
          (value_binding
-            ~pat:(ppat_construct (lident (string "()")) none)
+            ~pat:
+              (let pat_var = ppat_var __' |> map ~f:(fun f v -> f (`Var v)) in
+               let pat_unit =
+                 as__ @@ ppat_construct (lident (string "()")) none
+                 |> map ~f:(fun f _ -> f `Unit)
+               in
+               alt pat_var pat_unit)
             ~expr:(estring __)
          ^:: nil)
          __))

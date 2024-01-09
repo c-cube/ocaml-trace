@@ -1,0 +1,9 @@
+
+(library
+  (public_name trace.private.util)
+  (synopsis "internal utilities for trace. No guarantees of stability.")
+  (name trace_private_util)
+  (libraries trace.core mtime mtime.clock.os unix threads
+             (select domain_util.ml from
+                     (base-domain -> domain_util.real.ml)
+                     ( -> domain_util.dummy.ml))))

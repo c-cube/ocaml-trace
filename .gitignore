@@ -2,3 +2,5 @@ _opam
 _build
 *.json
 *.exe
+perf.*
+*.fxt

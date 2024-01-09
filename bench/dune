@@ -1,4 +1,16 @@
 
 (executable
   (name trace1)
+  (modules trace1)
   (libraries trace.core trace-tef))
+
+(executable
+  (name trace_fx)
+  (modules trace_fx)
+  (preprocess (pps ppx_trace))
+  (libraries trace.core trace-fuchsia))
+
+(executable
+  (name bench_fuchsia_write)
+  (modules bench_fuchsia_write)
+  (libraries benchmark trace-fuchsia.write))

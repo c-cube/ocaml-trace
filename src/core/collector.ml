@@ -31,6 +31,23 @@ module type S = sig
       to be efficient to implement in async contexts.
      @since 0.3 *)
 
+  val enter_span :
+    __FUNCTION__:string option ->
+    __FILE__:string ->
+    __LINE__:int ->
+    data:(string * user_data) list ->
+    string ->
+    span
+  (** Enter a new implicit span. For many uses cases, {!with_span} will
+      be easier to use.
+      @since NEXT_RELEASE *)
+
+  val exit_span : span -> unit
+  (** Exit span. This should be called on the same thread
+      as the corresponding {!enter_span}, and nest properly with
+      other calls to enter/exit_span and {!with_span}.
+      @since NEXT_RELEASE *)
+
   val enter_manual_span :
     parent:explicit_span option ->
     flavor:[ `Sync | `Async ] option ->

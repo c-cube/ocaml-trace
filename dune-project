@@ -22,6 +22,18 @@
   (trace tracing observability profiling)))
 
 (package
+ (name ppx_trace)
+ (synopsis "ppx-based instrumentation for trace")
+ (depends
+   (ocaml (>= 4.12)) ; we use __FUNCTION__
+   ppxlib
+   (trace (= :version))
+   (trace-tef (and (= :version) :with-test))
+   dune)
+ (tags
+  (trace tracing observability profiling ppx)))
+
+(package
  (name trace-tef)
  (synopsis "A simple backend for trace, emitting Catapult/TEF JSON into a file")
  (depends

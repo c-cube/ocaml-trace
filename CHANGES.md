@@ -1,4 +1,14 @@
 
+# 0.6
+
+- add `ppx_trace` for easier instrumentation.
+  * `let%trace span = "foo" in …` will enter a scope `span` named "foo"
+  * `let%trace () = "foo" in …` will enter a scope named "foo" with a hidden name
+- add `trace-fuchsia` backend, which produces traces in the binary format
+    of [fuchsia](https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format).
+    These traces are reasonably efficient to produce (~60ns per span on my machines)
+    and reasonably compact on disk, at least compared to the TEF backend.
+
 # 0.5
 
 - perf: reduce overhead in trace-tef

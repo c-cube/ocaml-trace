@@ -6,7 +6,7 @@
 This small library provides basic types that can be used to instrument
 a library or application, either by hand or via a ppx.
 
-### Features
+## Features
 
 - [x] spans
 - [x] messages
@@ -14,7 +14,7 @@ a library or application, either by hand or via a ppx.
 - [ ] other metrics?
 - [x] ppx to help instrumentation
 
-### Usage
+## Usage
 
 To instrument your code, you can simply add `trace` to your dune/opam files, and then
 write code like such:
@@ -138,13 +138,15 @@ In your `library` or `executable` stanza, add: `(preprocess (pps ppx_trace))`.
 The dependency on `trace.core` is automatically added. You still need to
 configure a backend to actually do collection.
 
-### Backends
+## Backends
 
 Concrete tracing or observability formats such as:
 
-- [ ] Fuchsia (see [tracing](https://github.com/janestreet/tracing))
+- [x] Fuchsia (see [the spec](https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format) and [tracing](https://github.com/janestreet/tracing).
+        Can be opened in https://ui.perfetto.dev)
 - Catapult
-  * [x] light bindings here with `trace-tef`
+  * [x] light bindings here with `trace-tef`.
+        (Can be opened in https://ui.perfetto.dev)
   * [ ] richer bindings with [ocaml-catapult](https://github.com/imandra-ai/catapult),
         with multi-process backends, etc.
 - [x] Tracy (see [ocaml-tracy](https://github.com/imandra-ai/ocaml-tracy), more specifically `tracy-client.trace`)

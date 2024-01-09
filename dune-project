@@ -2,7 +2,7 @@
 
 (name trace)
 (generate_opam_files true)
-(version 0.5)
+(version 0.6)
 
 (source
  (github c-cube/ocaml-trace))
@@ -25,7 +25,7 @@
 
 (package
  (name ppx_trace)
- (synopsis "ppx-based instrumentation for trace")
+ (synopsis "A ppx-based preprocessor for trace")
  (depends
    (ocaml (>= 4.12)) ; we use __FUNCTION__
    (ppxlib (>= 0.28))

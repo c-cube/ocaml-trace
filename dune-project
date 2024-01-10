@@ -33,7 +33,7 @@
    (trace-tef (and (= :version) :with-test))
    dune)
  (tags
-  (trace tracing observability profiling ppx)))
+  (trace ppx)))
 
 (package
  (name trace-tef)
@@ -45,7 +45,7 @@
    base-unix
    dune)
  (tags
-  (trace tracing catapult)))
+  (trace tracing catapult TEF chrome-format)))
 
 (package
  (name trace-fuchsia)

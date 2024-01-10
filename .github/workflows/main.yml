@@ -18,6 +18,7 @@ jobs:
               #- windows-latest
         ocaml-compiler:
             - '4.08.x'
+            - '4.12.x'
             - '4.14.x'
             - '5.0.x'
 
@@ -31,9 +32,13 @@ jobs:
           dune-cache: true
           allow-prerelease-opam: true
 
-      - run: opam install -t trace trace-tef --deps-only
-      - run: opam exec -- dune build '@install' -p trace,trace-tef
+      - run: opam install -t trace trace-tef trace-fuchsia --deps-only
+      - run: opam install ppx_trace --deps-only # no tests
+        if: matrix.ocaml-compiler != '4.08.x'
+      - run: opam exec -- dune build '@install' -p trace,trace-tef,trace-fuchsia
+      - run: opam exec -- dune build '@install' -p ppx_trace
+        if: matrix.ocaml-compiler != '4.08.x'
       - run: opam exec -- dune runtest -p trace
       - run: opam install trace
-      - run: opam exec -- dune runtest -p trace-tef
+      - run: opam exec -- dune runtest -p trace-tef,trace-fuchsia
 

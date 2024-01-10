@@ -5,7 +5,7 @@ synopsis: "ppx-based instrumentation for trace"
 maintainer: ["Simon Cruanes"]
 authors: ["Simon Cruanes"]
 license: "MIT"
-tags: ["trace" "tracing" "observability" "profiling" "ppx"]
+tags: ["trace" "ppx"]
 homepage: "https://github.com/c-cube/ocaml-trace"
 bug-reports: "https://github.com/c-cube/ocaml-trace/issues"
 depends: [

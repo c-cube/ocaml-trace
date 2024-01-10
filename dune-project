@@ -28,7 +28,7 @@
  (synopsis "ppx-based instrumentation for trace")
  (depends
    (ocaml (>= 4.12)) ; we use __FUNCTION__
-   ppxlib
+   (ppxlib (>= 0.28))
    (trace (= :version))
    (trace-tef (and (= :version) :with-test))
    dune)

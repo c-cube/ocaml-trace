@@ -18,6 +18,8 @@
  (depends
    (ocaml (>= 4.08))
    dune)
+ (depopts
+   (mtime (>= 2.0)))
  (tags
   (trace tracing observability profiling)))
 

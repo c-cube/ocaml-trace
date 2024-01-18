@@ -36,3 +36,4 @@ build: [
   ["dune" "install" "-p" name "--create-install-files" name]
 ]
 dev-repo: "git+https://github.com/c-cube/ocaml-trace.git"
+available: arch != "s390x"

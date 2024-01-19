@@ -1,0 +1,37 @@
+name: github pages
+
+on:
+  push:
+    branches:
+      - main # Set a branch name to trigger deployment
+  pull_request:
+
+jobs:
+  deploy:
+    name: Deploy doc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Use OCaml
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: '5.0.x'
+          allow-prerelease-opam: true
+          dune-cache: true
+
+      - run: opam pin odoc 2.2.2 -y -n
+        # crash with 2.4, see https://github.com/ocaml/odoc/issues/1066
+      - name: Deps
+        run: opam install trace trace-tef trace-fuchsia ppx_trace -d
+
+      - name: Build
+        run: opam exec -- dune build @doc
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_build/default/_doc/_html/
+          destination_dir: .
+          enable_jekyll: true

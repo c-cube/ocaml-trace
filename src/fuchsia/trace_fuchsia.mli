@@ -1,3 +1,11 @@
+(** Fuchsia trace collector.
+
+  This provides a collector for traces that emits data into a file
+  using the compact binary
+  {{:https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format} Fuchsia trace format}.
+  This reduces the tracing overhead compared to [trace-tef], at the expense of simplicity.
+*)
+
 val collector :
   out:[ `File of string | `Stderr | `Stdout ] -> unit -> Trace_core.collector
 (** Make a collector that writes into the given output.
@@ -34,7 +42,6 @@ val setup : ?out:[ output | `Env ] -> unit -> unit
 val with_setup : ?out:[ output | `Env ] -> unit -> (unit -> 'a) -> 'a
 (** [with_setup () f] (optionally) sets a collector up, calls [f()],
     and makes sure to shutdown before exiting.
-    since 0.2 a () argument was added.
 *)
 
 (**/**)

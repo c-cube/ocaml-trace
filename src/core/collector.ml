@@ -40,13 +40,13 @@ module type S = sig
     span
   (** Enter a new implicit span. For many uses cases, {!with_span} will
       be easier to use.
-      @since NEXT_RELEASE *)
+      @since 0.6 *)
 
   val exit_span : span -> unit
   (** Exit span. This should be called on the same thread
       as the corresponding {!enter_span}, and nest properly with
       other calls to enter/exit_span and {!with_span}.
-      @since NEXT_RELEASE *)
+      @since 0.6 *)
 
   val enter_manual_span :
     parent:explicit_span option ->

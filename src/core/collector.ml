@@ -9,9 +9,6 @@ open Types
 
 let dummy_span : span = Int64.min_int
 
-let dummy_explicit_span : explicit_span =
-  { span = dummy_span; meta = Meta_map.empty }
-
 (** Signature for a collector.
 
     This is only relevant to implementors of tracing backends; to instrument

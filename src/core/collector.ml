@@ -48,36 +48,9 @@ module type S = sig
       other calls to enter/exit_span and {!with_span}.
       @since 0.6 *)
 
-  val enter_manual_span :
-    parent:explicit_span option ->
-    flavor:[ `Sync | `Async ] option ->
-    __FUNCTION__:string option ->
-    __FILE__:string ->
-    __LINE__:int ->
-    data:(string * user_data) list ->
-    string ->
-    explicit_span
-  (** Enter an explicit span. Surrounding scope, if any, is provided by [parent],
-      and this function can store as much metadata as it wants in the hmap
-      in the {!explicit_span}'s [meta] field.
-
-      This means that the collector doesn't need to implement contextual
-      storage mapping {!span} to scopes, metadata, etc. on its side;
-      everything can be transmitted in the {!explicit_span}.
-      @since 0.3 *)
-
-  val exit_manual_span : explicit_span -> unit
-  (** Exit an explicit span.
-      @since 0.3 *)
-
   val add_data_to_span : span -> (string * user_data) list -> unit
   (** @since Adds data to the current span.
       0.4 *)
-
-  val add_data_to_manual_span :
-    explicit_span -> (string * user_data) list -> unit
-  (** Adds data to the given span.
-      @since 0.4 *)
 
   val message : ?span:span -> data:(string * user_data) list -> string -> unit
   (** Emit a message with associated metadata. *)

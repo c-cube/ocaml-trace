@@ -49,23 +49,6 @@ type event =
       id: span;
       data: (string * user_data) list;
     }
-  | E_enter_manual_span of {
-      tid: int;
-      name: string;
-      time_us: float;
-      id: int;
-      flavor: [ `Sync | `Async ] option;
-      fun_name: string option;
-      data: (string * user_data) list;
-    }
-  | E_exit_manual_span of {
-      tid: int;
-      name: string;
-      time_us: float;
-      flavor: [ `Sync | `Async ] option;
-      data: (string * user_data) list;
-      id: int;
-    }
   | E_counter of {
       name: string;
       tid: int;
@@ -90,15 +73,6 @@ type span_info = {
   start_us: float;
   mutable data: (string * user_data) list;
 }
-
-(** key used to carry a unique "id" for all spans in an async context *)
-let key_async_id : int Meta_map.Key.t = Meta_map.Key.create ()
-
-let key_async_data : (string * [ `Sync | `Async ] option) Meta_map.Key.t =
-  Meta_map.Key.create ()
-
-let key_data : (string * user_data) list ref Meta_map.Key.t =
-  Meta_map.Key.create ()
 
 (** Writer: knows how to write entries to a file in TEF format *)
 module Writer = struct
@@ -200,30 +174,6 @@ module Writer = struct
       args;
     Buffer.output_buffer self.oc self.buf
 
-  let emit_manual_begin ~tid ~name ~id ~ts ~args ~flavor (self : t) : unit =
-    emit_sep_and_start_ self;
-    Printf.bprintf self.buf
-      {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
-      self.pid id tid ts str_val name
-      (match flavor with
-      | None | Some `Async -> 'b'
-      | Some `Sync -> 'B')
-      (emit_args_o_ pp_user_data_)
-      args;
-    Buffer.output_buffer self.oc self.buf
-
-  let emit_manual_end ~tid ~name ~id ~ts ~flavor ~args (self : t) : unit =
-    emit_sep_and_start_ self;
-    Printf.bprintf self.buf
-      {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
-      self.pid id tid ts str_val name
-      (match flavor with
-      | None | Some `Async -> 'e'
-      | Some `Sync -> 'E')
-      (emit_args_o_ pp_user_data_)
-      args;
-    Buffer.output_buffer self.oc self.buf
-
   let emit_instant_event ~tid ~name ~ts ~args (self : t) : unit =
     emit_sep_and_start_ self;
     Printf.bprintf self.buf
@@ -298,13 +248,6 @@ let bg_thread ~out (events : event B_queue.t) : unit =
       (match Span_tbl.find_opt spans id with
       | None -> !on_tracing_error (Printf.sprintf "cannot find span %Ld" id)
       | Some info -> info.data <- List.rev_append data info.data)
-    | E_enter_manual_span { tid; time_us; name; id; data; fun_name; flavor } ->
-      let data = add_fun_name_ fun_name data in
-      Writer.emit_manual_begin ~tid ~name ~id ~ts:time_us ~args:data ~flavor
-        writer
-    | E_exit_manual_span { tid; time_us; name; id; flavor; data } ->
-      Writer.emit_manual_end ~tid ~name ~id ~ts:time_us ~flavor ~args:data
-        writer
     | E_counter { tid; name; time_us; n } ->
       Writer.emit_counter ~name ~tid ~ts:time_us writer n
     | E_name_process { name } -> Writer.emit_name_process ~name writer
@@ -408,48 +351,6 @@ let collector ~out () : collector =
 
     let add_data_to_span span data =
       if data <> [] then B_queue.push events (E_add_data { id = span; data })
-
-    let enter_manual_span ~(parent : explicit_span option) ~flavor
-        ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name :
-        explicit_span =
-      (* get the id, or make a new one *)
-      let id =
-        match parent with
-        | Some m -> Meta_map.find_exn key_async_id m.meta
-        | None -> A.fetch_and_add span_id_gen_ 1
-      in
-      let time_us = now_us () in
-      B_queue.push events
-        (E_enter_manual_span
-           { id; time_us; tid = get_tid_ (); data; name; fun_name; flavor });
-      {
-        span = 0L;
-        meta =
-          Meta_map.(
-            empty |> add key_async_id id |> add key_async_data (name, flavor));
-      }
-
-    let exit_manual_span (es : explicit_span) : unit =
-      let id = Meta_map.find_exn key_async_id es.meta in
-      let name, flavor = Meta_map.find_exn key_async_data es.meta in
-      let data =
-        try !(Meta_map.find_exn key_data es.meta) with Not_found -> []
-      in
-      let time_us = now_us () in
-      let tid = get_tid_ () in
-      B_queue.push events
-        (E_exit_manual_span { tid; id; name; time_us; data; flavor })
-
-    let add_data_to_manual_span (es : explicit_span) data =
-      if data <> [] then (
-        let data_ref, add =
-          try Meta_map.find_exn key_data es.meta, false
-          with Not_found -> ref [], true
-        in
-        let new_data = List.rev_append data !data_ref in
-        data_ref := new_data;
-        if add then es.meta <- Meta_map.add key_data data_ref es.meta
-      )
 
     let message ?span:_ ~data msg : unit =
       let time_us = now_us () in

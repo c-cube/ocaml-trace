@@ -103,15 +103,6 @@ end = struct
     with Found i -> Some i
 end
 
-type async_span_info = {
-  async_id: int;
-  flavor: [ `Sync | `Async ] option;
-  name: string;
-  mutable data: (string * user_data) list;
-}
-
-let key_async_data : async_span_info Meta_map.Key.t = Meta_map.Key.create ()
-
 open struct
   let state_id_ = A.make 0
 
@@ -131,7 +122,6 @@ type per_thread_state = {
 type state = {
   active: bool A.t;
   events: Bg_thread.event B_queue.t;
-  span_id_gen: int A.t;  (** Used for async spans *)
   bg_thread: Thread.t;
   buf_pool: Buf_pool.t;
   next_thread_ref: int A.t;  (** in [0x01 .. 0xff], to allocate thread refs *)
@@ -287,41 +277,6 @@ struct
     | None -> !on_tracing_error (spf "unknown span %Ld" span)
     | Some idx -> Span_info_stack.add_data tls.spans idx data
 
-  let enter_manual_span ~(parent : explicit_span option) ~flavor ~__FUNCTION__:_
-      ~__FILE__:_ ~__LINE__:_ ~data name : explicit_span =
-    let out, tls = get_thread_output () in
-    let time_ns = Time.now_ns () in
-
-    (* get the id, or make a new one *)
-    let async_id =
-      match parent with
-      | Some m -> (Meta_map.find_exn key_async_data m.meta).async_id
-      | None -> A.fetch_and_add st.span_id_gen 1
-    in
-
-    FWrite.Event.Async_begin.encode out ~name ~args:data ~t_ref:tls.thread_ref
-      ~time_ns ~async_id ();
-    {
-      span = 0L;
-      meta =
-        Meta_map.(
-          empty |> add key_async_data { async_id; name; flavor; data = [] });
-    }
-
-  let exit_manual_span (es : explicit_span) : unit =
-    let { async_id; name; data; flavor = _ } =
-      Meta_map.find_exn key_async_data es.meta
-    in
-    let out, tls = get_thread_output () in
-    let time_ns = Time.now_ns () in
-
-    FWrite.Event.Async_end.encode out ~name ~t_ref:tls.thread_ref ~time_ns
-      ~args:data ~async_id ()
-
-  let add_data_to_manual_span (es : explicit_span) data =
-    let m = Meta_map.find_exn key_async_data es.meta in
-    m.data <- List.rev_append data m.data
-
   let message ?span:_ ~data msg : unit =
     let out, tls = get_thread_output () in
     let time_ns = Time.now_ns () in
@@ -368,7 +323,6 @@ let create ~out () : collector =
       buf_pool;
       bg_thread;
       events;
-      span_id_gen = A.make 0;
       next_thread_ref = A.make 1;
       per_thread = Array.init 16 (fun _ -> A.make Int_map.empty);
     }

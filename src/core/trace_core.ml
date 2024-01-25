@@ -42,46 +42,11 @@ let[@inline] exit_span sp : unit =
   | None -> ()
   | Some (module C) -> C.exit_span sp
 
-let enter_explicit_span_collector_ (module C : Collector.S) ~parent ~flavor
-    ?__FUNCTION__ ~__FILE__ ~__LINE__ ?(data = data_empty_build_) name :
-    explicit_span =
-  let data = data () in
-  C.enter_manual_span ~parent ~flavor ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data
-    name
-
-let[@inline] enter_manual_sub_span ~parent ?flavor ?__FUNCTION__ ~__FILE__
-    ~__LINE__ ?data name : explicit_span =
-  match A.get collector with
-  | None -> Collector.dummy_explicit_span
-  | Some coll ->
-    enter_explicit_span_collector_ coll ~parent:(Some parent) ~flavor
-      ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name
-
-let[@inline] enter_manual_toplevel_span ?flavor ?__FUNCTION__ ~__FILE__
-    ~__LINE__ ?data name : explicit_span =
-  match A.get collector with
-  | None -> Collector.dummy_explicit_span
-  | Some coll ->
-    enter_explicit_span_collector_ coll ~parent:None ~flavor ?__FUNCTION__
-      ~__FILE__ ~__LINE__ ?data name
-
-let[@inline] exit_manual_span espan : unit =
-  match A.get collector with
-  | None -> ()
-  | Some (module C) -> C.exit_manual_span espan
-
 let[@inline] add_data_to_span sp data : unit =
   if data <> [] then (
     match A.get collector with
     | None -> ()
     | Some (module C) -> C.add_data_to_span sp data
-  )
-
-let[@inline] add_data_to_manual_span esp data : unit =
-  if data <> [] then (
-    match A.get collector with
-    | None -> ()
-    | Some (module C) -> C.add_data_to_manual_span esp data
   )
 
 let message_collector_ (module C : Collector.S) ?span

@@ -30,8 +30,7 @@ val with_span :
     {b NOTE} an important restriction is that this is only supposed to
     work for synchronous, direct style code. Monadic concurrency, Effect-based
     fibers, etc. might not play well with this style of spans on some
-    or all backends. If you use cooperative concurrency,
-    see {!enter_manual_span}.
+    or all backends.
 *)
 
 val enter_span :
@@ -47,52 +46,6 @@ val exit_span : span -> unit
 val add_data_to_span : span -> (string * user_data) list -> unit
 (** Add structured data to the given active span (see {!with_span}).
     Behavior is not specified if the span has been exited.
-    @since 0.4 *)
-
-val enter_manual_sub_span :
-  parent:explicit_span ->
-  ?flavor:[ `Sync | `Async ] ->
-  ?__FUNCTION__:string ->
-  __FILE__:string ->
-  __LINE__:int ->
-  ?data:(unit -> (string * user_data) list) ->
-  string ->
-  explicit_span
-(** Like {!with_span} but the caller is responsible for
-    obtaining the [parent] span from their {e own} caller, and carry the resulting
-    {!explicit_span} to  the matching {!exit_manual_span}. 
-    @param flavor a description of the span that can be used by the {!Collector.S}
-      to decide how to represent the span. Typically, [`Sync] spans
-      start and stop on one thread, and are nested purely by their timestamp;
-      and [`Async] spans can overlap, migrate between threads, etc. (as happens in
-      Lwt, Eio, Async, etc.) which impacts how the collector might represent them.
-    @since 0.3 *)
-
-val enter_manual_toplevel_span :
-  ?flavor:[ `Sync | `Async ] ->
-  ?__FUNCTION__:string ->
-  __FILE__:string ->
-  __LINE__:int ->
-  ?data:(unit -> (string * user_data) list) ->
-  string ->
-  explicit_span
-(** Like {!with_span} but the caller is responsible for carrying this
-    [explicit_span] around until it's exited with {!exit_manual_span}.
-    The span can be used as a parent in {!enter_manual_sub_span}.
-    @param flavor see {!enter_manual_sub_span} for more details.
-    @since 0.3 *)
-
-val exit_manual_span : explicit_span -> unit
-(** Exit an explicit span. This can be on another thread, in a
-    fiber or lightweight thread, etc. and will be supported by backends
-    nonetheless.
-    The span can be obtained via {!enter_manual_sub_span} or
-    {!enter_manual_toplevel_span}.
-    @since 0.3 *)
-
-val add_data_to_manual_span : explicit_span -> (string * user_data) list -> unit
-(** [add_data_explicit esp data] adds [data] to the span [esp].
-      The behavior is not specified is the span has been exited already.
     @since 0.4 *)
 
 val message :

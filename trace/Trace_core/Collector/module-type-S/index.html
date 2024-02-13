@@ -26,7 +26,22 @@
        <span>| `None</span> ]</span>)</span>
       list</span> <span class="arrow">&#45;&gt;</span></span>
   <span>string <span class="arrow">&#45;&gt;</span></span>
-  int64</span></code></div><div class="spec-doc"><p>Enter a new implicit span. For many uses cases, <a href="#val-with_span"><code>with_span</code></a> will be easier to use.</p><ul class="at-tags"><li class="since"><span class="at-tag">since</span> 0.6</li></ul></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-exit_span"><a href="#val-exit_span" class="anchor"></a><code><span><span class="keyword">val</span> exit_span : <span>int64 <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Exit span. This should be called on the same thread as the corresponding <a href="#val-enter_span"><code>enter_span</code></a>, and nest properly with other calls to enter/exit_span and <a href="#val-with_span"><code>with_span</code></a>.</p><ul class="at-tags"><li class="since"><span class="at-tag">since</span> 0.6</li></ul></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_data_to_span"><a href="#val-add_data_to_span" class="anchor"></a><code><span><span class="keyword">val</span> add_data_to_span : 
+  int64</span></code></div><div class="spec-doc"><p>Enter a new implicit span. For many uses cases, <a href="#val-with_span"><code>with_span</code></a> will be easier to use.</p><ul class="at-tags"><li class="since"><span class="at-tag">since</span> 0.6</li></ul></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-exit_span"><a href="#val-exit_span" class="anchor"></a><code><span><span class="keyword">val</span> exit_span : <span>int64 <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Exit span. This should be called on the same thread as the corresponding <a href="#val-enter_span"><code>enter_span</code></a>, and nest properly with other calls to enter/exit_span and <a href="#val-with_span"><code>with_span</code></a>.</p><ul class="at-tags"><li class="since"><span class="at-tag">since</span> 0.6</li></ul></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-enter_manual_span"><a href="#val-enter_manual_span" class="anchor"></a><code><span><span class="keyword">val</span> enter_manual_span : 
+  <span>parent:<span><span class="xref-unresolved">Trace_core__.Types.explicit_span</span> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>flavor:<span><span>[ `Sync <span>| `Async</span> ]</span> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>__FUNCTION__:<span>string option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>__FILE__:string <span class="arrow">&#45;&gt;</span></span>
+  <span>__LINE__:int <span class="arrow">&#45;&gt;</span></span>
+  <span>data:
+    <span><span>(string
+     * <span>[ <span>`Int of int</span>
+       <span><span>| `String</span> of string</span>
+       <span><span>| `Bool</span> of bool</span>
+       <span><span>| `Float</span> of float</span>
+       <span>| `None</span> ]</span>)</span>
+      list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span class="xref-unresolved">Trace_core__.Types.explicit_span</span></span></code></div><div class="spec-doc"><p>Enter an explicit span. Surrounding scope, if any, is provided by <code>parent</code>, and this function can store as much metadata as it wants in the hmap in the <a href="../../index.html#type-explicit_span"><code>explicit_span</code></a>'s <code>meta</code> field.</p><p>This means that the collector doesn't need to implement contextual storage mapping <a href="../../index.html#type-explicit_span.span"><code>span</code></a> to scopes, metadata, etc. on its side; everything can be transmitted in the <a href="../../index.html#type-explicit_span"><code>explicit_span</code></a>.</p><ul class="at-tags"><li class="since"><span class="at-tag">since</span> 0.3</li></ul></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-exit_manual_span"><a href="#val-exit_manual_span" class="anchor"></a><code><span><span class="keyword">val</span> exit_manual_span : <span><span class="xref-unresolved">Trace_core__.Types.explicit_span</span> <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Exit an explicit span.</p><ul class="at-tags"><li class="since"><span class="at-tag">since</span> 0.3</li></ul></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_data_to_span"><a href="#val-add_data_to_span" class="anchor"></a><code><span><span class="keyword">val</span> add_data_to_span : 
   <span>int64 <span class="arrow">&#45;&gt;</span></span>
   <span><span><span>(string
    * <span>[ <span>`Int of int</span>
@@ -35,7 +50,16 @@
      <span><span>| `Float</span> of float</span>
      <span>| `None</span> ]</span>)</span>
     list</span> <span class="arrow">&#45;&gt;</span></span>
-  unit</span></code></div><div class="spec-doc"><ul class="at-tags"><li class="since"><span class="at-tag">since</span> Adds data to the current span.</li></ul><p>0.4</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-message"><a href="#val-message" class="anchor"></a><code><span><span class="keyword">val</span> message : 
+  unit</span></code></div><div class="spec-doc"><ul class="at-tags"><li class="since"><span class="at-tag">since</span> Adds data to the current span.</li></ul><p>0.4</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_data_to_manual_span"><a href="#val-add_data_to_manual_span" class="anchor"></a><code><span><span class="keyword">val</span> add_data_to_manual_span : 
+  <span><span class="xref-unresolved">Trace_core__.Types.explicit_span</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string
+   * <span>[ <span>`Int of int</span>
+     <span><span>| `String</span> of string</span>
+     <span><span>| `Bool</span> of bool</span>
+     <span><span>| `Float</span> of float</span>
+     <span>| `None</span> ]</span>)</span>
+    list</span> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div><div class="spec-doc"><p>Adds data to the given span.</p><ul class="at-tags"><li class="since"><span class="at-tag">since</span> 0.4</li></ul></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-message"><a href="#val-message" class="anchor"></a><code><span><span class="keyword">val</span> message : 
   <span>?span:int64 <span class="arrow">&#45;&gt;</span></span>
   <span>data:
     <span><span>(string

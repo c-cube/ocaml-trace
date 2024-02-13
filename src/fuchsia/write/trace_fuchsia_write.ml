@@ -41,6 +41,20 @@ module Str_ref = struct
       (1 lsl 15) lor size
 end
 
+open struct
+  (** maximum length as specified in the
+        {{: https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format} spec} *)
+  let max_str_len = 32000
+end
+
+(** [truncate_string s] truncates [s] to the maximum length allowed for
+    strings. If [s] is already short enough, no allocation is done. *)
+let truncate_string s : string =
+  if String.length s <= max_str_len then
+    s
+  else
+    String.sub s 0 max_str_len
+
 module Thread_ref = struct
   type t =
     | Ref of int
@@ -117,8 +131,9 @@ end
 module Argument = struct
   type 'a t = string * ([< user_data | `Kid of int ] as 'a)
 
-  let check_valid _ = ()
-  (* TODO: check string length *)
+  let check_valid_ : _ t -> unit = function
+    | _, `String s -> assert (String.length s < max_str_len)
+    | _ -> ()
 
   let[@inline] is_i32_ (i : int) : bool = Int32.(to_int (of_int i) = i)
 
@@ -204,7 +219,7 @@ module Arguments = struct
     let len = len self in
     if len > 15 then
       invalid_arg (spf "fuchsia: can have at most 15 args, got %d" len);
-    List.iter Argument.check_valid self;
+    List.iter Argument.check_valid_ self;
     ()
 
   let[@inline] size_word (self : _ t) =

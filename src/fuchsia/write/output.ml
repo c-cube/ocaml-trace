@@ -29,12 +29,21 @@ open struct
     flush_ self;
     let buf = self.buf in
 
-    if Buf.available buf < available then
-      failwith "fuchsia: buffer is too small";
+    if Buf.available buf < available then (
+      let msg =
+        Printf.sprintf
+          "fuchsia: buffer is too small (available: %d bytes, needed: %d bytes)"
+          (Buf.available buf) available
+      in
+      failwith msg
+    );
     buf
 end
 
 let[@inline] flush (self : t) : unit = if Buf.size self.buf > 0 then flush_ self
+
+(** Maximum size available, in words, for a single message *)
+let[@inline] max_size_word (self : t) : int = self.buf_pool.buf_size lsr 3
 
 (** Obtain a buffer with at least [available] bytes *)
 let[@inline] get_buf (self : t) ~(available_word : int) : Buf.t =

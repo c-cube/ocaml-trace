@@ -29,27 +29,42 @@ module I64 = struct
   let ( asr ) = shift_right
 end
 
+open struct
+  (** maximum length as specified in the
+        {{: https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format} spec} *)
+  let max_str_len = 32000
+
+  (** Length of string, in words *)
+  let[@inline] str_len_word (s : string) =
+    let len = String.length s in
+    assert (len <= max_str_len);
+    round_to_word len lsr 3
+
+  let str_len_word_maybe_too_big s =
+    let len = min max_str_len (String.length s) in
+    round_to_word len lsr 3
+end
+
 module Str_ref = struct
   type t = int
   (** 16 bits *)
 
+  let[@inline never] inline_fail_ () =
+    invalid_arg
+      (Printf.sprintf "fuchsia: max length of strings is %d" max_str_len)
+
   let inline (size : int) : t =
-    if size > 32_000 then invalid_arg "fuchsia: max length of strings is 20_000";
-    if size = 0 then
+    if size > max_str_len then
+      inline_fail_ ()
+    else if size = 0 then
       0
     else
       (1 lsl 15) lor size
 end
 
-open struct
-  (** maximum length as specified in the
-        {{: https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format} spec} *)
-  let max_str_len = 32000
-end
-
 (** [truncate_string s] truncates [s] to the maximum length allowed for
     strings. If [s] is already short enough, no allocation is done. *)
-let truncate_string s : string =
+let[@inline] truncate_string s : string =
   if String.length s <= max_str_len then
     s
   else
@@ -108,9 +123,10 @@ module Metadata = struct
   end
 
   module Provider_info = struct
-    let size_word ~name () = 1 + (round_to_word (String.length name) lsr 3)
+    let size_word ~name () = 1 + str_len_word name
 
     let encode (out : Output.t) ~(id : int) ~name () : unit =
+      let name = truncate_string name in
       let size = size_word ~name () in
       let buf = Output.get_buf out ~available_word:size in
       let hd =
@@ -118,7 +134,7 @@ module Metadata = struct
           (of_int size lsl 4)
           lor (1L lsl 16)
           lor (of_int id lsl 20)
-          lor (of_int (Str_ref.inline (String.length name)) lsl 52))
+          lor (of_int (Str_ref.inline (str_len_word name)) lsl 52))
       in
       Buf.add_i64 buf hd;
       Buf.add_string buf name
@@ -140,15 +156,12 @@ module Argument = struct
   let size_word (self : _ t) =
     let name, data = self in
     match data with
-    | `None | `Bool _ -> 1 + (round_to_word (String.length name) lsr 3)
-    | `Int i when is_i32_ i -> 1 + (round_to_word (String.length name) lsr 3)
-    | `Int _ -> (* int64 *) 2 + (round_to_word (String.length name) lsr 3)
-    | `Float _ -> 2 + (round_to_word (String.length name) lsr 3)
-    | `String s ->
-      1
-      + (round_to_word (String.length s) lsr 3)
-      + (round_to_word (String.length name) lsr 3)
-    | `Kid _ -> 2 + (round_to_word (String.length name) lsr 3)
+    | `None | `Bool _ -> 1 + str_len_word name
+    | `Int i when is_i32_ i -> 1 + str_len_word name
+    | `Int _ -> (* int64 *) 2 + str_len_word name
+    | `Float _ -> 2 + str_len_word name
+    | `String s -> 1 + str_len_word_maybe_too_big s + str_len_word name
+    | `Kid _ -> 2 + str_len_word name
 
   open struct
     external int_of_bool : bool -> int = "%identity"
@@ -156,6 +169,7 @@ module Argument = struct
 
   let encode (buf : Buf.t) (self : _ t) : unit =
     let name, data = self in
+    let name = truncate_string name in
     let size = size_word self in
 
     (* part of header with argument name + size *)
@@ -186,6 +200,7 @@ module Argument = struct
       Buf.add_string buf name;
       Buf.add_i64 buf (I64.bits_of_float f)
     | `String s ->
+      let s = truncate_string s in
       let hd =
         I64.(
           6L lor hd_arg_size
@@ -271,12 +286,12 @@ module Event = struct
   (** type=0 *)
   module Instant = struct
     let size_word ~name ~t_ref ~args () : int =
-      1 + Thread_ref.size_word t_ref + 1
-      (* timestamp *) + (round_to_word (String.length name) / 8)
+      1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args
 
     let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
         : unit =
+      let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
       let buf = Output.get_buf out ~available_word:size in
 
@@ -306,12 +321,12 @@ module Event = struct
   (** type=1 *)
   module Counter = struct
     let size_word ~name ~t_ref ~args () : int =
-      1 + Thread_ref.size_word t_ref + 1
-      (* timestamp *) + (round_to_word (String.length name) lsr 3)
+      1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args + 1 (* counter id *)
 
     let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
         : unit =
+      let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
       let buf = Output.get_buf out ~available_word:size in
 
@@ -343,12 +358,12 @@ module Event = struct
   (** type=2 *)
   module Duration_begin = struct
     let size_word ~name ~t_ref ~args () : int =
-      1 + Thread_ref.size_word t_ref + 1
-      (* timestamp *) + (round_to_word (String.length name) lsr 3)
+      1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args
 
     let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
         : unit =
+      let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
       let buf = Output.get_buf out ~available_word:size in
 
@@ -378,12 +393,12 @@ module Event = struct
   (** type=3 *)
   module Duration_end = struct
     let size_word ~name ~t_ref ~args () : int =
-      1 + Thread_ref.size_word t_ref + 1
-      (* timestamp *) + (round_to_word (String.length name) lsr 3)
+      1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args
 
     let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
         : unit =
+      let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
       let buf = Output.get_buf out ~available_word:size in
 
@@ -413,12 +428,12 @@ module Event = struct
   (** type=4 *)
   module Duration_complete = struct
     let size_word ~name ~t_ref ~args () : int =
-      1 + Thread_ref.size_word t_ref + 1
-      (* timestamp *) + (round_to_word (String.length name) lsr 3)
+      1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args + 1 (* end timestamp *)
 
     let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
         ~end_time_ns ~args () : unit =
+      let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
       let buf = Output.get_buf out ~available_word:size in
 
@@ -450,12 +465,12 @@ module Event = struct
   (** type=5 *)
   module Async_begin = struct
     let size_word ~name ~t_ref ~args () : int =
-      1 + Thread_ref.size_word t_ref + 1
-      (* timestamp *) + (round_to_word (String.length name) lsr 3)
+      1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args + 1 (* async id *)
 
     let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
         ~(async_id : int) ~args () : unit =
+      let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
       let buf = Output.get_buf out ~available_word:size in
 
@@ -486,12 +501,12 @@ module Event = struct
   (** type=7 *)
   module Async_end = struct
     let size_word ~name ~t_ref ~args () : int =
-      1 + Thread_ref.size_word t_ref + 1
-      (* timestamp *) + (round_to_word (String.length name) lsr 3)
+      1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args + 1 (* async id *)
 
     let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
         ~(async_id : int) ~args () : unit =
+      let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
       let buf = Output.get_buf out ~available_word:size in
 
@@ -523,9 +538,7 @@ end
 (** record type = 7 *)
 module Kernel_object = struct
   let size_word ~name ~args () : int =
-    1 + 1
-    + (round_to_word (String.length name) lsr 3)
-    + Arguments.size_word args
+    1 + 1 + str_len_word name + Arguments.size_word args
 
   (* see:
      https://cs.opensource.google/fuchsia/fuchsia/+/main:zircon/system/public/zircon/types.h;l=441?q=ZX_OBJ_TYPE&ss=fuchsia%2Ffuchsia
@@ -537,6 +550,7 @@ module Kernel_object = struct
   let ty_thread : ty = 2
 
   let encode (out : Output.t) ~name ~(ty : ty) ~(kid : int) ~args () : unit =
+    let name = truncate_string name in
     let size = size_word ~name ~args () in
     let buf = Output.get_buf out ~available_word:size in
 

@@ -51,37 +51,37 @@ end)
 type t = exn_pair M.t
 
 let empty = M.empty
-let[@inline] mem k t = M.mem (Key.id k) t
+let[@inline] mem k (self : t) = M.mem (Key.id k) self
 
-let find_exn (type a) (k : a Key.t) t : a =
+let find_exn (type a) (k : a Key.t) (self : t) : a =
   let module K = (val k) in
-  let (E_pair (_, e)) = M.find K.id t in
+  let (E_pair (_, e)) = M.find K.id self in
   match e with
   | K.Store v -> v
   | _ -> assert false
 
-let find k t = try Some (find_exn k t) with Not_found -> None
-
-let add_e_pair_ p t =
-  let (E_pair ((module K), _)) = p in
-  M.add K.id p t
+let find k (self : t) = try Some (find_exn k self) with Not_found -> None
 
 open struct
-  let add_pair_ p t =
+  let add_e_pair_ p t =
+    let (E_pair ((module K), _)) = p in
+    M.add K.id p t
+
+  let add_pair_ p (self : t) : t =
     let (B (((module K) as k), v)) = p in
     let p = E_pair (k, K.Store v) in
-    M.add K.id p t
+    M.add K.id p self
 end
 
-let add (type a) (k : a Key.t) v t =
+let add (type a) (k : a Key.t) v (self : t) : t =
   let module K = (val k) in
-  add_e_pair_ (E_pair (k, K.Store v)) t
+  add_e_pair_ (E_pair (k, K.Store v)) self
 
-let remove (type a) (k : a Key.t) t =
+let remove (type a) (k : a Key.t) (self : t) : t =
   let module K = (val k) in
-  M.remove K.id t
+  M.remove K.id self
 
-let cardinal t = M.cardinal t
+let cardinal : t -> int = M.cardinal
 let length = cardinal
 let iter f (self : t) = M.iter (fun _ p -> f (pair_of_e_pair p)) self
 

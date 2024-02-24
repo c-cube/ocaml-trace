@@ -23,20 +23,24 @@ module Key = struct
     end in
     (module K : KEY_IMPL with type t = k)
 
-  let id (type k) (module K : KEY_IMPL with type t = k) = K.id
+  let[@inline] id (type k) (module K : KEY_IMPL with type t = k) = K.id
 
   let equal : type a b. a t -> b t -> bool =
    fun (module K1) (module K2) -> K1.id = K2.id
 end
 
-type pair = Pair : 'a Key.t * 'a -> pair
-type exn_pair = E_pair : 'a Key.t * exn -> exn_pair
+type 'a key = 'a Key.t
+type binding = B : 'a Key.t * 'a -> binding
 
-let pair_of_e_pair (E_pair (k, e)) =
-  let module K = (val k) in
-  match e with
-  | K.Store v -> Pair (k, v)
-  | _ -> assert false
+open struct
+  type exn_pair = E_pair : 'a Key.t * exn -> exn_pair
+
+  let pair_of_e_pair (E_pair (k, e)) =
+    let module K = (val k) in
+    match e with
+    | K.Store v -> B (k, v)
+    | _ -> assert false
+end
 
 module M = Map.Make (struct
   type t = int
@@ -47,7 +51,7 @@ end)
 type t = exn_pair M.t
 
 let empty = M.empty
-let mem k t = M.mem (Key.id k) t
+let[@inline] mem k t = M.mem (Key.id k) t
 
 let find_exn (type a) (k : a Key.t) t : a =
   let module K = (val k) in
@@ -62,10 +66,12 @@ let add_e_pair_ p t =
   let (E_pair ((module K), _)) = p in
   M.add K.id p t
 
-let add_pair_ p t =
-  let (Pair (((module K) as k), v)) = p in
-  let p = E_pair (k, K.Store v) in
-  M.add K.id p t
+open struct
+  let add_pair_ p t =
+    let (B (((module K) as k), v)) = p in
+    let p = E_pair (k, K.Store v) in
+    M.add K.id p t
+end
 
 let add (type a) (k : a Key.t) v t =
   let module K = (val k) in

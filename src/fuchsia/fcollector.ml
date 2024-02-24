@@ -110,7 +110,7 @@ type async_span_info = {
   mutable data: (string * user_data) list;
 }
 
-let key_async_data : async_span_info Meta_map.Key.t = Meta_map.Key.create ()
+let key_async_data : async_span_info Meta_map.key = Meta_map.Key.create ()
 
 open struct
   let state_id_ = A.make 0

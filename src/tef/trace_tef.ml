@@ -92,12 +92,12 @@ type span_info = {
 }
 
 (** key used to carry a unique "id" for all spans in an async context *)
-let key_async_id : int Meta_map.Key.t = Meta_map.Key.create ()
+let key_async_id : int Meta_map.key = Meta_map.Key.create ()
 
-let key_async_data : (string * [ `Sync | `Async ] option) Meta_map.Key.t =
+let key_async_data : (string * [ `Sync | `Async ] option) Meta_map.key =
   Meta_map.Key.create ()
 
-let key_data : (string * user_data) list ref Meta_map.Key.t =
+let key_data : (string * user_data) list ref Meta_map.key =
   Meta_map.Key.create ()
 
 (** Writer: knows how to write entries to a file in TEF format *)

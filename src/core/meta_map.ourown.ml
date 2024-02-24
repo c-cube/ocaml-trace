@@ -50,7 +50,7 @@ end)
 
 type t = { m: exn_pair M.t } [@@unboxed]
 
-let empty = M.empty
+let empty : t = { m = M.empty }
 let[@inline] mem k (self : t) = M.mem (Key.id k) self.m
 
 let find_exn (type a) (k : a Key.t) (self : t) : a =

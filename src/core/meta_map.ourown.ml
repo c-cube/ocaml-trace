@@ -83,7 +83,9 @@ let remove (type a) (k : a Key.t) t =
 
 let cardinal t = M.cardinal t
 let length = cardinal
-let iter f t = M.iter (fun _ p -> f (pair_of_e_pair p)) t
-let to_list t = M.fold (fun _ p l -> pair_of_e_pair p :: l) t []
-let add_list t l = List.fold_right add_pair_ l t
-let of_list l = add_list empty l
+let iter f (self : t) = M.iter (fun _ p -> f (pair_of_e_pair p)) self
+
+let to_list (self : t) : binding list =
+  M.fold (fun _ p l -> pair_of_e_pair p :: l) self []
+
+let add_list (self : t) l = List.fold_right add_pair_ l self

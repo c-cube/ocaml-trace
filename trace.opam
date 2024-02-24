@@ -15,6 +15,7 @@ depends: [
   "odoc" {with-doc}
 ]
 depopts: [
+  "hmap"
   "mtime" {>= "2.0"}
 ]
 build: [

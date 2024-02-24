@@ -19,6 +19,7 @@
    (ocaml (>= 4.08))
    dune)
  (depopts
+   hmap
    (mtime (>= 2.0)))
  (tags
   (trace tracing observability profiling)))

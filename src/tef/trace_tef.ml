@@ -433,7 +433,9 @@ let collector ~out () : collector =
       let id = Meta_map.find_exn key_async_id es.meta in
       let name, flavor = Meta_map.find_exn key_async_data es.meta in
       let data =
-        try !(Meta_map.find_exn key_data es.meta) with Not_found -> []
+        match Meta_map.find key_data es.meta with
+        | None -> []
+        | Some r -> !r
       in
       let time_us = now_us () in
       let tid = get_tid_ () in
@@ -443,8 +445,9 @@ let collector ~out () : collector =
     let add_data_to_manual_span (es : explicit_span) data =
       if data <> [] then (
         let data_ref, add =
-          try Meta_map.find_exn key_data es.meta, false
-          with Not_found -> ref [], true
+          match Meta_map.find key_data es.meta with
+          | Some r -> r, false
+          | None -> ref [], true
         in
         let new_data = List.rev_append data !data_ref in
         data_ref := new_data;

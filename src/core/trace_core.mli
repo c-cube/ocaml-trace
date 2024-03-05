@@ -22,9 +22,14 @@ val enabled : unit -> bool
     This is fast, so that the traced program can check it before creating
     any span or message. *)
 
+val get_default_level : unit -> Level.t
+(** Current default level for spans.
+    @since NEXT_RELEASE *)
+
 val set_default_level : Level.t -> unit
 (** Set level used for spans that do not specify it. The default
-    default value is [Level.Trace] *)
+    default value is [Level.Trace].
+    @since NEXT_RELEASE *)
 
 val with_span :
   ?level:Level.t ->

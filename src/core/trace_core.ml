@@ -24,6 +24,7 @@ let[@inline] enabled () =
   | None -> false
   | Some _ -> true
 
+let[@inline] get_default_level () = A.get default_level_
 let[@inline] set_default_level l = A.set default_level_ l
 let[@inline] set_current_level l = A.set current_level_ l
 let[@inline] get_current_level () = A.get current_level_

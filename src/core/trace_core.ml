@@ -83,19 +83,21 @@ let[@inline] enter_manual_toplevel_span ?flavor ?level ?__FUNCTION__ ~__FILE__
   | _ -> Collector.dummy_explicit_span
 
 let[@inline] exit_manual_span espan : unit =
-  match A.get collector with
-  | None -> ()
-  | Some (module C) -> C.exit_manual_span espan
+  if espan != Collector.dummy_explicit_span then (
+    match A.get collector with
+    | None -> ()
+    | Some (module C) -> C.exit_manual_span espan
+  )
 
 let[@inline] add_data_to_span sp data : unit =
-  if data <> [] then (
+  if sp != Collector.dummy_span && data <> [] then (
     match A.get collector with
     | None -> ()
     | Some (module C) -> C.add_data_to_span sp data
   )
 
 let[@inline] add_data_to_manual_span esp data : unit =
-  if data <> [] then (
+  if esp != Collector.dummy_explicit_span && data <> [] then (
     match A.get collector with
     | None -> ()
     | Some (module C) -> C.add_data_to_manual_span esp data

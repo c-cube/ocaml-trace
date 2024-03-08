@@ -6,12 +6,12 @@
     down the application or overwhelm the tracing system; yet
     they might be useful in debug situations.
 
-    @since NEXT_RELEASE *)
+    @since 0.7 *)
 
 (** Level of tracing. These levels are in increasing order, i.e if
     level [Debug1] is enabled, everything below it (Error, Warning, Info, etc.)
     are also enabled.
-    @since NEXT_RELEASE *)
+    @since 0.7 *)
 type t =
   | Error  (** Only errors *)
   | Warning  (** Warnings *)
@@ -21,7 +21,7 @@ type t =
   | Debug3  (** Maximum verbosity debugging level *)
   | Trace  (** Enable everything (default level) *)
 
-(** @since NEXT_RELEASE *)
+(** @since 0.7 *)
 let to_string : t -> string = function
   | Error -> "error"
   | Warning -> "warning"

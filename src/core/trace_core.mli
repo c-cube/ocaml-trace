@@ -24,12 +24,12 @@ val enabled : unit -> bool
 
 val get_default_level : unit -> Level.t
 (** Current default level for spans.
-    @since NEXT_RELEASE *)
+    @since 0.7 *)
 
 val set_default_level : Level.t -> unit
 (** Set level used for spans that do not specify it. The default
     default value is [Level.Trace].
-    @since NEXT_RELEASE *)
+    @since 0.7 *)
 
 val with_span :
   ?level:Level.t ->
@@ -47,7 +47,7 @@ val with_span :
 
     This is the recommended way to instrument most code.
 
-    @param level optional level for this span. since NEXT_RELEASE.
+    @param level optional level for this span. since 0.7.
       Default is set via {!set_default_level}.
 
     {b NOTE} an important restriction is that this is only supposed to
@@ -67,7 +67,7 @@ val enter_span :
   span
 (** Enter a span manually.
 
-    @param level optional level for this span. since NEXT_RELEASE.
+    @param level optional level for this span. since 0.7.
       Default is set via {!set_default_level}. *)
 
 val exit_span : span -> unit
@@ -98,7 +98,7 @@ val enter_manual_sub_span :
       start and stop on one thread, and are nested purely by their timestamp;
       and [`Async] spans can overlap, migrate between threads, etc. (as happens in
       Lwt, Eio, Async, etc.) which impacts how the collector might represent them.
-    @param level optional level for this span. since NEXT_RELEASE.
+    @param level optional level for this span. since 0.7.
       Default is set via {!set_default_level}.
     @since 0.3 *)
 
@@ -115,7 +115,7 @@ val enter_manual_toplevel_span :
     [explicit_span] around until it's exited with {!exit_manual_span}.
     The span can be used as a parent in {!enter_manual_sub_span}.
     @param flavor see {!enter_manual_sub_span} for more details.
-    @param level optional level for this span. since NEXT_RELEASE.
+    @param level optional level for this span. since 0.7.
       Default is set via {!set_default_level}.
     @since 0.3 *)
 
@@ -140,7 +140,7 @@ val message :
   unit
 (** [message msg] logs a message [msg] (if a collector is installed).
     Additional metadata can be provided.
-    @param level optional level for this span. since NEXT_RELEASE.
+    @param level optional level for this span. since 0.7.
       Default is set via {!set_default_level}.
     @param span the surrounding span, if any. This might be ignored by the collector. *)
 
@@ -153,7 +153,7 @@ val messagef :
 (** [messagef (fun k->k"hello %s %d!" "world" 42)] is like
     [message "hello world 42!"] but only computes the string formatting
     if a collector is installed.
-    @param level optional level for this span. since NEXT_RELEASE.
+    @param level optional level for this span. since 0.7.
       Default is set via {!set_default_level}. *)
 
 val set_thread_name : string -> unit
@@ -174,7 +174,7 @@ val counter_int :
   unit
 (** Emit a counter of type [int]. Counters represent the evolution of some quantity
     over time.
-    @param level optional level for this span. since NEXT_RELEASE.
+    @param level optional level for this span. since 0.7.
       Default is set via {!set_default_level}.
     @param data metadata for this metric (since 0.4) *)
 
@@ -185,7 +185,7 @@ val counter_float :
   float ->
   unit
 (** Emit a counter of type [float]. See {!counter_int} for more details.
-    @param level optional level for this span. since NEXT_RELEASE.
+    @param level optional level for this span. since 0.7.
       Default is set via {!set_default_level}.
     @param data metadata for this metric (since 0.4) *)
 
@@ -204,12 +204,12 @@ val setup_collector : collector -> unit
 val get_current_level : unit -> Level.t
 (** Get current level. This is only meaningful if
     a collector was set up with {!setup_collector}.
-    @since NEXT_RELEASE *)
+    @since 0.7 *)
 
 val set_current_level : Level.t -> unit
 (** Set the current level of tracing. This only has a visible
     effect if a collector was installed with {!setup_collector}.
-    @since NEXT_RELEASE *)
+    @since 0.7 *)
 
 val shutdown : unit -> unit
 (** [shutdown ()] shutdowns the current collector, if one was installed,

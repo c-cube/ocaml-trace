@@ -1,4 +1,11 @@
 
+# 0.7
+
+- feat: add levels to `Trace_core`. Levels are similar to `logs` levels, to help control verbosity.
+- add hmap as a depopt (#28)
+
+- fix: truncate large strings in fuchsia
+
 # 0.6
 
 - add `ppx_trace` for easier instrumentation.

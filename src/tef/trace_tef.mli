@@ -44,6 +44,14 @@ module Internal_ : sig
   (** use fake, deterministic timestamps, TID, PID *)
 
   val on_tracing_error : (string -> unit) ref
+
+  val collector_jsonl :
+    finally:(unit -> unit) ->
+    out:[ `File_append of string ] ->
+    unit ->
+    Trace_core.collector
+
+  module Event = Event
 end
 
 (**/**)

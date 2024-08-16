@@ -55,7 +55,7 @@
    (ocaml (>= 4.08))
    (trace (= :version))
    (mtime (>= 2.0))
-   thread-local-storage
+   (thread-local-storage (>= 0.2))
    base-bigarray
    base-unix
    dune)

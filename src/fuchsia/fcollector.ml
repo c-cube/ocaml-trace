@@ -140,26 +140,37 @@ type state = {
         at the end. This is a tid-sharded array of maps. *)
 }
 
-let key_thread_local_st : per_thread_state TLS.key =
-  TLS.new_key (fun () ->
-      let tid = Thread.id @@ Thread.self () in
-      {
-        tid;
-        state_id = A.get state_id_;
-        thread_ref = FWrite.Thread_ref.inline ~pid ~tid;
-        local_span_id_gen = A.make 0;
-        out = None;
-        spans = Span_info_stack.create ();
-      })
+let key_thread_local_st : per_thread_state TLS.t = TLS.create ()
+
+let[@inline never] mk_thread_local_st () =
+  let tid = Thread.id @@ Thread.self () in
+  let st =
+    {
+      tid;
+      state_id = A.get state_id_;
+      thread_ref = FWrite.Thread_ref.inline ~pid ~tid;
+      local_span_id_gen = A.make 0;
+      out = None;
+      spans = Span_info_stack.create ();
+    }
+  in
+  TLS.set key_thread_local_st st;
+  st
+
+let[@inline] get_thread_local_st () =
+  match TLS.get_opt key_thread_local_st with
+  | Some k -> k
+  | None -> mk_thread_local_st ()
 
 let out_of_st (st : state) : Output.t =
   FWrite.Output.create () ~buf_pool:st.buf_pool ~send_buf:(fun buf ->
       try B_queue.push st.events (E_write_buf buf) with B_queue.Closed -> ())
 
-module C (St : sig
-  val st : state
-end)
-() =
+module C
+    (St : sig
+      val st : state
+    end)
+    () =
 struct
   open St
 
@@ -208,7 +219,7 @@ struct
 
   (** Obtain the output for the current thread *)
   let[@inline] get_thread_output () : Output.t * per_thread_state =
-    let tls = TLS.get key_thread_local_st in
+    let tls = get_thread_local_st () in
     if tls.state_id != state_id || tls.out == None then
       update_or_init_local_state tls;
     let out =
@@ -240,7 +251,7 @@ struct
     )
 
   let enter_span ~__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ ~data name : span =
-    let tls = TLS.get key_thread_local_st in
+    let tls = get_thread_local_st () in
     let span = Int64.of_int (A.fetch_and_add tls.local_span_id_gen 1) in
     let time_ns = Time.now_ns () in
     Span_info_stack.push tls.spans span ~name ~data ~start_time_ns:time_ns;
@@ -282,7 +293,7 @@ struct
       reraise exn
 
   let add_data_to_span span data =
-    let tls = TLS.get key_thread_local_st in
+    let tls = get_thread_local_st () in
     match Span_info_stack.find_ tls.spans span with
     | None -> !on_tracing_error (spf "unknown span %Ld" span)
     | Some idx -> Span_info_stack.add_data tls.spans idx data

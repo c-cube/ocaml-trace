@@ -1,0 +1,6 @@
+
+(library
+  (name trace_tef_multiproc)
+  (public_name trace-tef.multiproc)
+  (synopsis "Tracing using TEF/Catapult format for multiple processes")
+  (libraries trace.core trace-tef unix threads))

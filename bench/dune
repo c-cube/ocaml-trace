@@ -11,6 +11,12 @@
   (libraries trace.core trace-fuchsia))
 
 (executable
+  (name trace_multiproc)
+  (modules trace_multiproc)
+  (preprocess (pps ppx_trace))
+  (libraries trace.core trace-tef.multiproc))
+
+(executable
   (name bench_fuchsia_write)
   (modules bench_fuchsia_write)
   (libraries benchmark trace-fuchsia.write))

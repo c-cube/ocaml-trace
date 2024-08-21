@@ -15,15 +15,13 @@ module Mock_ = struct
     float_of_int x
 end
 
-let counter = Mtime_clock.counter ()
-
 (** Now, in microseconds *)
 let[@inline] now_us () : float =
   if !Mock_.enabled then
     Mock_.now_us ()
   else (
-    let t = Mtime_clock.count counter in
-    Mtime.Span.to_float_ns t /. 1e3
+    let t = Mtime_clock.now () in
+    Int64.to_float (Mtime.to_uint64_ns t) /. 1e3
   )
 
 let on_tracing_error = ref (fun s -> Printf.eprintf "trace-tef error: %s\n%!" s)

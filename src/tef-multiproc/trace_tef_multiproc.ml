@@ -27,13 +27,20 @@ let aggregate_into ~dir ~final_file () : unit =
   let buf = Bytes.create 4096 in
 
   let emit_chunk buf i len =
-    if !afternewline && !first then
-      first := false
-    else if !afternewline then (
-      output_string oc ",\n";
-      afternewline := false
-    );
-    output oc buf i len
+    if len = 0 then
+      ()
+    else if Bytes.get buf i = '{' && Bytes.get buf (i + len - 1) <> '}' then
+      (* incomplete chunk *)
+      ()
+    else (
+      if !afternewline && !first then
+        first := false
+      else if !afternewline then (
+        output_string oc ",\n";
+        afternewline := false
+      );
+      output oc buf i len
+    )
   in
 
   (* dump content of jsonl file into [oc]. Insert "," before every object

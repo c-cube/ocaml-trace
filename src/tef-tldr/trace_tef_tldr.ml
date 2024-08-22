@@ -64,6 +64,13 @@ let find_role ~out () : role =
     Some { trace_id; emit_tef_at_exit = None; socket = get_unix_socket () }
   | None ->
     let write_to_file path =
+      (* normalize path so the daemon knows what we're talking about *)
+      let path =
+        if Filename.is_relative path then
+          Filename.concat (Unix.getcwd ()) path
+        else
+          path
+      in
       let trace_id = create_trace_id () in
       Unix.putenv env_var_trace_id trace_id;
       { trace_id; emit_tef_at_exit = Some path; socket = get_unix_socket () }

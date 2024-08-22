@@ -43,7 +43,7 @@ let main ~n ~j ~child () : unit =
       procs
 
 let () =
-  let@ () = Trace_tef_tldr.with_setup () in
+  let@ () = Trace_tef_tldrs.with_setup () in
 
   let n = ref 10_000 in
   let j = ref 4 in

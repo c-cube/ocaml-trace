@@ -15,7 +15,7 @@ let get_unix_socket () =
   match Sys.getenv_opt env_var_unix_socket with
   | Some s -> s
   | None ->
-    let s = "/tmp/tldr.socket" in
+    let s = "/tmp/tldrs.socket" in
     (* children must agree on the socket file *)
     Unix.putenv env_var_unix_socket s;
     s
@@ -90,7 +90,7 @@ let collector_ (client : as_client) : collector =
   (try Unix.connect sock (Unix.ADDR_UNIX client.socket)
    with exn ->
      failwith
-     @@ spf "Could not open socket to `tldr` demon at %S: %s" client.socket
+     @@ spf "Could not open socket to `tldrs` demon at %S: %s" client.socket
           (Printexc.to_string exn));
   let out = Unix.out_channel_of_descr sock in
 

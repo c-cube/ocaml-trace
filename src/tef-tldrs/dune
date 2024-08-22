@@ -1,0 +1,6 @@
+
+(library
+  (name trace_tef_tldrs)
+  (public_name trace-tef.tldrs)
+  (synopsis "Multiprocess tracing using the `tldrs` daemon")
+  (libraries trace.core trace.private.util trace-tef unix threads))

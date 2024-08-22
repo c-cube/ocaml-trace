@@ -11,10 +11,10 @@
   (libraries trace.core trace-fuchsia))
 
 (executable
-  (name trace_tldr)
-  (modules trace_tldr)
+  (name trace_tldrs)
+  (modules trace_tldrs)
   (preprocess (pps ppx_trace))
-  (libraries trace.core trace-tef.tldr))
+  (libraries trace.core trace-tef.tldrs))
 
 (executable
   (name bench_fuchsia_write)

@@ -70,6 +70,7 @@ module Writer = struct
       | `File path -> open_out path, true
       | `File_append path ->
         open_out_gen [ Open_creat; Open_wronly; Open_append ] 0o644 path, true
+      | `Output oc -> oc, false
     in
     let pid =
       if !Mock_.enabled then

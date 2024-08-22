@@ -47,7 +47,7 @@ module Internal_ : sig
 
   val collector_jsonl :
     finally:(unit -> unit) ->
-    out:[ `File_append of string ] ->
+    out:[ `File_append of string | `Output of out_channel ] ->
     unit ->
     Trace_core.collector
 

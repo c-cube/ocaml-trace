@@ -408,6 +408,9 @@ module Private_ = struct
 
   let on_tracing_error = on_tracing_error
 
+  let subscriber_jsonl ~finally ~out () =
+    subscriber_ ~finally ~mode:`Jsonl ~out ()
+
   let collector_jsonl ~finally ~out () : collector =
     collector_ ~finally ~mode:`Jsonl ~out ()
 

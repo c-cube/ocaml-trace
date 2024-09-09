@@ -48,6 +48,12 @@ module Private_ : sig
 
   val on_tracing_error : (string -> unit) ref
 
+  val subscriber_jsonl :
+    finally:(unit -> unit) ->
+    out:[ `File_append of string | `Output of out_channel ] ->
+    unit ->
+    Trace_subscriber.t
+
   val collector_jsonl :
     finally:(unit -> unit) ->
     out:[ `File_append of string | `Output of out_channel ] ->

@@ -84,7 +84,7 @@ let find_role ~out () : role =
       | Some path -> Some (write_to_file path)
       | None -> None))
 
-let collector_ (client : as_client) : collector =
+let subscriber_ (client : as_client) : Trace_subscriber.t =
   (* connect to unix socket *)
   let sock = Unix.socket Unix.PF_UNIX Unix.SOCK_STREAM 0 in
   (try Unix.connect sock (Unix.ADDR_UNIX client.socket)
@@ -105,24 +105,31 @@ let collector_ (client : as_client) : collector =
   in
 
   fpf out "OPEN %s\n%!" client.trace_id;
-  Trace_tef.Internal_.collector_jsonl ~finally ~out:(`Output out) ()
+  Trace_tef.Private_.subscriber_jsonl ~finally ~out:(`Output out) ()
+
+let subscriber ~out () =
+  let role = find_role ~out () in
+  match role with
+  | None -> assert false
+  | Some c -> subscriber_ c
 
 let collector ~out () : collector =
   let role = find_role ~out () in
   match role with
   | None -> assert false
-  | Some c -> collector_ c
+  | Some c -> subscriber_ c |> Trace_subscriber.collector
 
 let setup ?(out = `Env) () =
   let role = find_role ~out () in
   match role with
   | None -> ()
-  | Some c -> Trace_core.setup_collector @@ collector_ c
+  | Some c ->
+    Trace_core.setup_collector @@ Trace_subscriber.collector @@ subscriber_ c
 
 let with_setup ?out () f =
   setup ?out ();
   Fun.protect ~finally:Trace_core.shutdown f
 
-module Internal_ = struct
-  include Trace_tef.Internal_
+module Private_ = struct
+  include Trace_tef.Private_
 end

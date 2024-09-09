@@ -1,6 +1,12 @@
+(** Emit traces by talking to the {{: https://github.com/imandra-ai/tldrs} tldrs} daemon *)
+
 val collector : out:[ `File of string ] -> unit -> Trace_core.collector
 (** Make a collector that writes into the given output.
     See {!setup} for more details. *)
+
+val subscriber : out:[ `File of string ] -> unit -> Trace_subscriber.t
+(** Make a subscriber that writes into the given output.
+    @since NEXT_RELEASE *)
 
 type output = [ `File of string ]
 (** Output for tracing.
@@ -30,7 +36,7 @@ val with_setup : ?out:[ output | `Env ] -> unit -> (unit -> 'a) -> 'a
 
 (**/**)
 
-module Internal_ : sig
+module Private_ : sig
   val mock_all_ : unit -> unit
   (** use fake, deterministic timestamps, TID, PID *)
 

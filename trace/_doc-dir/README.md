@@ -147,6 +147,9 @@ Concrete tracing or observability formats such as:
 - Catapult
   * [x] light bindings here with `trace-tef`.
         (Can be opened in https://ui.perfetto.dev)
+  * [x] backend for [tldrs](https://github.com/imandra-ai/tldrs), a
+        small rust daemon that aggregates TEF traces from multiple processes/clients
+        into a single `.jsonl` file
   * [ ] richer bindings with [ocaml-catapult](https://github.com/imandra-ai/catapult),
         with multi-process backends, etc.
 - [x] Tracy (see [ocaml-tracy](https://github.com/imandra-ai/ocaml-tracy), more specifically `tracy-client.trace`)

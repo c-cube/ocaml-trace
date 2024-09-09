@@ -25,9 +25,9 @@ let run () =
           Trace.enter_manual_sub_span ~parent:pseudo_async_sp
             ~flavor:
               (if _i mod 3 = 0 then
-                `Sync
-              else
-                `Async)
+                 `Sync
+               else
+                 `Async)
             ~__FILE__ ~__LINE__ "sub-sleep"
         in
 
@@ -43,5 +43,5 @@ let run () =
   done
 
 let () =
-  Trace_tef.Internal_.mock_all_ ();
+  Trace_tef.Private_.mock_all_ ();
   Trace_tef.with_setup ~out:`Stdout () @@ fun () -> run ()

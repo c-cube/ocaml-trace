@@ -14,7 +14,7 @@ let%trace rec fib2 x =
     fib2 (x - 1) + fib2 (x - 2)
 
 let () =
-  Trace_tef.Internal_.mock_all_ ();
+  Trace_tef.Private_.mock_all_ ();
   let@ () = Trace_tef.with_setup ~out:`Stdout () in
 
   Trace_core.set_process_name "main";

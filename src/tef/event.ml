@@ -1,4 +1,5 @@
 open Trace_core
+module Sub = Trace_subscriber
 
 (** An event, specialized for TEF *)
 type t =
@@ -7,7 +8,7 @@ type t =
       tid: int;
       msg: string;
       time_us: float;
-      data: (string * user_data) list;
+      data: (string * Sub.user_data) list;
     }
   | E_define_span of {
       tid: int;
@@ -15,7 +16,7 @@ type t =
       time_us: float;
       id: span;
       fun_name: string option;
-      data: (string * user_data) list;
+      data: (string * Sub.user_data) list;
     }
   | E_exit_span of {
       id: span;
@@ -23,23 +24,23 @@ type t =
     }
   | E_add_data of {
       id: span;
-      data: (string * user_data) list;
+      data: (string * Sub.user_data) list;
     }
   | E_enter_manual_span of {
       tid: int;
       name: string;
       time_us: float;
       id: int;
-      flavor: [ `Sync | `Async ] option;
+      flavor: Sub.flavor option;
       fun_name: string option;
-      data: (string * user_data) list;
+      data: (string * Sub.user_data) list;
     }
   | E_exit_manual_span of {
       tid: int;
       name: string;
       time_us: float;
-      flavor: [ `Sync | `Async ] option;
-      data: (string * user_data) list;
+      flavor: Sub.flavor option;
+      data: (string * Sub.user_data) list;
       id: int;
     }
   | E_counter of {

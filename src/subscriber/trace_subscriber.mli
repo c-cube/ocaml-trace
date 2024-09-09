@@ -11,6 +11,10 @@
 module Callbacks = Callbacks
 module Subscriber = Subscriber
 
+include module type of struct
+  include Types
+end
+
 type t = Subscriber.t
 
 val collector : t -> Trace_core.collector

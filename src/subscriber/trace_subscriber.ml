@@ -1,6 +1,7 @@
 open Trace_core
 module Callbacks = Callbacks
 module Subscriber = Subscriber
+include Types
 
 type t = Subscriber.t
 
@@ -27,7 +28,7 @@ open struct
 
   type manual_span_info = {
     name: string;
-    flavor: [ `Sync | `Async ] option;
+    flavor: flavor option;
     mutable data: (string * user_data) list;
   }
 
@@ -38,6 +39,26 @@ open struct
   (** key used to carry a unique "id" for all spans in an async context *)
   let key_async_trace_id : int Meta_map.key = Meta_map.Key.create ()
 end
+
+let[@inline] conv_flavor = function
+  | `Async -> Async
+  | `Sync -> Sync
+
+let[@inline] conv_flavor_opt = function
+  | None -> None
+  | Some f -> Some (conv_flavor f)
+
+let[@inline] conv_user_data = function
+  | `Int i -> U_int i
+  | `Bool b -> U_bool b
+  | `Float f -> U_float f
+  | `String s -> U_string s
+  | `None -> U_none
+
+let rec conv_data = function
+  | [] -> []
+  | [ (k, v) ] -> [ k, conv_user_data v ]
+  | (k, v) :: tl -> (k, conv_user_data v) :: conv_data tl
 
 (** A collector that calls the callbacks of subscriber *)
 let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
@@ -54,6 +75,7 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
       let span = Int64.of_int (new_span_ ()) in
       let tid = tid_ () in
       let time_ns = now_ns () in
+      let data = conv_data data in
       CB.on_enter_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~time_ns ~tid ~data
         ~name span;
       span
@@ -75,13 +97,18 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
         Printexc.raise_with_backtrace exn bt
 
     let add_data_to_span span data =
-      if data <> [] then CB.on_add_data st ~data span
+      if data <> [] then (
+        let data = conv_data data in
+        CB.on_add_data st ~data span
+      )
 
     let enter_manual_span ~(parent : explicit_span option) ~flavor ~__FUNCTION__
         ~__FILE__ ~__LINE__ ~data name : explicit_span =
       let span = Int64.of_int (new_span_ ()) in
       let tid = tid_ () in
       let time_ns = now_ns () in
+      let data = conv_data data in
+      let flavor = conv_flavor_opt flavor in
 
       (* get the common trace id, or make a new one *)
       let trace_id, parent =
@@ -117,6 +144,7 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
 
     let add_data_to_manual_span (es : explicit_span) data =
       if data <> [] then (
+        let data = conv_data data in
         match Meta_map.find key_manual_info es.meta with
         | None -> assert false
         | Some m -> m.data <- List.rev_append data m.data
@@ -125,11 +153,13 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
     let message ?span ~data msg : unit =
       let time_ns = now_ns () in
       let tid = tid_ () in
+      let data = conv_data data in
       CB.on_message st ~time_ns ~tid ~span ~data msg
 
     let counter_float ~data name f : unit =
       let time_ns = now_ns () in
       let tid = tid_ () in
+      let data = conv_data data in
       CB.on_counter st ~tid ~time_ns ~data ~name f
 
     let[@inline] counter_int ~data name i =

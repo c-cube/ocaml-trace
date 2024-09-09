@@ -29,7 +29,7 @@ type span_info = {
   tid: int;
   name: string;
   start_us: float;
-  mutable data: (string * user_data) list;
+  mutable data: (string * Sub.user_data) list;
 }
 
 (** Writer: knows how to write entries to a file in TEF format *)
@@ -110,12 +110,12 @@ module Writer = struct
     String.iter encode_char s;
     char buf '"'
 
-  let pp_user_data_ (out : Buffer.t) : [< user_data ] -> unit = function
-    | `None -> raw_string out "null"
-    | `Int i -> Printf.bprintf out "%d" i
-    | `Bool b -> Printf.bprintf out "%b" b
-    | `String s -> str_val out s
-    | `Float f -> Printf.bprintf out "%g" f
+  let pp_user_data_ (out : Buffer.t) : Sub.user_data -> unit = function
+    | U_none -> raw_string out "null"
+    | U_int i -> Printf.bprintf out "%d" i
+    | U_bool b -> Printf.bprintf out "%b" b
+    | U_string s -> str_val out s
+    | U_float f -> Printf.bprintf out "%g" f
 
   (* emit args, if not empty. [ppv] is used to print values. *)
   let emit_args_o_ ppv (out : Buffer.t) args : unit =
@@ -142,26 +142,28 @@ module Writer = struct
       args;
     Buffer.output_buffer self.oc self.buf
 
-  let emit_manual_begin ~tid ~name ~id ~ts ~args ~flavor (self : t) : unit =
+  let emit_manual_begin ~tid ~name ~id ~ts ~args ~(flavor : Sub.flavor option)
+      (self : t) : unit =
     emit_sep_and_start_ self;
     Printf.bprintf self.buf
       {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
       self.pid id tid ts str_val name
       (match flavor with
-      | None | Some `Async -> 'b'
-      | Some `Sync -> 'B')
+      | None | Some Async -> 'b'
+      | Some Sync -> 'B')
       (emit_args_o_ pp_user_data_)
       args;
     Buffer.output_buffer self.oc self.buf
 
-  let emit_manual_end ~tid ~name ~id ~ts ~flavor ~args (self : t) : unit =
+  let emit_manual_end ~tid ~name ~id ~ts ~(flavor : Sub.flavor option) ~args
+      (self : t) : unit =
     emit_sep_and_start_ self;
     Printf.bprintf self.buf
       {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
       self.pid id tid ts str_val name
       (match flavor with
-      | None | Some `Async -> 'e'
-      | Some `Sync -> 'E')
+      | None | Some Async -> 'e'
+      | Some Sync -> 'E')
       (emit_args_o_ pp_user_data_)
       args;
     Buffer.output_buffer self.oc self.buf
@@ -181,7 +183,7 @@ module Writer = struct
       {json|{"pid":%d,"tid": %d,"name":"thread_name","ph":"M"%a}|json} self.pid
       tid
       (emit_args_o_ pp_user_data_)
-      [ "name", `String name ];
+      [ "name", U_string name ];
     Buffer.output_buffer self.oc self.buf
 
   let emit_name_process ~name (self : t) : unit =
@@ -189,7 +191,7 @@ module Writer = struct
     Printf.bprintf self.buf
       {json|{"pid":%d,"name":"process_name","ph":"M"%a}|json} self.pid
       (emit_args_o_ pp_user_data_)
-      [ "name", `String name ];
+      [ "name", U_string name ];
     Buffer.output_buffer self.oc self.buf
 
   let emit_counter ~name ~tid ~ts (self : t) f : unit =
@@ -198,7 +200,7 @@ module Writer = struct
       {json|{"pid":%d,"tid":%d,"ts":%.2f,"name":"c","ph":"C"%a}|json} self.pid
       tid ts
       (emit_args_o_ pp_user_data_)
-      [ name, `Float f ];
+      [ name, U_float f ];
     Buffer.output_buffer self.oc self.buf
 end
 
@@ -215,7 +217,7 @@ let bg_thread ~mode ~out (events : Event.t B_queue.t) : unit =
   let add_fun_name_ fun_name data : _ list =
     match fun_name with
     | None -> data
-    | Some f -> ("function", `String f) :: data
+    | Some f -> ("function", Sub.U_string f) :: data
   in
 
   (* how to deal with an event *)

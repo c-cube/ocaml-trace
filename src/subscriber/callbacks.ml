@@ -1,4 +1,5 @@
 open Trace_core
+open Types
 
 module type S = sig
   type st
@@ -64,7 +65,7 @@ module type S = sig
     parent:span option ->
     data:(string * user_data) list ->
     name:string ->
-    flavor:[ `Sync | `Async ] option ->
+    flavor:flavor option ->
     trace_id:int ->
     span ->
     unit
@@ -76,7 +77,7 @@ module type S = sig
     tid:int ->
     name:string ->
     data:(string * user_data) list ->
-    flavor:[ `Sync | `Async ] option ->
+    flavor:flavor option ->
     trace_id:int ->
     span ->
     unit

@@ -32,17 +32,17 @@ jobs:
           dune-cache: true
           allow-prerelease-opam: true
 
-      - run: opam install -t trace trace-tef trace-fuchsia --deps-only
+      - run: opam install -t trace trace-subscriber trace-tef trace-fuchsia --deps-only
       - run: opam install ppx_trace --deps-only # no tests
         if: matrix.ocaml-compiler != '4.08.x'
-      - run: opam exec -- dune build '@install' -p trace,trace-tef,trace-fuchsia
+      - run: opam exec -- dune build '@install' -p trace,trace-subscriber,trace-tef,trace-fuchsia
       - run: opam exec -- dune build '@install' -p ppx_trace
         if: matrix.ocaml-compiler != '4.08.x'
       - run: opam exec -- dune runtest -p trace
       - run: opam install trace
-      - run: opam exec -- dune runtest -p trace-tef,trace-fuchsia
+      - run: opam exec -- dune runtest -p trace-subscriber,trace-tef,trace-fuchsia
 
       # with depopts
       - run: opam install hmap
-      - run: opam exec -- dune build '@install' -p trace,trace-tef,trace-fuchsia
+      - run: opam exec -- dune build '@install' -p trace,trace-subscriber,trace-tef,trace-fuchsia
 

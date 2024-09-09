@@ -1,26 +1,34 @@
 (lang dune 2.9)
 
 (name trace)
+
 (generate_opam_files true)
+
 (version 0.7)
 
 (source
  (github c-cube/ocaml-trace))
+
 (authors "Simon Cruanes")
+
 (maintainers "Simon Cruanes")
+
 (license MIT)
 
 ;(documentation https://url/to/documentation)
 
 (package
  (name trace)
- (synopsis "A stub for tracing/observability, agnostic in how data is collected")
+ (synopsis
+  "A stub for tracing/observability, agnostic in how data is collected")
  (depends
-   (ocaml (>= 4.08))
-   dune)
+  (ocaml
+   (>= 4.08))
+  dune)
  (depopts
-   hmap
-   (mtime (>= 2.0)))
+  hmap
+  (mtime
+   (>= 2.0)))
  (tags
   (trace tracing observability profiling)))
 
@@ -28,37 +36,67 @@
  (name ppx_trace)
  (synopsis "A ppx-based preprocessor for trace")
  (depends
-   (ocaml (>= 4.12)) ; we use __FUNCTION__
-   (ppxlib (>= 0.28))
-   (trace (= :version))
-   (trace-tef (and (= :version) :with-test))
-   dune)
+  (ocaml
+   (>= 4.12)) ; we use __FUNCTION__
+  (ppxlib
+   (>= 0.28))
+  (trace
+   (= :version))
+  (trace-tef
+   (and
+    (= :version)
+    :with-test))
+  dune)
  (tags
   (trace ppx)))
 
 (package
- (name trace-tef)
- (synopsis "A simple backend for trace, emitting Catapult/TEF JSON into a file")
+ (name trace-subscriber)
+ (synopsis "Generic subscriber system for `trace`")
  (depends
-   (ocaml (>= 4.08))
-   (trace (= :version))
-   (mtime (>= 2.0))
-   base-unix
-   dune)
+  (ocaml
+   (>= 4.08))
+  (trace
+   (= :version))
+  (mtime
+   (>= 2.0)))
+ (tags
+  (trace subscriber)))
+
+(package
+ (name trace-tef)
+ (synopsis
+  "A simple backend for trace, emitting Catapult/TEF JSON into a file")
+ (depends
+  (ocaml
+   (>= 4.08))
+  (trace
+   (= :version))
+  (trace-subscriber
+   (= :version))
+  (mtime
+   (>= 2.0))
+  base-unix
+  dune)
  (tags
   (trace tracing catapult TEF chrome-format)))
 
 (package
  (name trace-fuchsia)
- (synopsis "A high-performance backend for trace, emitting a Fuchsia trace into a file")
+ (synopsis
+  "A high-performance backend for trace, emitting a Fuchsia trace into a file")
  (depends
-   (ocaml (>= 4.08))
-   (trace (= :version))
-   (mtime (>= 2.0))
-   (thread-local-storage (>= 0.2))
-   base-bigarray
-   base-unix
-   dune)
+  (ocaml
+   (>= 4.08))
+  (trace
+   (= :version))
+  (mtime
+   (>= 2.0))
+  (thread-local-storage
+   (>= 0.2))
+  base-bigarray
+  base-unix
+  dune)
  (tags
   (trace tracing fuchsia)))
 

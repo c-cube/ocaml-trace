@@ -1,0 +1,6 @@
+
+(library
+  (name trace_subscriber)
+  (public_name trace-subscriber)
+  (libraries (re_export trace.core) mtime mtime.clock.os threads))
+

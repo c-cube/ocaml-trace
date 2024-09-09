@@ -1,5 +1,6 @@
 open Trace_core
 
+(** An event, specialized for TEF *)
 type t =
   | E_tick
   | E_message of {

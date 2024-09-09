@@ -1,8 +1,3 @@
-val collector :
-  out:[ `File of string | `Stderr | `Stdout ] -> unit -> Trace_core.collector
-(** Make a collector that writes into the given output.
-    See {!setup} for more details. *)
-
 type output =
   [ `Stdout
   | `Stderr
@@ -15,6 +10,14 @@ type output =
     - [`File "foo"] will enable tracing and print events into file
         named "foo"
 *)
+
+val subscriber : out:[< output ] -> unit -> Trace_subscriber.t
+(** A subscriber emitting TEF traces into [out].
+    @since NEXT_RELEASE *)
+
+val collector : out:[< output ] -> unit -> Trace_core.collector
+(** Make a collector that writes into the given output.
+    See {!setup} for more details. *)
 
 val setup : ?out:[ output | `Env ] -> unit -> unit
 (** [setup ()] installs the collector depending on [out].
@@ -39,7 +42,7 @@ val with_setup : ?out:[ output | `Env ] -> unit -> (unit -> 'a) -> 'a
 
 (**/**)
 
-module Internal_ : sig
+module Private_ : sig
   val mock_all_ : unit -> unit
   (** use fake, deterministic timestamps, TID, PID *)
 

@@ -61,7 +61,7 @@ module type S = sig
     __LINE__:int ->
     time_ns:float ->
     tid:int ->
-    parent:explicit_span option ->
+    parent:span option ->
     data:(string * user_data) list ->
     name:string ->
     flavor:[ `Sync | `Async ] option ->

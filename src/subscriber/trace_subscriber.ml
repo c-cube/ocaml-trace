@@ -84,10 +84,10 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
       let time_ns = now_ns () in
 
       (* get the common trace id, or make a new one *)
-      let trace_id =
+      let trace_id, parent =
         match parent with
-        | Some m -> Meta_map.find_exn key_async_trace_id m.meta
-        | None -> A.fetch_and_add trace_id_gen_ 1
+        | Some m -> Meta_map.find_exn key_async_trace_id m.meta, Some m.span
+        | None -> A.fetch_and_add trace_id_gen_ 1, None
       in
 
       CB.on_enter_manual_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~parent ~data

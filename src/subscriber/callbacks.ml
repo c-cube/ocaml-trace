@@ -1,8 +1,10 @@
 open Trace_core
 open Types
 
+(** First class module signature for callbacks *)
 module type S = sig
   type st
+  (** Type of the state passed to every callback. *)
 
   val on_init : st -> time_ns:float -> unit
   (** Called when the subscriber is initialized in a collector *)
@@ -85,10 +87,14 @@ module type S = sig
 end
 
 type 'st t = (module S with type st = 'st)
+(** Callbacks for a subscriber. There is one callback per event
+    in {!Trace}. The type ['st] is the state that is passed to
+    every single callback. *)
 
-(** Callbacks for a subscriber *)
-
-(** Dummy callbacks *)
+(** Dummy callbacks.
+    It can be useful to reuse some of these functions in a
+    real subscriber that doesn't want to handle {b all}
+    events, but only some of them. *)
 module Dummy = struct
   let on_init _ ~time_ns:_ = ()
   let on_shutdown _ ~time_ns:_ = ()
@@ -113,6 +119,7 @@ module Dummy = struct
     ()
 end
 
+(** Dummy callbacks, do nothing. *)
 let dummy (type st) () : st t =
   let module M = struct
     type nonrec st = st

@@ -1,4 +1,9 @@
-(** A trace subscriber *)
+(** A trace subscriber. It pairs a set of callbacks
+    with the state they need (which can contain a file handle,
+    a socket, config, etc.).
+
+    The design goal for this is that it should be possible to avoid allocations
+    when the trace collector calls the callbacks. *)
 type t =
   | Sub : {
       st: 'st;
@@ -6,6 +11,7 @@ type t =
     }
       -> t
 
+(** Dummy subscriber that ignores every call. *)
 let dummy : t = Sub { st = (); callbacks = Callbacks.dummy () }
 
 open struct
@@ -91,6 +97,8 @@ open struct
   end
 end
 
+(** [tee s1 s2] is a subscriber that forwards every
+    call to [s1] and [s2] both. *)
 let tee (s1 : t) (s2 : t) : t =
   let st = s1, s2 in
   Sub { st; callbacks = (module Tee_cb) }

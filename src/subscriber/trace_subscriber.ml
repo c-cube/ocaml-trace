@@ -1,4 +1,5 @@
 open Trace_core
+module A = Trace_core.Internal_.Atomic_
 module Callbacks = Callbacks
 module Subscriber = Subscriber
 include Types
@@ -183,3 +184,40 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
       CB.on_init st ~time_ns
   end in
   (module M)
+
+module Handle = struct
+  type t = int
+
+  let compare : t -> t -> int = compare
+end
+
+(** how to allocate new handles *)
+let new_handle_ =
+  let a = A.make 0 in
+  fun () -> A.fetch_and_add a 1
+
+module Handle_map = Map.Make (Handle)
+
+(** Set of subscribers *)
+let top_subscribers : t Handle_map.t option A.t = A.make None
+
+let register_subscriber (s : t) : Handle.t =
+  let h = new_handle_ () in
+  let rec loop () =
+    let old = A.get top_subscribers in
+    let is_new, new_map =
+      match old with
+      | None -> true, Handle_map.singleton h s
+      | Some m -> false, Handle_map.add h s m
+    in
+    if A.compare_and_set top_subscribers old (Some new_map) then
+      is_new, new_map
+    else
+      loop ()
+  in
+
+  let is_new, map = loop () in
+
+  h
+
+let unregister_subscriber (h : Handle.t) : unit = ()

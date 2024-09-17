@@ -24,6 +24,28 @@ val collector : t -> Trace_core.collector
 
   It uses [mtime] (if available) to obtain timestamps. *)
 
+(** {2 Global set of subscribers}
+
+    There is a global set of subscribers (it is not mandatory to use it).
+    When the first subscriber is added to it, a {!Trace_core.collector}
+    is registered (see {!Trace_core.setup_collector}).
+
+    When the last subscriber is unregistered, the collector is shut down. *)
+
+module Handle : sig
+  type t = private int
+  (** A unique handle for a subscriber *)
+end
+
+val register_subscriber : t -> Handle.t
+(** Register a subscriber. This calls {!Trace_core.setup_collector} if
+  no other subscriber is registered.
+  @raise Invalid_argument if {!Trace_core.setup_collector} fails. *)
+
+val unregister_subscriber : Handle.t -> unit
+(** Remove a subscriber using its handle. If no subscriber remains,
+  {!Trace_core.shutdown} is called to remove the collector. *)
+
 (**/**)
 
 module Private_ : sig

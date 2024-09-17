@@ -32,6 +32,11 @@ jobs:
           dune-cache: true
           allow-prerelease-opam: true
 
+      # check that trace compiles with no optional deps
+      - run: opam install -t trace --deps-only
+      - run: opam exec -- dune build '@install' -p trace
+
+      # install all packages
       - run: opam install -t trace trace-tef trace-fuchsia --deps-only
       - run: opam install ppx_trace --deps-only # no tests
         if: matrix.ocaml-compiler != '4.08.x'

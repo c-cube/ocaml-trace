@@ -15,13 +15,17 @@ include module type of struct
   include Types
 end
 
+(** {2 Main API} *)
+
 type t = Subscriber.t
 
 val collector : t -> Trace_core.collector
+(** A collector that calls the subscriber's callbacks.
+
+  It uses [mtime] (if available) to obtain timestamps. *)
 
 (**/**)
 
-(**/*)
 module Private_ : sig
   val get_now_ns_ : (unit -> float) option ref
   (** The callback used to get the current timestamp *)
@@ -31,3 +35,5 @@ module Private_ : sig
 
   val now_ns : unit -> float
 end
+
+(**/**)

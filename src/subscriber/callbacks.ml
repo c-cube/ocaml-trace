@@ -1,3 +1,23 @@
+(** Callbacks used for subscribers.
+
+  Each subscriber defines a set of callbacks, for each possible
+  tracing event. These callbacks take a custom state that is paired
+  with the callbacks in {!Subscriber.t}.
+
+  To use a default implementation for some callbacks, use:
+
+  {[
+  module My_callbacks = struct
+    type st = …
+
+    include Trace_subscriber.Callbacks.Dummy
+
+    let on_init (state:st) ~time_ns : unit = …
+
+    (* other customize callbacks *)
+  end ]}
+*)
+
 open Trace_core
 open Types
 
@@ -119,7 +139,7 @@ module Dummy = struct
     ()
 end
 
-(** Dummy callbacks, do nothing. *)
+(** Dummy callbacks, ignores all events. *)
 let dummy (type st) () : st t =
   let module M = struct
     type nonrec st = st

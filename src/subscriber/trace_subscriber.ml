@@ -13,9 +13,7 @@ module Private_ = struct
   let[@inline] now_ns () : float =
     match !get_now_ns_ with
     | Some f -> f ()
-    | None ->
-      let t = Mtime_clock.now () in
-      Int64.to_float (Mtime.to_uint64_ns t)
+    | None -> Time_.get_time_ns ()
 
   let[@inline] tid_ () : int =
     match !get_tid_ with

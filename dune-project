@@ -61,8 +61,6 @@
    (>= 4.08))
   (trace
    (= :version))
-  (trace-subscriber
-   (= :version))
   (mtime
    (>= 2.0))
   base-unix

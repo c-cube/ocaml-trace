@@ -13,7 +13,7 @@ type output =
 
 val subscriber : out:[< output ] -> unit -> Trace_subscriber.t
 (** A subscriber emitting TEF traces into [out].
-    @since NEXT_RELEASE *)
+    @since 0.8 *)
 
 val collector : out:[< output ] -> unit -> Trace_core.collector
 (** Make a collector that writes into the given output.

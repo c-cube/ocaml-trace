@@ -5,7 +5,7 @@
     It also defines a collector that needs to be installed
     for the subscriber(s) to be called.
 
-    @since NEXT_RELEASE
+    @since 0.8
 *)
 
 module Callbacks = Callbacks

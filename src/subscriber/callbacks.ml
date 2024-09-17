@@ -14,7 +14,7 @@
 
     let on_init (state:st) ~time_ns : unit = …
 
-    (* other customize callbacks *)
+    (* … other custom callbacks … *)
   end ]}
 *)
 

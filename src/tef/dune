@@ -6,7 +6,7 @@
  (libraries
   trace.core
   trace.private.util
-  trace-subscriber
+  trace.subscriber
   mtime
   mtime.clock.os
   unix

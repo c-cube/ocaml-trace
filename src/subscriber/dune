@@ -1,6 +1,13 @@
 
 (library
   (name trace_subscriber)
-  (public_name trace-subscriber)
-  (libraries (re_export trace.core) mtime mtime.clock.os threads))
+  (public_name trace.subscriber)
+  (libraries (re_export trace.core)
+             (select thread_.ml from
+                     (threads -> thread_.real.ml)
+                     ( -> thread_.dummy.ml))
+             (select time_.ml from
+                     (mtime mtime.clock.os -> time_.mtime.ml)
+                     (mtime mtime.clock.jsoo -> time_.mtime.ml)
+                     ( -> time_.dummy.ml))))
 

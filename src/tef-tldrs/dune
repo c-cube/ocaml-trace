@@ -5,7 +5,7 @@
  (libraries
   trace.core
   trace.private.util
-  trace-subscriber
+  trace.subscriber
   trace-tef
   unix
   threads))

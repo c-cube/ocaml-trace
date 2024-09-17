@@ -20,7 +20,7 @@ module Private_ = struct
   let[@inline] tid_ () : int =
     match !get_tid_ with
     | Some f -> f ()
-    | None -> Thread.id (Thread.self ())
+    | None -> Thread_.get_tid ()
 end
 
 open struct

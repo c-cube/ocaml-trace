@@ -47,21 +47,10 @@
     (= :version)
     :with-test))
   dune)
+ (depopts
+   (mtime (>= 2.0)))
  (tags
   (trace ppx)))
-
-(package
- (name trace-subscriber)
- (synopsis "Generic subscriber system for `trace`")
- (depends
-  (ocaml
-   (>= 4.08))
-  (trace
-   (= :version))
-  (mtime
-   (>= 2.0)))
- (tags
-  (trace subscriber)))
 
 (package
  (name trace-tef)

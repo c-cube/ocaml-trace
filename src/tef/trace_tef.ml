@@ -1,30 +1,23 @@
 open Trace_core
 open Trace_private_util
 open Event
+module Sub = Trace_subscriber
 module A = Trace_core.Internal_.Atomic_
 
-let ( let@ ) = ( @@ )
+let on_tracing_error = ref (fun s -> Printf.eprintf "trace-tef error: %s\n%!" s)
 
 module Mock_ = struct
   let enabled = ref false
   let now = ref 0
 
-  let[@inline never] now_us () : float =
+  (* used to mock timing *)
+  let get_now_ns () : float =
     let x = !now in
     incr now;
-    float_of_int x
+    float_of_int x *. 1000.
+
+  let get_tid_ () : int = 3
 end
-
-(** Now, in microseconds *)
-let[@inline] now_us () : float =
-  if !Mock_.enabled then
-    Mock_.now_us ()
-  else (
-    let t = Mtime_clock.now () in
-    Int64.to_float (Mtime.to_uint64_ns t) /. 1e3
-  )
-
-let on_tracing_error = ref (fun s -> Printf.eprintf "trace-tef error: %s\n%!" s)
 
 module Span_tbl = Hashtbl.Make (struct
   include Int64
@@ -36,17 +29,8 @@ type span_info = {
   tid: int;
   name: string;
   start_us: float;
-  mutable data: (string * user_data) list;
+  mutable data: (string * Sub.user_data) list;
 }
-
-(** key used to carry a unique "id" for all spans in an async context *)
-let key_async_id : int Meta_map.key = Meta_map.Key.create ()
-
-let key_async_data : (string * [ `Sync | `Async ] option) Meta_map.key =
-  Meta_map.Key.create ()
-
-let key_data : (string * user_data) list ref Meta_map.key =
-  Meta_map.Key.create ()
 
 (** Writer: knows how to write entries to a file in TEF format *)
 module Writer = struct
@@ -126,12 +110,12 @@ module Writer = struct
     String.iter encode_char s;
     char buf '"'
 
-  let pp_user_data_ (out : Buffer.t) : [< user_data ] -> unit = function
-    | `None -> raw_string out "null"
-    | `Int i -> Printf.bprintf out "%d" i
-    | `Bool b -> Printf.bprintf out "%b" b
-    | `String s -> str_val out s
-    | `Float f -> Printf.bprintf out "%g" f
+  let pp_user_data_ (out : Buffer.t) : Sub.user_data -> unit = function
+    | U_none -> raw_string out "null"
+    | U_int i -> Printf.bprintf out "%d" i
+    | U_bool b -> Printf.bprintf out "%b" b
+    | U_string s -> str_val out s
+    | U_float f -> Printf.bprintf out "%g" f
 
   (* emit args, if not empty. [ppv] is used to print values. *)
   let emit_args_o_ ppv (out : Buffer.t) args : unit =
@@ -158,26 +142,28 @@ module Writer = struct
       args;
     Buffer.output_buffer self.oc self.buf
 
-  let emit_manual_begin ~tid ~name ~id ~ts ~args ~flavor (self : t) : unit =
+  let emit_manual_begin ~tid ~name ~id ~ts ~args ~(flavor : Sub.flavor option)
+      (self : t) : unit =
     emit_sep_and_start_ self;
     Printf.bprintf self.buf
       {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
       self.pid id tid ts str_val name
       (match flavor with
-      | None | Some `Async -> 'b'
-      | Some `Sync -> 'B')
+      | None | Some Async -> 'b'
+      | Some Sync -> 'B')
       (emit_args_o_ pp_user_data_)
       args;
     Buffer.output_buffer self.oc self.buf
 
-  let emit_manual_end ~tid ~name ~id ~ts ~flavor ~args (self : t) : unit =
+  let emit_manual_end ~tid ~name ~id ~ts ~(flavor : Sub.flavor option) ~args
+      (self : t) : unit =
     emit_sep_and_start_ self;
     Printf.bprintf self.buf
       {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
       self.pid id tid ts str_val name
       (match flavor with
-      | None | Some `Async -> 'e'
-      | Some `Sync -> 'E')
+      | None | Some Async -> 'e'
+      | Some Sync -> 'E')
       (emit_args_o_ pp_user_data_)
       args;
     Buffer.output_buffer self.oc self.buf
@@ -197,7 +183,7 @@ module Writer = struct
       {json|{"pid":%d,"tid": %d,"name":"thread_name","ph":"M"%a}|json} self.pid
       tid
       (emit_args_o_ pp_user_data_)
-      [ "name", `String name ];
+      [ "name", U_string name ];
     Buffer.output_buffer self.oc self.buf
 
   let emit_name_process ~name (self : t) : unit =
@@ -205,7 +191,7 @@ module Writer = struct
     Printf.bprintf self.buf
       {json|{"pid":%d,"name":"process_name","ph":"M"%a}|json} self.pid
       (emit_args_o_ pp_user_data_)
-      [ "name", `String name ];
+      [ "name", U_string name ];
     Buffer.output_buffer self.oc self.buf
 
   let emit_counter ~name ~tid ~ts (self : t) f : unit =
@@ -214,7 +200,7 @@ module Writer = struct
       {json|{"pid":%d,"tid":%d,"ts":%.2f,"name":"c","ph":"C"%a}|json} self.pid
       tid ts
       (emit_args_o_ pp_user_data_)
-      [ name, `Float f ];
+      [ name, U_float f ];
     Buffer.output_buffer self.oc self.buf
 end
 
@@ -231,7 +217,7 @@ let bg_thread ~mode ~out (events : Event.t B_queue.t) : unit =
   let add_fun_name_ fun_name data : _ list =
     match fun_name with
     | None -> data
-    | Some f -> ("function", `String f) :: data
+    | Some f -> ("function", Sub.U_string f) :: data
   in
 
   (* how to deal with an event *)
@@ -280,7 +266,8 @@ let bg_thread ~mode ~out (events : Event.t B_queue.t) : unit =
     (* write a message about us closing *)
     Writer.emit_instant_event ~name:"tef-worker.exit"
       ~tid:(Thread.id @@ Thread.self ())
-      ~ts:(now_us ()) ~args:[] writer;
+      ~ts:(Sub.Private_.now_ns () *. 1e-3)
+      ~args:[] writer;
 
     (* warn if app didn't close all spans *)
     if Span_tbl.length spans > 0 then
@@ -304,138 +291,90 @@ type output =
   | `File of string
   ]
 
-let collector_ ~(finally : unit -> unit) ~(mode : [ `Single | `Jsonl ]) ~out ()
-    : collector =
-  let module M = struct
-    let active = A.make true
+module Internal_st = struct
+  type t = {
+    active: bool A.t;
+    events: Event.t B_queue.t;
+    t_write: Thread.t;
+  }
+end
 
-    (** generator for span ids *)
-    let span_id_gen_ = A.make 0
+let subscriber_ ~finally ~out ~(mode : [ `Single | `Jsonl ]) () : Sub.t =
+  let module M : Sub.Callbacks.S with type st = Internal_st.t = struct
+    type st = Internal_st.t
 
-    (* queue of messages to write *)
-    let events : Event.t B_queue.t = B_queue.create ()
+    let on_init _ ~time_ns:_ = ()
 
-    (** writer thread. It receives events and writes them to [oc]. *)
-    let t_write : Thread.t =
-      Thread.create
-        (fun () ->
-          let@ () = Fun.protect ~finally in
-          bg_thread ~mode ~out events)
-        ()
-
-    (** ticker thread, regularly sends a message to the writer thread.
-         no need to join it. *)
-    let _t_tick : Thread.t = Thread.create (fun () -> tick_thread events) ()
-
-    let shutdown () =
-      if A.exchange active false then (
-        B_queue.close events;
+    let on_shutdown (self : st) ~time_ns:_ =
+      if A.exchange self.active false then (
+        B_queue.close self.events;
         (* wait for writer thread to be done. The writer thread will exit
            after processing remaining events because the queue is now closed *)
-        Thread.join t_write
+        Thread.join self.t_write
       )
 
-    let get_tid_ () : int =
-      if !Mock_.enabled then
-        3
-      else
-        Thread.id (Thread.self ())
+    let on_name_process (self : st) ~time_ns:_ ~tid:_ ~name : unit =
+      B_queue.push self.events @@ E_name_process { name }
 
-    let[@inline] enter_span_ ~fun_name ~data name : span =
-      let span = Int64.of_int (A.fetch_and_add span_id_gen_ 1) in
-      let tid = get_tid_ () in
-      let time_us = now_us () in
-      B_queue.push events
-        (E_define_span { tid; name; time_us; id = span; fun_name; data });
-      span
+    let on_name_thread (self : st) ~time_ns:_ ~tid ~name : unit =
+      B_queue.push self.events @@ E_name_thread { tid; name }
 
-    let enter_span ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name :
-        span =
-      enter_span_ ~fun_name ~data name
+    let[@inline] on_enter_span (self : st) ~__FUNCTION__:fun_name ~__FILE__:_
+        ~__LINE__:_ ~time_ns ~tid ~data ~name span : unit =
+      let time_us = time_ns *. 1e-3 in
+      B_queue.push self.events
+      @@ E_define_span { tid; name; time_us; id = span; fun_name; data }
 
-    let exit_span span : unit =
-      let time_us = now_us () in
-      B_queue.push events (E_exit_span { id = span; time_us })
+    let on_exit_span (self : st) ~time_ns ~tid:_ span : unit =
+      let time_us = time_ns *. 1e-3 in
+      B_queue.push self.events @@ E_exit_span { id = span; time_us }
 
-    (* re-raise exception with its backtrace *)
-    external reraise : exn -> 'a = "%reraise"
+    let on_add_data (self : st) ~data span =
+      if data <> [] then
+        B_queue.push self.events @@ E_add_data { id = span; data }
 
-    let with_span ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name f =
-      let span = enter_span_ ~fun_name ~data name in
-      try
-        let x = f span in
-        exit_span span;
-        x
-      with exn ->
-        exit_span span;
-        reraise exn
+    let on_message (self : st) ~time_ns ~tid ~span:_ ~data msg : unit =
+      let time_us = time_ns *. 1e-3 in
+      B_queue.push self.events @@ E_message { tid; time_us; msg; data }
 
-    let add_data_to_span span data =
-      if data <> [] then B_queue.push events (E_add_data { id = span; data })
+    let on_counter (self : st) ~time_ns ~tid ~data:_ ~name f : unit =
+      let time_us = time_ns *. 1e-3 in
+      B_queue.push self.events @@ E_counter { name; n = f; time_us; tid }
 
-    let enter_manual_span ~(parent : explicit_span option) ~flavor
-        ~__FUNCTION__:fun_name ~__FILE__:_ ~__LINE__:_ ~data name :
-        explicit_span =
-      (* get the id, or make a new one *)
-      let id =
-        match parent with
-        | Some m -> Meta_map.find_exn key_async_id m.meta
-        | None -> A.fetch_and_add span_id_gen_ 1
-      in
-      let time_us = now_us () in
-      B_queue.push events
-        (E_enter_manual_span
-           { id; time_us; tid = get_tid_ (); data; name; fun_name; flavor });
-      {
-        span = 0L;
-        meta =
-          Meta_map.(
-            empty |> add key_async_id id |> add key_async_data (name, flavor));
-      }
+    let on_enter_manual_span (self : st) ~__FUNCTION__:fun_name ~__FILE__:_
+        ~__LINE__:_ ~time_ns ~tid ~parent:_ ~data ~name ~flavor ~trace_id _span
+        : unit =
+      let time_us = time_ns *. 1e-3 in
+      B_queue.push self.events
+      @@ E_enter_manual_span
+           { id = trace_id; time_us; tid; data; name; fun_name; flavor }
 
-    let exit_manual_span (es : explicit_span) : unit =
-      let id = Meta_map.find_exn key_async_id es.meta in
-      let name, flavor = Meta_map.find_exn key_async_data es.meta in
-      let data =
-        match Meta_map.find key_data es.meta with
-        | None -> []
-        | Some r -> !r
-      in
-      let time_us = now_us () in
-      let tid = get_tid_ () in
-      B_queue.push events
-        (E_exit_manual_span { tid; id; name; time_us; data; flavor })
-
-    let add_data_to_manual_span (es : explicit_span) data =
-      if data <> [] then (
-        let data_ref, add =
-          match Meta_map.find key_data es.meta with
-          | Some r -> r, false
-          | None -> ref [], true
-        in
-        let new_data = List.rev_append data !data_ref in
-        data_ref := new_data;
-        if add then es.meta <- Meta_map.add key_data data_ref es.meta
-      )
-
-    let message ?span:_ ~data msg : unit =
-      let time_us = now_us () in
-      let tid = get_tid_ () in
-      B_queue.push events (E_message { tid; time_us; msg; data })
-
-    let counter_float ~data:_ name f =
-      let time_us = now_us () in
-      let tid = get_tid_ () in
-      B_queue.push events (E_counter { name; n = f; time_us; tid })
-
-    let counter_int ~data name i = counter_float ~data name (float_of_int i)
-    let name_process name : unit = B_queue.push events (E_name_process { name })
-
-    let name_thread name : unit =
-      let tid = get_tid_ () in
-      B_queue.push events (E_name_thread { tid; name })
+    let on_exit_manual_span (self : st) ~time_ns ~tid ~name ~data ~flavor
+        ~trace_id (_ : span) : unit =
+      let time_us = time_ns *. 1e-3 in
+      B_queue.push self.events
+      @@ E_exit_manual_span { tid; id = trace_id; name; time_us; data; flavor }
   end in
-  (module M)
+  let events = B_queue.create () in
+  let t_write =
+    Thread.create
+      (fun () -> Fun.protect ~finally @@ fun () -> bg_thread ~mode ~out events)
+      ()
+  in
+
+  (* ticker thread, regularly sends a message to the writer thread.
+      no need to join it. *)
+  let _t_tick : Thread.t = Thread.create (fun () -> tick_thread events) () in
+  let st : Internal_st.t = { active = A.make true; events; t_write } in
+  Sub.Subscriber.Sub { st; callbacks = (module M) }
+
+let collector_ ~(finally : unit -> unit) ~(mode : [ `Single | `Jsonl ]) ~out ()
+    : collector =
+  let sub = subscriber_ ~finally ~mode ~out () in
+  Sub.collector sub
+
+let[@inline] subscriber ~out () : Sub.t =
+  subscriber_ ~finally:ignore ~mode:`Single ~out ()
 
 let[@inline] collector ~out () : collector =
   collector_ ~finally:ignore ~mode:`Single ~out ()
@@ -462,9 +401,17 @@ let with_setup ?out () f =
   setup ?out ();
   Fun.protect ~finally:Trace_core.shutdown f
 
-module Internal_ = struct
-  let mock_all_ () = Mock_.enabled := true
+module Private_ = struct
+  let mock_all_ () =
+    Mock_.enabled := true;
+    Sub.Private_.get_now_ns_ := Some Mock_.get_now_ns;
+    Sub.Private_.get_tid_ := Some Mock_.get_tid_;
+    ()
+
   let on_tracing_error = on_tracing_error
+
+  let subscriber_jsonl ~finally ~out () =
+    subscriber_ ~finally ~mode:`Jsonl ~out ()
 
   let collector_jsonl ~finally ~out () : collector =
     collector_ ~finally ~mode:`Jsonl ~out ()

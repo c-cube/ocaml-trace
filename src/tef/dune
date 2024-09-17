@@ -1,6 +1,13 @@
-
 (library
-  (name trace_tef)
-  (public_name trace-tef)
-  (synopsis "Simple and lightweight tracing using TEF/Catapult format, in-process")
-  (libraries trace.core trace.private.util mtime mtime.clock.os unix threads))
+ (name trace_tef)
+ (public_name trace-tef)
+ (synopsis
+  "Simple and lightweight tracing using TEF/Catapult format, in-process")
+ (libraries
+  trace.core
+  trace.private.util
+  trace.subscriber
+  mtime
+  mtime.clock.os
+  unix
+  threads))

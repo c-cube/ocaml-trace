@@ -214,3 +214,16 @@ val set_current_level : Level.t -> unit
 val shutdown : unit -> unit
 (** [shutdown ()] shutdowns the current collector, if one was installed,
     and waits for it to terminate before returning. *)
+
+(** {2 Extensions} *)
+
+type extension_event = Types.extension_event = ..
+(** Extension event
+  @since NEXT_RELEASE *)
+
+val extension_event : extension_event -> unit
+(** Trigger an extension event, whose meaning depends on
+    the library that defines it. Some collectors will
+    simply ignore it. This does nothing if no collector
+    is setup.
+    @since NEXT_RELEASE *)

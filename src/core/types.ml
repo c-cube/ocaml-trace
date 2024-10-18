@@ -23,3 +23,8 @@ type explicit_span = {
         of the span, to the end of the span. *)
 }
 (** Explicit span, with collector-specific metadata *)
+
+type extension_event = ..
+(** An extension event, used to add features that are backend specific
+    or simply not envisioned by [trace].
+  @since NEXT_RELEASE *)

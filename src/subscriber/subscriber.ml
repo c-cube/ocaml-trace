@@ -96,6 +96,12 @@ open struct
         span;
       CB2.on_exit_manual_span s2 ~time_ns ~tid ~name ~data ~flavor ~trace_id
         span
+
+    let on_extension_event
+        ( Sub { st = s1; callbacks = (module CB1) },
+          Sub { st = s2; callbacks = (module CB2) } ) ~time_ns ~tid ev : unit =
+      CB1.on_extension_event s1 ~time_ns ~tid ev;
+      CB2.on_extension_event s2 ~time_ns ~tid ev
   end
 end
 

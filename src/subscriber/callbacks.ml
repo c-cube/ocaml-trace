@@ -104,6 +104,11 @@ module type S = sig
     span ->
     unit
   (** Exit a manual span *)
+
+  val on_extension_event :
+    st -> time_ns:float -> tid:int -> extension_event -> unit
+  (** Extension event
+      @since NEXT_RELEASE *)
 end
 
 type 'st t = (module S with type st = 'st)
@@ -137,6 +142,8 @@ module Dummy = struct
   let on_exit_manual_span _ ~time_ns:_ ~tid:_ ~name:_ ~data:_ ~flavor:_
       ~trace_id:_ _ =
     ()
+
+  let on_extension_event _ ~time_ns:_ ~tid:_ _ = ()
 end
 
 (** Dummy callbacks, ignores all events. *)

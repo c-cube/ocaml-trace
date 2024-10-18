@@ -363,6 +363,8 @@ struct
       encode out ~name ~ty:ty_thread ~kid:tls.tid
         ~args:[ "process", `Kid pid ]
         ())
+
+  let extension_event _ = ()
 end
 
 let create ~out () : collector =

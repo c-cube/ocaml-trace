@@ -354,6 +354,8 @@ let subscriber_ ~finally ~out ~(mode : [ `Single | `Jsonl ]) () : Sub.t =
       let time_us = time_ns *. 1e-3 in
       B_queue.push self.events
       @@ E_exit_manual_span { tid; id = trace_id; name; time_us; data; flavor }
+
+    let on_extension_event _ ~time_ns:_ ~tid:_ _ev = ()
   end in
   let events = B_queue.create () in
   let t_write =

@@ -168,6 +168,13 @@ let shutdown () =
   | None -> ()
   | Some (module C) -> C.shutdown ()
 
+type extension_event = Types.extension_event = ..
+
+let[@inline] extension_event ev =
+  match A.get collector with
+  | None -> ()
+  | Some (module C) -> C.extension_event ev
+
 module Internal_ = struct
   module Atomic_ = Atomic_
 end

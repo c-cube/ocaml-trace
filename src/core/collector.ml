@@ -94,6 +94,12 @@ module type S = sig
   val counter_float : data:(string * user_data) list -> string -> float -> unit
   (** Float counter. *)
 
+  val extension_event : extension_event -> unit
+  (** Handle an extension event.
+      A collector {b MUST} simple ignore events it doesn't know,
+      and return [()] silently.
+      @since NEXT_RELEASE *)
+
   val shutdown : unit -> unit
   (** Shutdown collector, possibly waiting for it to finish sending data. *)
 end

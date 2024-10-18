@@ -177,6 +177,11 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
       let time_ns = now_ns () in
       CB.on_shutdown st ~time_ns
 
+    let extension_event ev =
+      let tid = tid_ () in
+      let time_ns = now_ns () in
+      CB.on_extension_event st ~time_ns ~tid ev
+
     let () =
       (* init code *)
       let time_ns = now_ns () in

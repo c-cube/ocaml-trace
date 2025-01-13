@@ -1,3 +1,42 @@
+0.34.0 (2025-01-06)
+-------------------
+
+### 5.3 support
+
+5.3 support is being added gradually over the course of its development.
+This section should be updated with each relevant PR.
+
+Note to maintainers: until 5.3 support is officially released, this section
+should be excluded from the release, see [RELEASING.md](RELEASING.md) for
+details.
+
+- Add initial OCaml 5.3 support (#487, @NathanReb, @hhugo, @nojb)
+
+- Initialise OCaml 5.3's lexer with the `keywords` setting from `OCAMLPARAM` or
+  the new `-keywords` driver's CLI option to allow the standalone ppx driver to
+  process old packages using `effect` as an identifier
+  (#535, @dra27, @NathanReb)
+
+### Other changes
+
+- Add `Pprintast.binding`, `longident` and `payload` (#542, @mattiasdrp)
+
+- Fix `deriving_inline` round-trip check so that it works with 5.01 <-> 5.02
+  migrations (#519, @NathanReb)
+
+- Add ppxlib's AST pretty-printing utilities in `Ppxlib.Pp_ast` and
+  a `ppxlib-pp-ast` executable in a new separate `ppxlib-tools` package
+  (#517, #525, #537, @NathanReb)
+
+- Change `-dparsetree` from a sexp output to a pretty printed AST, closer
+  to what the compiler's `-dparsetree` is.
+  (#530, @NathanReb)
+
+- Add Parsetree documentation comments to `Ast_builder` functions (#518, @patricoferris)
+
+- Support class type declarations in derivers with the new, optional arguments
+  `{str,sig}_class_type_decl` in `Deriving.add` (#538, @patricoferris)
+
 0.33.0 (2024-07-22)
 -------------------
 

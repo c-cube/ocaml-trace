@@ -219,11 +219,11 @@ val shutdown : unit -> unit
 
 type extension_event = Types.extension_event = ..
 (** Extension event
-  @since NEXT_RELEASE *)
+  @since 0.8 *)
 
 val extension_event : extension_event -> unit
 (** Trigger an extension event, whose meaning depends on
     the library that defines it. Some collectors will
     simply ignore it. This does nothing if no collector
     is setup.
-    @since NEXT_RELEASE *)
+    @since 0.8 *)

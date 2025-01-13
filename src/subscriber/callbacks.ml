@@ -108,7 +108,7 @@ module type S = sig
   val on_extension_event :
     st -> time_ns:float -> tid:int -> extension_event -> unit
   (** Extension event
-      @since NEXT_RELEASE *)
+      @since 0.8 *)
 end
 
 type 'st t = (module S with type st = 'st)

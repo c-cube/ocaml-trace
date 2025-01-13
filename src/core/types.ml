@@ -27,4 +27,4 @@ type explicit_span = {
 type extension_event = ..
 (** An extension event, used to add features that are backend specific
     or simply not envisioned by [trace].
-  @since NEXT_RELEASE *)
+  @since 0.8 *)

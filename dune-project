@@ -4,7 +4,7 @@
 
 (generate_opam_files true)
 
-(version 0.8)
+(version 0.9)
 
 (source
  (github c-cube/ocaml-trace))

@@ -98,7 +98,7 @@ module type S = sig
   (** Handle an extension event.
       A collector {b MUST} simple ignore events it doesn't know,
       and return [()] silently.
-      @since NEXT_RELEASE *)
+      @since 0.8 *)
 
   val shutdown : unit -> unit
   (** Shutdown collector, possibly waiting for it to finish sending data. *)

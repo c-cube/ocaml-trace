@@ -204,10 +204,28 @@ module Writer = struct
     Buffer.output_buffer self.oc self.buf
 end
 
+let block_signals () =
+  try
+    ignore
+      (Unix.sigprocmask SIG_BLOCK
+         [
+           Sys.sigterm;
+           Sys.sigpipe;
+           Sys.sigint;
+           Sys.sigchld;
+           Sys.sigalrm;
+           Sys.sigusr1;
+           Sys.sigusr2;
+         ]
+        : _ list)
+  with _ -> ()
+
 (** Background thread, takes events from the queue, puts them
     in context using local state, and writes fully resolved
     TEF events to [out]. *)
 let bg_thread ~mode ~out (events : Event.t B_queue.t) : unit =
+  block_signals ();
+
   (* open a writer to [out] *)
   Writer.with_ ~mode ~out @@ fun writer ->
   (* local state, to keep track of span information and implicit stack context *)
@@ -278,6 +296,7 @@ let bg_thread ~mode ~out (events : Event.t B_queue.t) : unit =
 (** Thread that simply regularly "ticks", sending events to
     the background thread so it has a chance to write to the file *)
 let tick_thread events : unit =
+  block_signals ();
   try
     while true do
       Thread.delay 0.5;

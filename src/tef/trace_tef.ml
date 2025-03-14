@@ -220,6 +220,17 @@ let block_signals () =
         : _ list)
   with _ -> ()
 
+let print_non_closed_spans_warning spans =
+  let module Str_set = Set.Make (String) in
+  Printf.eprintf "trace-tef: warning: %d spans were not closed\n"
+    (Span_tbl.length spans);
+  let names = ref Str_set.empty in
+  Span_tbl.iter (fun _ span -> names := Str_set.add span.name !names) spans;
+  Str_set.iter
+    (fun name -> Printf.eprintf "  span %S was not closed\n" name)
+    !names;
+  flush stderr
+
 (** Background thread, takes events from the queue, puts them
     in context using local state, and writes fully resolved
     TEF events to [out]. *)
@@ -288,9 +299,7 @@ let bg_thread ~mode ~out (events : Event.t B_queue.t) : unit =
       ~args:[] writer;
 
     (* warn if app didn't close all spans *)
-    if Span_tbl.length spans > 0 then
-      Printf.eprintf "trace-tef: warning: %d spans were not closed\n%!"
-        (Span_tbl.length spans);
+    if Span_tbl.length spans > 0 then print_non_closed_spans_warning spans;
     ()
 
 (** Thread that simply regularly "ticks", sending events to

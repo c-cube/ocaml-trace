@@ -1,14 +1,20 @@
+0.35.0 (2025-02-03)
+-------------------
+
+- Allow use of effect syntax in preprocessed files without causing migration
+  failures. (#552, @hhugo, @NathanReb)
+
+- Remove support for compilers older than 4.08 (#556, @NathanReb)
+
+- Add a `--use-compiler-pp` flag to the standalone driver. This flag
+ can be set when the driver outputs source code to make it use the compiler's
+ `Pprintast` instead of ppxlib's.
+ (#555, @NathanReb)
+
 0.34.0 (2025-01-06)
 -------------------
 
 ### 5.3 support
-
-5.3 support is being added gradually over the course of its development.
-This section should be updated with each relevant PR.
-
-Note to maintainers: until 5.3 support is officially released, this section
-should be excluded from the release, see [RELEASING.md](RELEASING.md) for
-details.
 
 - Add initial OCaml 5.3 support (#487, @NathanReb, @hhugo, @nojb)
 

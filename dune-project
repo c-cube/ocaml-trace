@@ -39,7 +39,7 @@
   (ocaml
    (>= 4.12)) ; we use __FUNCTION__
   (ppxlib
-   (>= 0.28))
+   (and (>= 0.28) (< 0.36)))
   (trace
    (= :version))
   (trace-tef

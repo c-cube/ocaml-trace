@@ -48,6 +48,9 @@ jobs:
       - run: opam exec -- dune runtest -p trace-tef,trace-fuchsia
 
       # with depopts
-      - run: opam install hmap mtime
+      - run: opam install hmap unix
+      - run: opam exec -- dune build '@install' -p trace,trace-tef,trace-fuchsia
+
+      - run: opam install mtime
       - run: opam exec -- dune build '@install' -p trace,trace-tef,trace-fuchsia
 

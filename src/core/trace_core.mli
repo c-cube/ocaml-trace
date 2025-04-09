@@ -31,6 +31,10 @@ val set_default_level : Level.t -> unit
     default value is [Level.Trace].
     @since 0.7 *)
 
+val ctx_of_span : explicit_span -> explicit_span_ctx
+(** Turn a span into a span context.
+    @since NEXT_RELEASE *)
+
 val with_span :
   ?level:Level.t ->
   ?__FUNCTION__:string ->
@@ -80,8 +84,8 @@ val add_data_to_span : span -> (string * user_data) list -> unit
     Behavior is not specified if the span has been exited.
     @since 0.4 *)
 
-val enter_manual_sub_span :
-  parent:explicit_span ->
+val enter_manual_span :
+  parent:explicit_span_ctx option ->
   ?flavor:[ `Sync | `Async ] ->
   ?level:Level.t ->
   ?__FUNCTION__:string ->
@@ -93,6 +97,12 @@ val enter_manual_sub_span :
 (** Like {!with_span} but the caller is responsible for
     obtaining the [parent] span from their {e own} caller, and carry the resulting
     {!explicit_span} to  the matching {!exit_manual_span}. 
+
+    {b NOTE} this replaces [enter_manual_sub_span] and [enter_manual_toplevel_span]
+    by just making [parent] an explicit option. It is breaking anyway because we now pass
+    an {!explicit_span_ctx} instead of a full {!explicit_span} (the reason being that we
+    might receive this explicit_span_ctx from another process or machine).
+
     @param flavor a description of the span that can be used by the {!Collector.S}
       to decide how to represent the span. Typically, [`Sync] spans
       start and stop on one thread, and are nested purely by their timestamp;
@@ -100,24 +110,7 @@ val enter_manual_sub_span :
       Lwt, Eio, Async, etc.) which impacts how the collector might represent them.
     @param level optional level for this span. since 0.7.
       Default is set via {!set_default_level}.
-    @since 0.3 *)
-
-val enter_manual_toplevel_span :
-  ?flavor:[ `Sync | `Async ] ->
-  ?level:Level.t ->
-  ?__FUNCTION__:string ->
-  __FILE__:string ->
-  __LINE__:int ->
-  ?data:(unit -> (string * user_data) list) ->
-  string ->
-  explicit_span
-(** Like {!with_span} but the caller is responsible for carrying this
-    [explicit_span] around until it's exited with {!exit_manual_span}.
-    The span can be used as a parent in {!enter_manual_sub_span}.
-    @param flavor see {!enter_manual_sub_span} for more details.
-    @param level optional level for this span. since 0.7.
-      Default is set via {!set_default_level}.
-    @since 0.3 *)
+    @since NEXT_RELEASE *)
 
 val exit_manual_span : explicit_span -> unit
 (** Exit an explicit span. This can be on another thread, in a

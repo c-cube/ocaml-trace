@@ -30,7 +30,7 @@ type t =
       tid: int;
       name: string;
       time_us: float;
-      id: int;
+      id: trace_id;
       flavor: Sub.flavor option;
       fun_name: string option;
       data: (string * Sub.user_data) list;
@@ -41,7 +41,7 @@ type t =
       time_us: float;
       flavor: Sub.flavor option;
       data: (string * Sub.user_data) list;
-      id: int;
+      id: trace_id;
     }
   | E_counter of {
       name: string;

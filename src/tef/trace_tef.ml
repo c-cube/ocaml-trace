@@ -142,12 +142,12 @@ module Writer = struct
       args;
     Buffer.output_buffer self.oc self.buf
 
-  let emit_manual_begin ~tid ~name ~id ~ts ~args ~(flavor : Sub.flavor option)
-      (self : t) : unit =
+  let emit_manual_begin ~tid ~name ~(id : trace_id) ~ts ~args
+      ~(flavor : Sub.flavor option) (self : t) : unit =
     emit_sep_and_start_ self;
     Printf.bprintf self.buf
-      {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
-      self.pid id tid ts str_val name
+      {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
+      self.pid (String.get_int64_le id 0) tid ts str_val name
       (match flavor with
       | None | Some Async -> 'b'
       | Some Sync -> 'B')
@@ -155,12 +155,12 @@ module Writer = struct
       args;
     Buffer.output_buffer self.oc self.buf
 
-  let emit_manual_end ~tid ~name ~id ~ts ~(flavor : Sub.flavor option) ~args
-      (self : t) : unit =
+  let emit_manual_end ~tid ~name ~(id : trace_id) ~ts
+      ~(flavor : Sub.flavor option) ~args (self : t) : unit =
     emit_sep_and_start_ self;
     Printf.bprintf self.buf
-      {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
-      self.pid id tid ts str_val name
+      {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
+      self.pid (String.get_int64_le id 0) tid ts str_val name
       (match flavor with
       | None | Some Async -> 'e'
       | Some Sync -> 'E')

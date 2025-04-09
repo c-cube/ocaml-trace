@@ -17,6 +17,9 @@ let current_level_ = A.make Level.Trace
 
 (* ## implementation ## *)
 
+let[@inline] ctx_of_span (sp : explicit_span) : explicit_span_ctx =
+  { span = sp.span; trace_id = sp.trace_id }
+
 let data_empty_build_ () = []
 
 let[@inline] enabled () =
@@ -59,27 +62,19 @@ let[@inline] exit_span sp : unit =
   | None -> ()
   | Some (module C) -> C.exit_span sp
 
-let enter_explicit_span_collector_ (module C : Collector.S) ~parent ~flavor
+let enter_manual_span_collector_ (module C : Collector.S) ~parent ~flavor
     ?__FUNCTION__ ~__FILE__ ~__LINE__ ?(data = data_empty_build_) name :
     explicit_span =
   let data = data () in
   C.enter_manual_span ~parent ~flavor ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data
     name
 
-let[@inline] enter_manual_sub_span ~parent ?flavor ?level ?__FUNCTION__
-    ~__FILE__ ~__LINE__ ?data name : explicit_span =
-  match A.get collector with
-  | Some coll when check_level ?level () ->
-    enter_explicit_span_collector_ coll ~parent:(Some parent) ~flavor
-      ?__FUNCTION__ ~__FILE__ ~__LINE__ ?data name
-  | _ -> Collector.dummy_explicit_span
-
-let[@inline] enter_manual_toplevel_span ?flavor ?level ?__FUNCTION__ ~__FILE__
+let[@inline] enter_manual_span ~parent ?flavor ?level ?__FUNCTION__ ~__FILE__
     ~__LINE__ ?data name : explicit_span =
   match A.get collector with
   | Some coll when check_level ?level () ->
-    enter_explicit_span_collector_ coll ~parent:None ~flavor ?__FUNCTION__
-      ~__FILE__ ~__LINE__ ?data name
+    enter_manual_span_collector_ coll ~parent ~flavor ?__FUNCTION__ ~__FILE__
+      ~__LINE__ ?data name
   | _ -> Collector.dummy_explicit_span
 
 let[@inline] exit_manual_span espan : unit =

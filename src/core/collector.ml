@@ -30,9 +30,6 @@ module type S = sig
     (span -> 'a) ->
     'a
   (** Run the function in a new span.
-
-      This replaces the previous [enter_span] and [exit_span] which were too flexible
-      to be efficient to implement in async contexts.
      @since 0.3 *)
 
   val enter_span :

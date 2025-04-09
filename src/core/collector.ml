@@ -8,7 +8,7 @@
 open Types
 
 let dummy_span : span = Int64.min_int
-let dummy_trace_id : trace_id = String.empty
+let dummy_trace_id : trace_id = "<dummy>"
 
 let dummy_explicit_span : explicit_span =
   { span = dummy_span; trace_id = dummy_trace_id; meta = Meta_map.empty }

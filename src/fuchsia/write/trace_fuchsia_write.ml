@@ -9,6 +9,9 @@ module Buf_pool = Buf_pool
 
 open struct
   let spf = Printf.sprintf
+
+  let[@inline] int64_of_trace_id_ (id : Trace_core.trace_id) : int64 =
+    Bytes.get_int64_le (Bytes.unsafe_of_string id) 0
 end
 
 open Util
@@ -494,7 +497,7 @@ module Event = struct
 
       Buf.add_string buf name;
       Arguments.encode buf args;
-      Buf.add_i64 buf (String.get_int64_le async_id 0);
+      Buf.add_i64 buf (int64_of_trace_id_ async_id);
       ()
   end
 
@@ -530,7 +533,7 @@ module Event = struct
 
       Buf.add_string buf name;
       Arguments.encode buf args;
-      Buf.add_i64 buf (String.get_int64_le async_id 0);
+      Buf.add_i64 buf (int64_of_trace_id_ async_id);
       ()
   end
 end

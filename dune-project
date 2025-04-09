@@ -27,6 +27,7 @@
   dune)
  (depopts
   hmap
+  unix
   (mtime
    (>= 2.0)))
  (tags

@@ -16,6 +16,7 @@ depends: [
 ]
 depopts: [
   "hmap"
+  "unix"
   "mtime" {>= "2.0"}
 ]
 build: [

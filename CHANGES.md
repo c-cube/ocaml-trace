@@ -1,3 +1,10 @@
+# 0.10 (wip)
+
+- breaking: manual spans now take a `explicit_span_ctx` as parent, that
+    can potentially be transmitted across processes/machines. It also
+    is intended to be more compatible with OTEL.
+- depopt on unix for TEF timestamps
+
 # 0.9.1
 
 

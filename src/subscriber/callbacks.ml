@@ -16,6 +16,9 @@
 
     (* … other custom callbacks … *)
   end ]}
+
+  {b NOTE}: the [trace_id] passed alongside manual spans is guaranteed to be at
+  least 64 bits.
 *)
 
 open Trace_core
@@ -88,7 +91,7 @@ module type S = sig
     data:(string * user_data) list ->
     name:string ->
     flavor:flavor option ->
-    trace_id:int ->
+    trace_id:trace_id ->
     span ->
     unit
   (** Enter a manual (possibly async) span *)
@@ -100,7 +103,7 @@ module type S = sig
     name:string ->
     data:(string * user_data) list ->
     flavor:flavor option ->
-    trace_id:int ->
+    trace_id:trace_id ->
     span ->
     unit
   (** Exit a manual span *)

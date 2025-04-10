@@ -8,9 +8,13 @@
 open Types
 
 let dummy_span : span = Int64.min_int
+let dummy_trace_id : trace_id = "<dummy>"
 
 let dummy_explicit_span : explicit_span =
-  { span = dummy_span; meta = Meta_map.empty }
+  { span = dummy_span; trace_id = dummy_trace_id; meta = Meta_map.empty }
+
+let dummy_explicit_span_ctx : explicit_span_ctx =
+  { span = dummy_span; trace_id = dummy_trace_id }
 
 (** Signature for a collector.
 
@@ -26,9 +30,6 @@ module type S = sig
     (span -> 'a) ->
     'a
   (** Run the function in a new span.
-
-      This replaces the previous [enter_span] and [exit_span] which were too flexible
-      to be efficient to implement in async contexts.
      @since 0.3 *)
 
   val enter_span :
@@ -49,7 +50,7 @@ module type S = sig
       @since 0.6 *)
 
   val enter_manual_span :
-    parent:explicit_span option ->
+    parent:explicit_span_ctx option ->
     flavor:[ `Sync | `Async ] option ->
     __FUNCTION__:string option ->
     __FILE__:string ->
@@ -60,6 +61,9 @@ module type S = sig
   (** Enter an explicit span. Surrounding scope, if any, is provided by [parent],
       and this function can store as much metadata as it wants in the hmap
       in the {!explicit_span}'s [meta] field.
+
+      {b NOTE} the [parent] argument is now an {!explicit_span_ctx} and not
+      an {!explicit_span} since NEXT_RELEASE.
 
       This means that the collector doesn't need to implement contextual
       storage mapping {!span} to scopes, metadata, etc. on its side;

@@ -9,6 +9,9 @@ module Buf_pool = Buf_pool
 
 open struct
   let spf = Printf.sprintf
+
+  let[@inline] int64_of_trace_id_ (id : Trace_core.trace_id) : int64 =
+    Bytes.get_int64_le (Bytes.unsafe_of_string id) 0
 end
 
 open Util
@@ -469,7 +472,7 @@ module Event = struct
       + Arguments.size_word args + 1 (* async id *)
 
     let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
-        ~(async_id : int) ~args () : unit =
+        ~(async_id : Trace_core.trace_id) ~args () : unit =
       let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
       let buf = Output.get_buf out ~available_word:size in
@@ -494,7 +497,7 @@ module Event = struct
 
       Buf.add_string buf name;
       Arguments.encode buf args;
-      Buf.add_i64 buf (I64.of_int async_id);
+      Buf.add_i64 buf (int64_of_trace_id_ async_id);
       ()
   end
 
@@ -505,7 +508,7 @@ module Event = struct
       + Arguments.size_word args + 1 (* async id *)
 
     let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
-        ~(async_id : int) ~args () : unit =
+        ~(async_id : Trace_core.trace_id) ~args () : unit =
       let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
       let buf = Output.get_buf out ~available_word:size in
@@ -530,7 +533,7 @@ module Event = struct
 
       Buf.add_string buf name;
       Arguments.encode buf args;
-      Buf.add_i64 buf (I64.of_int async_id);
+      Buf.add_i64 buf (int64_of_trace_id_ async_id);
       ()
   end
 end

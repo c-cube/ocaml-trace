@@ -6,6 +6,9 @@ module A = Trace_core.Internal_.Atomic_
 
 let on_tracing_error = ref (fun s -> Printf.eprintf "trace-tef error: %s\n%!" s)
 
+let[@inline] int64_of_trace_id_ (id : Trace_core.trace_id) : int64 =
+  Bytes.get_int64_le (Bytes.unsafe_of_string id) 0
+
 module Mock_ = struct
   let enabled = ref false
   let now = ref 0
@@ -142,12 +145,12 @@ module Writer = struct
       args;
     Buffer.output_buffer self.oc self.buf
 
-  let emit_manual_begin ~tid ~name ~id ~ts ~args ~(flavor : Sub.flavor option)
-      (self : t) : unit =
+  let emit_manual_begin ~tid ~name ~(id : trace_id) ~ts ~args
+      ~(flavor : Sub.flavor option) (self : t) : unit =
     emit_sep_and_start_ self;
     Printf.bprintf self.buf
-      {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
-      self.pid id tid ts str_val name
+      {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
+      self.pid (int64_of_trace_id_ id) tid ts str_val name
       (match flavor with
       | None | Some Async -> 'b'
       | Some Sync -> 'B')
@@ -155,12 +158,12 @@ module Writer = struct
       args;
     Buffer.output_buffer self.oc self.buf
 
-  let emit_manual_end ~tid ~name ~id ~ts ~(flavor : Sub.flavor option) ~args
-      (self : t) : unit =
+  let emit_manual_end ~tid ~name ~(id : trace_id) ~ts
+      ~(flavor : Sub.flavor option) ~args (self : t) : unit =
     emit_sep_and_start_ self;
     Printf.bprintf self.buf
-      {json|{"pid":%d,"cat":"trace","id":%d,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
-      self.pid id tid ts str_val name
+      {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
+      self.pid (int64_of_trace_id_ id) tid ts str_val name
       (match flavor with
       | None | Some Async -> 'e'
       | Some Sync -> 'E')

@@ -33,9 +33,6 @@ open struct
   (** Key used to carry some information between begin and end of
     manual spans, by way of the meta map *)
   let key_manual_info : manual_span_info Meta_map.key = Meta_map.Key.create ()
-
-  (** key used to carry a unique "id" for all spans in an async context *)
-  let key_async_trace_id : int Meta_map.key = Meta_map.Key.create ()
 end
 
 let[@inline] conv_flavor = function
@@ -63,6 +60,12 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
   let open Private_ in
   let module M = struct
     let trace_id_gen_ = A.make 0
+
+    let[@inline] mk_trace_id () : trace_id =
+      let n = A.fetch_and_add trace_id_gen_ 1 in
+      let b = Bytes.create 8 in
+      Bytes.set_int64_le b 0 (Int64.of_int n);
+      Bytes.unsafe_to_string b
 
     (** generator for span ids *)
     let new_span_ : unit -> int =
@@ -100,8 +103,8 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
         CB.on_add_data st ~data span
       )
 
-    let enter_manual_span ~(parent : explicit_span option) ~flavor ~__FUNCTION__
-        ~__FILE__ ~__LINE__ ~data name : explicit_span =
+    let enter_manual_span ~(parent : explicit_span_ctx option) ~flavor
+        ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name : explicit_span =
       let span = Int64.of_int (new_span_ ()) in
       let tid = tid_ () in
       let time_ns = now_ns () in
@@ -111,8 +114,8 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
       (* get the common trace id, or make a new one *)
       let trace_id, parent =
         match parent with
-        | Some m -> Meta_map.find_exn key_async_trace_id m.meta, Some m.span
-        | None -> A.fetch_and_add trace_id_gen_ 1, None
+        | Some m -> m.trace_id, Some m.span
+        | None -> mk_trace_id (), None
       in
 
       CB.on_enter_manual_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~parent ~data
@@ -120,18 +123,13 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
       let meta =
         Meta_map.empty
         |> Meta_map.add key_manual_info { name; flavor; data = [] }
-        |> Meta_map.add key_async_trace_id trace_id
       in
-      { span; meta }
+      { span; trace_id; meta }
 
     let exit_manual_span (es : explicit_span) : unit =
       let time_ns = now_ns () in
       let tid = tid_ () in
-      let trace_id =
-        match Meta_map.find key_async_trace_id es.meta with
-        | None -> assert false
-        | Some id -> id
-      in
+      let trace_id = es.trace_id in
       let minfo =
         match Meta_map.find key_manual_info es.meta with
         | None -> assert false

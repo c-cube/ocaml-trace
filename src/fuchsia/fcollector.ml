@@ -104,7 +104,6 @@ end = struct
 end
 
 type async_span_info = {
-  async_id: int;
   flavor: [ `Sync | `Async ] option;
   name: string;
   mutable data: (string * user_data) list;
@@ -139,6 +138,12 @@ type state = {
       (** the state keeps tabs on thread-local state, so it can flush writers
         at the end. This is a tid-sharded array of maps. *)
 }
+
+let[@inline] mk_trace_id (self : state) : trace_id =
+  let n = A.fetch_and_add self.span_id_gen 1 in
+  let b = Bytes.create 8 in
+  Bytes.set_int64_le b 0 (Int64.of_int n);
+  Bytes.unsafe_to_string b
 
 let key_thread_local_st : per_thread_state TLS.t = TLS.create ()
 
@@ -298,36 +303,33 @@ struct
     | None -> !on_tracing_error (spf "unknown span %Ld" span)
     | Some idx -> Span_info_stack.add_data tls.spans idx data
 
-  let enter_manual_span ~(parent : explicit_span option) ~flavor ~__FUNCTION__:_
-      ~__FILE__:_ ~__LINE__:_ ~data name : explicit_span =
+  let enter_manual_span ~(parent : explicit_span_ctx option) ~flavor
+      ~__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ ~data name : explicit_span =
     let out, tls = get_thread_output () in
     let time_ns = Time.now_ns () in
 
     (* get the id, or make a new one *)
-    let async_id =
+    let trace_id =
       match parent with
-      | Some m -> (Meta_map.find_exn key_async_data m.meta).async_id
-      | None -> A.fetch_and_add st.span_id_gen 1
+      | Some m -> m.trace_id
+      | None -> mk_trace_id st
     in
 
     FWrite.Event.Async_begin.encode out ~name ~args:data ~t_ref:tls.thread_ref
-      ~time_ns ~async_id ();
+      ~time_ns ~async_id:trace_id ();
     {
       span = 0L;
-      meta =
-        Meta_map.(
-          empty |> add key_async_data { async_id; name; flavor; data = [] });
+      trace_id;
+      meta = Meta_map.(empty |> add key_async_data { name; flavor; data = [] });
     }
 
   let exit_manual_span (es : explicit_span) : unit =
-    let { async_id; name; data; flavor = _ } =
-      Meta_map.find_exn key_async_data es.meta
-    in
+    let { name; data; flavor = _ } = Meta_map.find_exn key_async_data es.meta in
     let out, tls = get_thread_output () in
     let time_ns = Time.now_ns () in
 
     FWrite.Event.Async_end.encode out ~name ~t_ref:tls.thread_ref ~time_ns
-      ~args:data ~async_id ()
+      ~args:data ~async_id:es.trace_id ()
 
   let add_data_to_manual_span (es : explicit_span) data =
     let m = Meta_map.find_exn key_async_data es.meta in

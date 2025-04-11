@@ -7,7 +7,10 @@ module A = Trace_core.Internal_.Atomic_
 let on_tracing_error = ref (fun s -> Printf.eprintf "trace-tef error: %s\n%!" s)
 
 let[@inline] int64_of_trace_id_ (id : Trace_core.trace_id) : int64 =
-  Bytes.get_int64_le (Bytes.unsafe_of_string id) 0
+  if id == Trace_core.Collector.dummy_trace_id then
+    0L
+  else
+    Bytes.get_int64_le (Bytes.unsafe_of_string id) 0
 
 module Mock_ = struct
   let enabled = ref false

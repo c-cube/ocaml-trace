@@ -48,8 +48,8 @@ module Writer = struct
     must_close: bool;  (** Do we have to close the underlying channel [oc]? *)
     pid: int;
   }
-  (** A writer to a [out_channel]. It writes JSON entries in an array
-      and closes the array at the end. *)
+  (** A writer to a [out_channel]. It writes JSON entries in an array and closes
+      the array at the end. *)
 
   let create ~(mode : [ `Single | `Jsonl ]) ~out () : t =
     let jsonl = mode = `Jsonl in
@@ -237,9 +237,8 @@ let print_non_closed_spans_warning spans =
     !names;
   flush stderr
 
-(** Background thread, takes events from the queue, puts them
-    in context using local state, and writes fully resolved
-    TEF events to [out]. *)
+(** Background thread, takes events from the queue, puts them in context using
+    local state, and writes fully resolved TEF events to [out]. *)
 let bg_thread ~mode ~out (events : Event.t B_queue.t) : unit =
   block_signals ();
 
@@ -308,8 +307,8 @@ let bg_thread ~mode ~out (events : Event.t B_queue.t) : unit =
     if Span_tbl.length spans > 0 then print_non_closed_spans_warning spans;
     ()
 
-(** Thread that simply regularly "ticks", sending events to
-    the background thread so it has a chance to write to the file *)
+(** Thread that simply regularly "ticks", sending events to the background
+    thread so it has a chance to write to the file *)
 let tick_thread events : unit =
   block_signals ();
   try

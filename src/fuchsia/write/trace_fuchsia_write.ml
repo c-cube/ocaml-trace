@@ -1,6 +1,6 @@
 (** Write fuchsia events into buffers.
 
-Reference: https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format *)
+    Reference: https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format *)
 
 module Util = Util
 module Buf = Buf
@@ -37,7 +37,8 @@ end
 
 open struct
   (** maximum length as specified in the
-        {{: https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format} spec} *)
+      {{:https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format} spec}
+  *)
   let max_str_len = 32000
 
   (** Length of string, in words *)
@@ -68,8 +69,8 @@ module Str_ref = struct
       (1 lsl 15) lor size
 end
 
-(** [truncate_string s] truncates [s] to the maximum length allowed for
-    strings. If [s] is already short enough, no allocation is done. *)
+(** [truncate_string s] truncates [s] to the maximum length allowed for strings.
+    If [s] is already short enough, no allocation is done. *)
 let[@inline] truncate_string s : string =
   if String.length s <= max_str_len then
     s

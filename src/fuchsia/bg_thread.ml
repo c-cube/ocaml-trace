@@ -51,9 +51,8 @@ let bg_thread ~buf_pool ~out ~(events : event B_queue.t) () : unit =
   let st = { oc; buf_pool; events } in
   bg_loop st
 
-(** Thread that simply regularly "ticks", sending events to
-     the background thread so it has a chance to write to the file,
-     and call [f()] *)
+(** Thread that simply regularly "ticks", sending events to the background
+    thread so it has a chance to write to the file, and call [f()] *)
 let tick_thread events : unit =
   try
     while true do

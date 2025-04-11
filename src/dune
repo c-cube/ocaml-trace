@@ -2,5 +2,5 @@
  (name trace)
  (public_name trace)
  (synopsis "Lightweight stub for tracing")
- (libraries (re_export trace.core))
-)
+ (libraries
+  (re_export trace.core)))

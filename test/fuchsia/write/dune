@@ -1,5 +1,4 @@
-
 (tests
-  (names t1 t2)
-  (package trace-fuchsia)
-  (libraries trace-fuchsia.write))
+ (names t1 t2)
+ (package trace-fuchsia)
+ (libraries trace-fuchsia.write))

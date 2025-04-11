@@ -1,25 +1,25 @@
 (** Callbacks used for subscribers.
 
-  Each subscriber defines a set of callbacks, for each possible
-  tracing event. These callbacks take a custom state that is paired
-  with the callbacks in {!Subscriber.t}.
+    Each subscriber defines a set of callbacks, for each possible tracing event.
+    These callbacks take a custom state that is paired with the callbacks in
+    {!Subscriber.t}.
 
-  To use a default implementation for some callbacks, use:
+    To use a default implementation for some callbacks, use:
 
-  {[
-  module My_callbacks = struct
-    type st = …
+    {[
+      module My_callbacks = struct
+        type st = …
 
-    include Trace_subscriber.Callbacks.Dummy
+        include Trace_subscriber.Callbacks.Dummy
 
-    let on_init (state:st) ~time_ns : unit = …
+        let on_init (state:st) ~time_ns : unit = …
 
-    (* … other custom callbacks … *)
-  end ]}
+        (* … other custom callbacks … *)
+      end
+    ]}
 
-  {b NOTE}: the [trace_id] passed alongside manual spans is guaranteed to be at
-  least 64 bits.
-*)
+    {b NOTE}: the [trace_id] passed alongside manual spans is guaranteed to be
+    at least 64 bits. *)
 
 open Trace_core
 open Types
@@ -55,7 +55,8 @@ module type S = sig
   (** Enter a regular (sync) span *)
 
   val on_exit_span : st -> time_ns:float -> tid:int -> span -> unit
-  (** Exit a span. This and [on_enter_span] must follow strict stack discipline *)
+  (** Exit a span. This and [on_enter_span] must follow strict stack discipline
+  *)
 
   val on_add_data : st -> data:(string * user_data) list -> span -> unit
   (** Add data to a regular span (which must be active) *)
@@ -115,14 +116,12 @@ module type S = sig
 end
 
 type 'st t = (module S with type st = 'st)
-(** Callbacks for a subscriber. There is one callback per event
-    in {!Trace}. The type ['st] is the state that is passed to
-    every single callback. *)
+(** Callbacks for a subscriber. There is one callback per event in {!Trace}. The
+    type ['st] is the state that is passed to every single callback. *)
 
-(** Dummy callbacks.
-    It can be useful to reuse some of these functions in a
-    real subscriber that doesn't want to handle {b all}
-    events, but only some of them. *)
+(** Dummy callbacks. It can be useful to reuse some of these functions in a real
+    subscriber that doesn't want to handle {b all} events, but only some of
+    them. *)
 module Dummy = struct
   let on_init _ ~time_ns:_ = ()
   let on_shutdown _ ~time_ns:_ = ()

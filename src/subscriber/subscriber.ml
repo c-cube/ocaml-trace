@@ -1,8 +1,8 @@
 (** Trace subscribers *)
 
-(** A trace subscriber. It pairs a set of callbacks
-    with the state they need (which can contain a file handle,
-    a socket to write events to, config, etc.).
+(** A trace subscriber. It pairs a set of callbacks with the state they need
+    (which can contain a file handle, a socket to write events to, config,
+    etc.).
 
     The design goal for this is that it should be possible to avoid allocations
     whenever the trace collector invokes the callbacks. *)
@@ -105,14 +105,14 @@ open struct
   end
 end
 
-(** [tee s1 s2] is a subscriber that forwards every
-    call to [s1] and [s2] both. *)
+(** [tee s1 s2] is a subscriber that forwards every call to [s1] and [s2] both.
+*)
 let tee (s1 : t) (s2 : t) : t =
   let st = s1, s2 in
   Sub { st; callbacks = (module Tee_cb) }
 
-(** Tee multiple subscribers, ie return a subscriber that forwards
-    to all the subscribers in [subs]. *)
+(** Tee multiple subscribers, ie return a subscriber that forwards to all the
+    subscribers in [subs]. *)
 let rec tee_l (subs : t list) : t =
   match subs with
   | [] -> dummy

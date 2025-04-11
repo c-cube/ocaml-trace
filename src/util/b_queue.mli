@@ -11,9 +11,8 @@ val push : 'a t -> 'a -> unit
     @raise Closed if [close q] was previously called.*)
 
 val pop_all : 'a t -> 'a list
-(** [pop_all bq] returns all items presently
-    in [bq], in the same order, and clears [bq].
-    It blocks if no element is in [bq]. *)
+(** [pop_all bq] returns all items presently in [bq], in the same order, and
+    clears [bq]. It blocks if no element is in [bq]. *)
 
 val close : _ t -> unit
 (** Close the queue, meaning there won't be any more [push] allowed. *)

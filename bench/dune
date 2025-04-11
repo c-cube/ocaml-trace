@@ -1,22 +1,23 @@
+(executable
+ (name trace1)
+ (modules trace1)
+ (libraries trace.core trace-tef))
 
 (executable
-  (name trace1)
-  (modules trace1)
-  (libraries trace.core trace-tef))
+ (name trace_fx)
+ (modules trace_fx)
+ (preprocess
+  (pps ppx_trace))
+ (libraries trace.core trace-fuchsia))
 
 (executable
-  (name trace_fx)
-  (modules trace_fx)
-  (preprocess (pps ppx_trace))
-  (libraries trace.core trace-fuchsia))
+ (name trace_tldrs)
+ (modules trace_tldrs)
+ (preprocess
+  (pps ppx_trace))
+ (libraries trace.core trace-tef.tldrs))
 
 (executable
-  (name trace_tldrs)
-  (modules trace_tldrs)
-  (preprocess (pps ppx_trace))
-  (libraries trace.core trace-tef.tldrs))
-
-(executable
-  (name bench_fuchsia_write)
-  (modules bench_fuchsia_write)
-  (libraries benchmark trace-fuchsia.write))
+ (name bench_fuchsia_write)
+ (modules bench_fuchsia_write)
+ (libraries benchmark trace-fuchsia.write))

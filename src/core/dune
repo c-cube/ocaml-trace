@@ -1,15 +1,17 @@
-
 (library
  (name trace_core)
  (public_name trace.core)
- (libraries (select meta_map.ml from
-                    (hmap -> meta_map.hmap.ml)
-                    (-> meta_map.ourown.ml)))
- (synopsis "Lightweight stub for tracing")
-)
+ (libraries
+  (select
+   meta_map.ml
+   from
+   (hmap -> meta_map.hmap.ml)
+   (-> meta_map.ourown.ml)))
+ (synopsis "Lightweight stub for tracing"))
 
 (rule
-  (targets atomic_.ml)
-  (action
-    (with-stdout-to %{targets}
-     (run ./gen/gen.exe --ocaml %{ocaml_version} --atomic))))
+ (targets atomic_.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ./gen/gen.exe --ocaml %{ocaml_version} --atomic))))

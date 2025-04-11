@@ -37,19 +37,19 @@ let expand_let ~ctxt (var : [ `Var of label loc | `Unit ]) (name : string) body
 let extension_let =
   Extension.V3.declare "trace" Extension.Context.expression
     (let open! Ast_pattern in
-    single_expr_payload
-      (pexp_let nonrecursive
-         (value_binding
-            ~pat:
-              (let pat_var = ppat_var __' |> map ~f:(fun f v -> f (`Var v)) in
-               let pat_unit =
-                 as__ @@ ppat_construct (lident (string "()")) none
-                 |> map ~f:(fun f _ -> f `Unit)
-               in
-               alt pat_var pat_unit)
-            ~expr:(estring __)
-         ^:: nil)
-         __))
+     single_expr_payload
+       (pexp_let nonrecursive
+          (value_binding
+             ~pat:
+               (let pat_var = ppat_var __' |> map ~f:(fun f v -> f (`Var v)) in
+                let pat_unit =
+                  as__ @@ ppat_construct (lident (string "()")) none
+                  |> map ~f:(fun f _ -> f `Unit)
+                in
+                alt pat_var pat_unit)
+             ~expr:(estring __)
+          ^:: nil)
+          __))
     expand_let
 
 let rule_let = Ppxlib.Context_free.Rule.extension extension_let
@@ -90,7 +90,7 @@ let expand_top_let ~ctxt rec_flag (vbs : _ list) =
 let extension_top_let =
   Extension.V3.declare "trace" Extension.Context.structure_item
     (let open! Ast_pattern in
-    pstr (pstr_value __ __ ^:: nil))
+     pstr (pstr_value __ __ ^:: nil))
     expand_top_let
 
 let rule_top_let = Ppxlib.Context_free.Rule.extension extension_top_let

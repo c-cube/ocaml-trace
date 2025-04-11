@@ -135,8 +135,8 @@ type state = {
   buf_pool: Buf_pool.t;
   next_thread_ref: int A.t;  (** in [0x01 .. 0xff], to allocate thread refs *)
   per_thread: per_thread_state Int_map.t A.t array;
-      (** the state keeps tabs on thread-local state, so it can flush writers
-        at the end. This is a tid-sharded array of maps. *)
+      (** the state keeps tabs on thread-local state, so it can flush writers at
+          the end. This is a tid-sharded array of maps. *)
 }
 
 let[@inline] mk_trace_id (self : state) : trace_id =

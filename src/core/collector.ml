@@ -1,9 +1,8 @@
 (** A global collector.
 
-    The collector, if present, is responsible for collecting messages
-    and spans, and storing them, recording them, forward them, or
-    offering them to other services and processes.
-*)
+    The collector, if present, is responsible for collecting messages and spans,
+    and storing them, recording them, forward them, or offering them to other
+    services and processes. *)
 
 open Types
 
@@ -30,7 +29,7 @@ module type S = sig
     (span -> 'a) ->
     'a
   (** Run the function in a new span.
-     @since 0.3 *)
+      @since 0.3 *)
 
   val enter_span :
     __FUNCTION__:string option ->
@@ -39,14 +38,14 @@ module type S = sig
     data:(string * user_data) list ->
     string ->
     span
-  (** Enter a new implicit span. For many uses cases, {!with_span} will
-      be easier to use.
+  (** Enter a new implicit span. For many uses cases, {!with_span} will be
+      easier to use.
       @since 0.6 *)
 
   val exit_span : span -> unit
-  (** Exit span. This should be called on the same thread
-      as the corresponding {!enter_span}, and nest properly with
-      other calls to enter/exit_span and {!with_span}.
+  (** Exit span. This should be called on the same thread as the corresponding
+      {!enter_span}, and nest properly with other calls to enter/exit_span and
+      {!with_span}.
       @since 0.6 *)
 
   val enter_manual_span :
@@ -58,16 +57,16 @@ module type S = sig
     data:(string * user_data) list ->
     string ->
     explicit_span
-  (** Enter an explicit span. Surrounding scope, if any, is provided by [parent],
-      and this function can store as much metadata as it wants in the hmap
-      in the {!explicit_span}'s [meta] field.
+  (** Enter an explicit span. Surrounding scope, if any, is provided by
+      [parent], and this function can store as much metadata as it wants in the
+      hmap in the {!explicit_span}'s [meta] field.
 
-      {b NOTE} the [parent] argument is now an {!explicit_span_ctx} and not
-      an {!explicit_span} since NEXT_RELEASE.
+      {b NOTE} the [parent] argument is now an {!explicit_span_ctx} and not an
+      {!explicit_span} since NEXT_RELEASE.
 
-      This means that the collector doesn't need to implement contextual
-      storage mapping {!span} to scopes, metadata, etc. on its side;
-      everything can be transmitted in the {!explicit_span}.
+      This means that the collector doesn't need to implement contextual storage
+      mapping {!span} to scopes, metadata, etc. on its side; everything can be
+      transmitted in the {!explicit_span}.
       @since 0.3 *)
 
   val exit_manual_span : explicit_span -> unit
@@ -76,6 +75,7 @@ module type S = sig
 
   val add_data_to_span : span -> (string * user_data) list -> unit
   (** @since Adds data to the current span.
+
       0.4 *)
 
   val add_data_to_manual_span :
@@ -99,9 +99,8 @@ module type S = sig
   (** Float counter. *)
 
   val extension_event : extension_event -> unit
-  (** Handle an extension event.
-      A collector {b MUST} simple ignore events it doesn't know,
-      and return [()] silently.
+  (** Handle an extension event. A collector {b MUST} simple ignore events it
+      doesn't know, and return [()] silently.
       @since 0.8 *)
 
   val shutdown : unit -> unit

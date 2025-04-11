@@ -19,16 +19,16 @@ end
 val enabled : unit -> bool
 (** Is there a collector?
 
-    This is fast, so that the traced program can check it before creating
-    any span or message. *)
+    This is fast, so that the traced program can check it before creating any
+    span or message. *)
 
 val get_default_level : unit -> Level.t
 (** Current default level for spans.
     @since 0.7 *)
 
 val set_default_level : Level.t -> unit
-(** Set level used for spans that do not specify it. The default
-    default value is [Level.Trace].
+(** Set level used for spans that do not specify it. The default default value
+    is [Level.Trace].
     @since 0.7 *)
 
 val ctx_of_span : explicit_span -> explicit_span_ctx
@@ -44,22 +44,20 @@ val with_span :
   string ->
   (span -> 'a) ->
   'a
-(** [with_span ~__FILE__ ~__LINE__ name f] enters a new span [sp],
-    and calls [f sp].
-    [sp] might be a dummy span if no collector is installed.
-    When [f sp] returns or raises, the span [sp] is exited.
+(** [with_span ~__FILE__ ~__LINE__ name f] enters a new span [sp], and calls
+    [f sp]. [sp] might be a dummy span if no collector is installed. When [f sp]
+    returns or raises, the span [sp] is exited.
 
     This is the recommended way to instrument most code.
 
-    @param level optional level for this span. since 0.7.
-      Default is set via {!set_default_level}.
+    @param level
+      optional level for this span. since 0.7. Default is set via
+      {!set_default_level}.
 
-    {b NOTE} an important restriction is that this is only supposed to
-    work for synchronous, direct style code. Monadic concurrency, Effect-based
-    fibers, etc. might not play well with this style of spans on some
-    or all backends. If you use cooperative concurrency,
-    see {!enter_manual_span}.
-*)
+    {b NOTE} an important restriction is that this is only supposed to work for
+    synchronous, direct style code. Monadic concurrency, Effect-based fibers,
+    etc. might not play well with this style of spans on some or all backends.
+    If you use cooperative concurrency, see {!enter_manual_span}. *)
 
 val enter_span :
   ?level:Level.t ->
@@ -71,17 +69,17 @@ val enter_span :
   span
 (** Enter a span manually.
 
-    @param level optional level for this span. since 0.7.
-      Default is set via {!set_default_level}. *)
+    @param level
+      optional level for this span. since 0.7. Default is set via
+      {!set_default_level}. *)
 
 val exit_span : span -> unit
-(** Exit a span manually. This must run on the same thread
-    as the corresponding {!enter_span}, and spans must nest
-    correctly. *)
+(** Exit a span manually. This must run on the same thread as the corresponding
+    {!enter_span}, and spans must nest correctly. *)
 
 val add_data_to_span : span -> (string * user_data) list -> unit
-(** Add structured data to the given active span (see {!with_span}).
-    Behavior is not specified if the span has been exited.
+(** Add structured data to the given active span (see {!with_span}). Behavior is
+    not specified if the span has been exited.
     @since 0.4 *)
 
 val enter_manual_span :
@@ -94,35 +92,37 @@ val enter_manual_span :
   ?data:(unit -> (string * user_data) list) ->
   string ->
   explicit_span
-(** Like {!with_span} but the caller is responsible for
-    obtaining the [parent] span from their {e own} caller, and carry the resulting
-    {!explicit_span} to  the matching {!exit_manual_span}. 
+(** Like {!with_span} but the caller is responsible for obtaining the [parent]
+    span from their {e own} caller, and carry the resulting {!explicit_span} to
+    the matching {!exit_manual_span}.
 
-    {b NOTE} this replaces [enter_manual_sub_span] and [enter_manual_toplevel_span]
-    by just making [parent] an explicit option. It is breaking anyway because we now pass
-    an {!explicit_span_ctx} instead of a full {!explicit_span} (the reason being that we
-    might receive this explicit_span_ctx from another process or machine).
+    {b NOTE} this replaces [enter_manual_sub_span] and
+    [enter_manual_toplevel_span] by just making [parent] an explicit option. It
+    is breaking anyway because we now pass an {!explicit_span_ctx} instead of a
+    full {!explicit_span} (the reason being that we might receive this
+    explicit_span_ctx from another process or machine).
 
-    @param flavor a description of the span that can be used by the {!Collector.S}
-      to decide how to represent the span. Typically, [`Sync] spans
-      start and stop on one thread, and are nested purely by their timestamp;
-      and [`Async] spans can overlap, migrate between threads, etc. (as happens in
-      Lwt, Eio, Async, etc.) which impacts how the collector might represent them.
-    @param level optional level for this span. since 0.7.
-      Default is set via {!set_default_level}.
+    @param flavor
+      a description of the span that can be used by the {!Collector.S} to decide
+      how to represent the span. Typically, [`Sync] spans start and stop on one
+      thread, and are nested purely by their timestamp; and [`Async] spans can
+      overlap, migrate between threads, etc. (as happens in Lwt, Eio, Async,
+      etc.) which impacts how the collector might represent them.
+    @param level
+      optional level for this span. since 0.7. Default is set via
+      {!set_default_level}.
     @since NEXT_RELEASE *)
 
 val exit_manual_span : explicit_span -> unit
-(** Exit an explicit span. This can be on another thread, in a
-    fiber or lightweight thread, etc. and will be supported by backends
-    nonetheless.
-    The span can be obtained via {!enter_manual_sub_span} or
+(** Exit an explicit span. This can be on another thread, in a fiber or
+    lightweight thread, etc. and will be supported by backends nonetheless. The
+    span can be obtained via {!enter_manual_sub_span} or
     {!enter_manual_toplevel_span}.
     @since 0.3 *)
 
 val add_data_to_manual_span : explicit_span -> (string * user_data) list -> unit
-(** [add_data_explicit esp data] adds [data] to the span [esp].
-      The behavior is not specified is the span has been exited already.
+(** [add_data_explicit esp data] adds [data] to the span [esp]. The behavior is
+    not specified is the span has been exited already.
     @since 0.4 *)
 
 val message :
@@ -131,11 +131,13 @@ val message :
   ?data:(unit -> (string * user_data) list) ->
   string ->
   unit
-(** [message msg] logs a message [msg] (if a collector is installed).
-    Additional metadata can be provided.
-    @param level optional level for this span. since 0.7.
-      Default is set via {!set_default_level}.
-    @param span the surrounding span, if any. This might be ignored by the collector. *)
+(** [message msg] logs a message [msg] (if a collector is installed). Additional
+    metadata can be provided.
+    @param level
+      optional level for this span. since 0.7. Default is set via
+      {!set_default_level}.
+    @param span
+      the surrounding span, if any. This might be ignored by the collector. *)
 
 val messagef :
   ?level:Level.t ->
@@ -144,20 +146,19 @@ val messagef :
   ((('a, Format.formatter, unit, unit) format4 -> 'a) -> unit) ->
   unit
 (** [messagef (fun k->k"hello %s %d!" "world" 42)] is like
-    [message "hello world 42!"] but only computes the string formatting
-    if a collector is installed.
-    @param level optional level for this span. since 0.7.
-      Default is set via {!set_default_level}. *)
+    [message "hello world 42!"] but only computes the string formatting if a
+    collector is installed.
+    @param level
+      optional level for this span. since 0.7. Default is set via
+      {!set_default_level}. *)
 
 val set_thread_name : string -> unit
-(** Give a name to the current thread.
-    This might be used by the collector
-    to display traces in a more informative way. *)
+(** Give a name to the current thread. This might be used by the collector to
+    display traces in a more informative way. *)
 
 val set_process_name : string -> unit
-(** Give a name to the current process.
-    This might be used by the collector
-    to display traces in a more informative way. *)
+(** Give a name to the current process. This might be used by the collector to
+    display traces in a more informative way. *)
 
 val counter_int :
   ?level:Level.t ->
@@ -165,10 +166,11 @@ val counter_int :
   string ->
   int ->
   unit
-(** Emit a counter of type [int]. Counters represent the evolution of some quantity
-    over time.
-    @param level optional level for this span. since 0.7.
-      Default is set via {!set_default_level}.
+(** Emit a counter of type [int]. Counters represent the evolution of some
+    quantity over time.
+    @param level
+      optional level for this span. since 0.7. Default is set via
+      {!set_default_level}.
     @param data metadata for this metric (since 0.4) *)
 
 val counter_float :
@@ -178,8 +180,9 @@ val counter_float :
   float ->
   unit
 (** Emit a counter of type [float]. See {!counter_int} for more details.
-    @param level optional level for this span. since 0.7.
-      Default is set via {!set_default_level}.
+    @param level
+      optional level for this span. since 0.7. Default is set via
+      {!set_default_level}.
     @param data metadata for this metric (since 0.4) *)
 
 (** {2 Collector} *)
@@ -191,32 +194,30 @@ type collector = (module Collector.S)
 
 val setup_collector : collector -> unit
 (** [setup_collector c] installs [c] as the current collector.
-    @raise Invalid_argument if there already is an established
-    collector. *)
+    @raise Invalid_argument if there already is an established collector. *)
 
 val get_current_level : unit -> Level.t
-(** Get current level. This is only meaningful if
-    a collector was set up with {!setup_collector}.
+(** Get current level. This is only meaningful if a collector was set up with
+    {!setup_collector}.
     @since 0.7 *)
 
 val set_current_level : Level.t -> unit
-(** Set the current level of tracing. This only has a visible
-    effect if a collector was installed with {!setup_collector}.
+(** Set the current level of tracing. This only has a visible effect if a
+    collector was installed with {!setup_collector}.
     @since 0.7 *)
 
 val shutdown : unit -> unit
-(** [shutdown ()] shutdowns the current collector, if one was installed,
-    and waits for it to terminate before returning. *)
+(** [shutdown ()] shutdowns the current collector, if one was installed, and
+    waits for it to terminate before returning. *)
 
 (** {2 Extensions} *)
 
 type extension_event = Types.extension_event = ..
 (** Extension event
-  @since 0.8 *)
+    @since 0.8 *)
 
 val extension_event : extension_event -> unit
-(** Trigger an extension event, whose meaning depends on
-    the library that defines it. Some collectors will
-    simply ignore it. This does nothing if no collector
-    is setup.
+(** Trigger an extension event, whose meaning depends on the library that
+    defines it. Some collectors will simply ignore it. This does nothing if no
+    collector is setup.
     @since 0.8 *)

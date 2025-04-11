@@ -30,8 +30,8 @@ open struct
     mutable data: (string * user_data) list;
   }
 
-  (** Key used to carry some information between begin and end of
-    manual spans, by way of the meta map *)
+  (** Key used to carry some information between begin and end of manual spans,
+      by way of the meta map *)
   let key_manual_info : manual_span_info Meta_map.key = Meta_map.Key.create ()
 end
 

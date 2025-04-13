@@ -1,0 +1,5 @@
+(library
+ (name trace_stdext)
+ (public_name trace.stdext)
+ (synopsis "standard extensions for trace")
+ (libraries trace.core))

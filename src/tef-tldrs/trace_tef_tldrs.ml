@@ -96,15 +96,16 @@ let subscriber_ (client : as_client) : Trace_subscriber.t =
 
   (* what to do when the collector shuts down *)
   let finally () =
-    (* ask the collector to emit the trace in a user-chosen file, perhaps *)
-    Option.iter
-      (fun file -> fpf out "EMIT_TEF %s\n" file)
-      client.emit_tef_at_exit;
     (try flush out with _ -> ());
     try Unix.close sock with _ -> ()
   in
 
   fpf out "OPEN %s\n%!" client.trace_id;
+  (* ask the collector to emit the trace in a user-chosen file, perhaps *)
+  Option.iter
+    (fun file -> fpf out "EMIT_TEF_AT_EXIT %s\n" file)
+    client.emit_tef_at_exit;
+
   Trace_tef.Private_.subscriber_jsonl ~finally ~out:(`Output out) ()
 
 let subscriber ~out () =

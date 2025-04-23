@@ -16,6 +16,12 @@ end
 (** {2 Main API} *)
 
 type t = Subscriber.t
+(** A trace subscriber. It pairs a set of callbacks with the state they need
+    (which can contain a file handle, a socket to write events to, config,
+    etc.).
+
+    The design goal for this is that it should be possible to avoid allocations
+    whenever the trace collector invokes the callbacks. *)
 
 val collector : t -> Trace_core.collector
 (** A collector that calls the subscriber's callbacks.

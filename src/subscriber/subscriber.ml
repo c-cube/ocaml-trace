@@ -17,105 +17,97 @@ type t =
 let dummy : t = Sub { st = (); callbacks = Callbacks.dummy () }
 
 open struct
-  module Tee_cb : Callbacks.S with type st = t * t = struct
-    type nonrec st = t * t
+  module Tee_cb : Callbacks.S with type st = t array = struct
+    type nonrec st = t array
 
-    let on_init
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~time_ns =
-      CB1.on_init s1 ~time_ns;
-      CB2.on_init s2 ~time_ns
+    let on_init st ~time_ns =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_init s ~time_ns
+      done
 
-    let on_shutdown
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~time_ns =
-      CB1.on_shutdown s1 ~time_ns;
-      CB2.on_shutdown s2 ~time_ns
+    let on_shutdown st ~time_ns =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_shutdown s ~time_ns
+      done
 
-    let on_name_thread
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~time_ns ~tid ~name =
-      CB1.on_name_thread s1 ~time_ns ~tid ~name;
-      CB2.on_name_thread s2 ~time_ns ~tid ~name
+    let on_name_thread st ~time_ns ~tid ~name =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_name_thread s ~time_ns ~tid ~name
+      done
 
-    let on_name_process
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~time_ns ~tid ~name =
-      CB1.on_name_process s1 ~time_ns ~tid ~name;
-      CB2.on_name_process s2 ~time_ns ~tid ~name
+    let on_name_process st ~time_ns ~tid ~name =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_name_process s ~time_ns ~tid ~name
+      done
 
-    let on_enter_span
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~__FUNCTION__ ~__FILE__
-        ~__LINE__ ~time_ns ~tid ~data ~name span =
-      CB1.on_enter_span s1 ~__FUNCTION__ ~__FILE__ ~__LINE__ ~time_ns ~tid ~data
-        ~name span;
-      CB2.on_enter_span s2 ~__FUNCTION__ ~__FILE__ ~__LINE__ ~time_ns ~tid ~data
-        ~name span
+    let on_enter_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~time_ns ~tid ~data
+        ~name span =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_enter_span s ~__FUNCTION__ ~__FILE__ ~__LINE__ ~time_ns ~tid ~data
+          ~name span
+      done
 
-    let on_exit_span
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~time_ns ~tid span =
-      CB1.on_exit_span s1 ~time_ns ~tid span;
-      CB2.on_exit_span s2 ~time_ns ~tid span
+    let on_exit_span st ~time_ns ~tid span =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_exit_span s ~time_ns ~tid span
+      done
 
-    let on_add_data
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~data span =
-      CB1.on_add_data s1 ~data span;
-      CB2.on_add_data s2 ~data span
+    let on_add_data st ~data span =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_add_data s ~data span
+      done
 
-    let on_message
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~time_ns ~tid ~span ~data
-        msg =
-      CB1.on_message s1 ~time_ns ~tid ~span ~data msg;
-      CB2.on_message s2 ~time_ns ~tid ~span ~data msg
+    let on_message st ~time_ns ~tid ~span ~data msg =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_message s ~time_ns ~tid ~span ~data msg
+      done
 
-    let on_counter
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~time_ns ~tid ~data ~name
-        n =
-      CB1.on_counter s1 ~time_ns ~tid ~data ~name n;
-      CB2.on_counter s2 ~time_ns ~tid ~data ~name n
+    let on_counter st ~time_ns ~tid ~data ~name n =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_counter s ~time_ns ~tid ~data ~name n
+      done
 
-    let on_enter_manual_span
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~__FUNCTION__ ~__FILE__
-        ~__LINE__ ~time_ns ~tid ~parent ~data ~name ~flavor ~trace_id span =
-      CB1.on_enter_manual_span s1 ~__FUNCTION__ ~__FILE__ ~__LINE__ ~time_ns
-        ~tid ~parent ~data ~name ~flavor ~trace_id span;
-      CB2.on_enter_manual_span s2 ~__FUNCTION__ ~__FILE__ ~__LINE__ ~time_ns
-        ~tid ~parent ~data ~name ~flavor ~trace_id span
+    let on_enter_manual_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~time_ns ~tid
+        ~parent ~data ~name ~flavor ~trace_id span =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_enter_manual_span s ~__FUNCTION__ ~__FILE__ ~__LINE__ ~time_ns
+          ~tid ~parent ~data ~name ~flavor ~trace_id span
+      done
 
-    let on_exit_manual_span
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~time_ns ~tid ~name ~data
-        ~flavor ~trace_id span =
-      CB1.on_exit_manual_span s1 ~time_ns ~tid ~name ~data ~flavor ~trace_id
-        span;
-      CB2.on_exit_manual_span s2 ~time_ns ~tid ~name ~data ~flavor ~trace_id
-        span
+    let on_exit_manual_span st ~time_ns ~tid ~name ~data ~flavor ~trace_id span
+        =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_exit_manual_span s ~time_ns ~tid ~name ~data ~flavor ~trace_id
+          span
+      done
 
-    let on_extension_event
-        ( Sub { st = s1; callbacks = (module CB1) },
-          Sub { st = s2; callbacks = (module CB2) } ) ~time_ns ~tid ev : unit =
-      CB1.on_extension_event s1 ~time_ns ~tid ev;
-      CB2.on_extension_event s2 ~time_ns ~tid ev
+    let on_extension_event st ~time_ns ~tid ev : unit =
+      for i = 0 to Array.length st - 1 do
+        let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
+        CB.on_extension_event s ~time_ns ~tid ev
+      done
   end
 end
 
-(** [tee s1 s2] is a subscriber that forwards every call to [s1] and [s2] both.
-*)
-let tee (s1 : t) (s2 : t) : t =
-  let st = s1, s2 in
-  Sub { st; callbacks = (module Tee_cb) }
-
 (** Tee multiple subscribers, ie return a subscriber that forwards to all the
     subscribers in [subs]. *)
-let rec tee_l (subs : t list) : t =
+let tee_l (subs : t list) : t =
   match subs with
   | [] -> dummy
   | [ s ] -> s
-  | [ s1; s2 ] -> tee s1 s2
-  | s1 :: s2 :: tl -> tee (tee s1 s2) (tee_l tl)
+  | l -> Sub { st = Array.of_list l; callbacks = (module Tee_cb) }
+
+(** [tee s1 s2] is a subscriber that forwards every call to [s1] and [s2] both.
+*)
+let tee (s1 : t) (s2 : t) : t = tee_l [ s1; s2 ]

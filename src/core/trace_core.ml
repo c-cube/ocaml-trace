@@ -77,6 +77,16 @@ let[@inline] enter_manual_span ~parent ?flavor ?level ?__FUNCTION__ ~__FILE__
       ~__LINE__ ?data name
   | _ -> Collector.dummy_explicit_span
 
+let[@inline] enter_manual_toplevel_span ?flavor ?level ?__FUNCTION__ ~__FILE__
+    ~__LINE__ ?data name : explicit_span =
+  enter_manual_span ~parent:None ?flavor ?level ?__FUNCTION__ ~__FILE__
+    ~__LINE__ ?data name
+
+let[@inline] enter_manual_sub_span ~parent ?flavor ?level ?__FUNCTION__
+    ~__FILE__ ~__LINE__ ?data name : explicit_span =
+  enter_manual_span ~parent:(Some parent) ?flavor ?level ?__FUNCTION__ ~__FILE__
+    ~__LINE__ ?data name
+
 let[@inline] exit_manual_span espan : unit =
   if espan != Collector.dummy_explicit_span then (
     match A.get collector with

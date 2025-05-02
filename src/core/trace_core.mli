@@ -113,6 +113,31 @@ val enter_manual_span :
       {!set_default_level}.
     @since NEXT_RELEASE *)
 
+val enter_manual_sub_span :
+  parent:explicit_span_ctx ->
+  ?flavor:[ `Sync | `Async ] ->
+  ?level:Level.t ->
+  ?__FUNCTION__:string ->
+  __FILE__:string ->
+  __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
+  string ->
+  explicit_span
+[@@deprecated "use enter_manual_span"]
+(** @deprecated since NEXT_RELEASE, use {!enter_manual_span} *)
+
+val enter_manual_toplevel_span :
+  ?flavor:[ `Sync | `Async ] ->
+  ?level:Level.t ->
+  ?__FUNCTION__:string ->
+  __FILE__:string ->
+  __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
+  string ->
+  explicit_span
+[@@deprecated "use enter_manual_span"]
+(** @deprecated since NEXT_RELEASE, use {!enter_manual_span} *)
+
 val exit_manual_span : explicit_span -> unit
 (** Exit an explicit span. This can be on another thread, in a fiber or
     lightweight thread, etc. and will be supported by backends nonetheless. The

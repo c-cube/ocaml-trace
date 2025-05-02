@@ -5,6 +5,19 @@ module Int_map = Map.Make (Int)
 
 let pid = Unix.getpid ()
 
+module Mock_ = struct
+  let enabled = ref false
+  let now = ref 0
+
+  (* used to mock timing *)
+  let get_now_ns () : float =
+    let x = !now in
+    incr now;
+    float_of_int x *. 1000.
+
+  let get_tid_ () : int = 3
+end
+
 (** Thread-local stack of span info *)
 module Span_info_stack : sig
   type t
@@ -408,3 +421,10 @@ let create ~out () : collector =
       ()
   in
   (module Coll)
+
+module Internal_ = struct
+  let mock_all_ () =
+    Mock_.enabled := true;
+    Sub.Private_.get_now_ns_ := Some Mock_.get_now_ns;
+    Sub.Private_.get_tid_ := Some Mock_.get_tid_
+end

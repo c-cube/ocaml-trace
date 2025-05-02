@@ -34,5 +34,6 @@ let with_setup ?out () f =
   Fun.protect ~finally:Trace_core.shutdown f
 
 module Internal_ = struct
+  let mock_all_ = Fcollector.Internal_.mock_all_
   let on_tracing_error = on_tracing_error
 end

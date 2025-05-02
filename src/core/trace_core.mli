@@ -114,7 +114,7 @@ val enter_manual_span :
     @since NEXT_RELEASE *)
 
 val enter_manual_sub_span :
-  parent:explicit_span_ctx ->
+  parent:explicit_span ->
   ?flavor:[ `Sync | `Async ] ->
   ?level:Level.t ->
   ?__FUNCTION__:string ->

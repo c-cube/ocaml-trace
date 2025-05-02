@@ -31,13 +31,17 @@ val collector : t -> Trace_core.collector
 (**/**)
 
 module Private_ : sig
-  val get_now_ns_ : (unit -> float) option ref
+  val mock : bool ref
+  (** Global mock flag. If enable, all timestamps, tid, etc should be faked. *)
+
+  val get_now_ns_ : (unit -> int64) ref
   (** The callback used to get the current timestamp *)
 
-  val get_tid_ : (unit -> int) option ref
+  val get_tid_ : (unit -> int) ref
   (** The callback used to get the current thread's id *)
 
-  val now_ns : unit -> float
+  val now_ns : unit -> int64
+  (** Get the current timestamp, or a mock version *)
 end
 
 (**/**)

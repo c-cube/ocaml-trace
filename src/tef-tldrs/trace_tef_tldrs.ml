@@ -22,7 +22,7 @@ let get_unix_socket () =
 
 type as_client = {
   trace_id: string;
-  socket: string;
+  socket: string;  (** Unix socket address *)
   emit_tef_at_exit: string option;
       (** For parent, ask daemon to emit traces here *)
 }

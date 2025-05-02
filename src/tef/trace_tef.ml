@@ -6,6 +6,9 @@ module A = Trace_core.Internal_.Atomic_
 
 let on_tracing_error = ref (fun s -> Printf.eprintf "trace-tef error: %s\n%!" s)
 
+let[@inline] time_us_of_time_ns (t : int64) : float =
+  Int64.div t 1_000L |> Int64.to_float
+
 let[@inline] int64_of_trace_id_ (id : Trace_core.trace_id) : int64 =
   if id == Trace_core.Collector.dummy_trace_id then
     0L
@@ -13,14 +16,13 @@ let[@inline] int64_of_trace_id_ (id : Trace_core.trace_id) : int64 =
     Bytes.get_int64_le (Bytes.unsafe_of_string id) 0
 
 module Mock_ = struct
-  let enabled = ref false
   let now = ref 0
 
   (* used to mock timing *)
-  let get_now_ns () : float =
+  let get_now_ns () : int64 =
     let x = !now in
     incr now;
-    float_of_int x *. 1000.
+    Int64.(mul (of_int x) 1000L)
 
   let get_tid_ () : int = 3
 end
@@ -63,7 +65,7 @@ module Writer = struct
       | `Output oc -> oc, false
     in
     let pid =
-      if !Mock_.enabled then
+      if !Sub.Private_.mock then
         2
       else
         Unix.getpid ()
@@ -300,7 +302,7 @@ let bg_thread ~mode ~out (events : Event.t B_queue.t) : unit =
     (* write a message about us closing *)
     Writer.emit_instant_event ~name:"tef-worker.exit"
       ~tid:(Thread.id @@ Thread.self ())
-      ~ts:(Sub.Private_.now_ns () *. 1e-3)
+      ~ts:(time_us_of_time_ns @@ Sub.Private_.now_ns ())
       ~args:[] writer;
 
     (* warn if app didn't close all spans *)
@@ -354,12 +356,12 @@ let subscriber_ ~finally ~out ~(mode : [ `Single | `Jsonl ]) () : Sub.t =
 
     let[@inline] on_enter_span (self : st) ~__FUNCTION__:fun_name ~__FILE__:_
         ~__LINE__:_ ~time_ns ~tid ~data ~name span : unit =
-      let time_us = time_ns *. 1e-3 in
+      let time_us = time_us_of_time_ns @@ time_ns in
       B_queue.push self.events
       @@ E_define_span { tid; name; time_us; id = span; fun_name; data }
 
     let on_exit_span (self : st) ~time_ns ~tid:_ span : unit =
-      let time_us = time_ns *. 1e-3 in
+      let time_us = time_us_of_time_ns @@ time_ns in
       B_queue.push self.events @@ E_exit_span { id = span; time_us }
 
     let on_add_data (self : st) ~data span =
@@ -367,24 +369,24 @@ let subscriber_ ~finally ~out ~(mode : [ `Single | `Jsonl ]) () : Sub.t =
         B_queue.push self.events @@ E_add_data { id = span; data }
 
     let on_message (self : st) ~time_ns ~tid ~span:_ ~data msg : unit =
-      let time_us = time_ns *. 1e-3 in
+      let time_us = time_us_of_time_ns @@ time_ns in
       B_queue.push self.events @@ E_message { tid; time_us; msg; data }
 
     let on_counter (self : st) ~time_ns ~tid ~data:_ ~name f : unit =
-      let time_us = time_ns *. 1e-3 in
+      let time_us = time_us_of_time_ns @@ time_ns in
       B_queue.push self.events @@ E_counter { name; n = f; time_us; tid }
 
     let on_enter_manual_span (self : st) ~__FUNCTION__:fun_name ~__FILE__:_
         ~__LINE__:_ ~time_ns ~tid ~parent:_ ~data ~name ~flavor ~trace_id _span
         : unit =
-      let time_us = time_ns *. 1e-3 in
+      let time_us = time_us_of_time_ns @@ time_ns in
       B_queue.push self.events
       @@ E_enter_manual_span
            { id = trace_id; time_us; tid; data; name; fun_name; flavor }
 
     let on_exit_manual_span (self : st) ~time_ns ~tid ~name ~data ~flavor
         ~trace_id (_ : span) : unit =
-      let time_us = time_ns *. 1e-3 in
+      let time_us = time_us_of_time_ns @@ time_ns in
       B_queue.push self.events
       @@ E_exit_manual_span { tid; id = trace_id; name; time_us; data; flavor }
 
@@ -438,9 +440,9 @@ let with_setup ?out () f =
 
 module Private_ = struct
   let mock_all_ () =
-    Mock_.enabled := true;
-    Sub.Private_.get_now_ns_ := Some Mock_.get_now_ns;
-    Sub.Private_.get_tid_ := Some Mock_.get_tid_;
+    Sub.Private_.mock := true;
+    Sub.Private_.get_now_ns_ := Mock_.get_now_ns;
+    Sub.Private_.get_tid_ := Mock_.get_tid_;
     ()
 
   let on_tracing_error = on_tracing_error

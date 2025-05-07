@@ -43,6 +43,33 @@ let run () =
     done
   done
 
+let to_hex (s : string) : string =
+  let i_to_hex (i : int) =
+    if i < 10 then
+      Char.chr (i + Char.code '0')
+    else
+      Char.chr (i - 10 + Char.code 'a')
+  in
+
+  let res = Bytes.create (2 * String.length s) in
+  for i = 0 to String.length s - 1 do
+    let n = Char.code (String.get s i) in
+    Bytes.set res (2 * i) (i_to_hex ((n land 0xf0) lsr 4));
+    Bytes.set res ((2 * i) + 1) (i_to_hex (n land 0x0f))
+  done;
+  Bytes.unsafe_to_string res
+
 let () =
-  Trace_tef.Private_.mock_all_ ();
-  Trace_tef.with_setup ~out:`Stdout () @@ fun () -> run ()
+  Trace_fuchsia.Internal_.mock_all_ ();
+  let buf = Buffer.create 32 in
+  let exporter = Trace_fuchsia.Exporter.of_buffer buf in
+  Trace_fuchsia.with_setup ~out:(`Exporter exporter) () run;
+  exporter.close ();
+
+  let data = Buffer.contents buf in
+  (let oc = open_out_bin "t1.fxt" in
+   output_string oc data;
+   close_out_noerr oc);
+
+  print_endline (to_hex data);
+  flush stdout

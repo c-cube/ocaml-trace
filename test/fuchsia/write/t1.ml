@@ -1,4 +1,4 @@
-open Trace_fuchsia_write
+open Trace_fuchsia
 
 module Str_ = struct
   open String
@@ -39,14 +39,14 @@ module Str_ = struct
 end
 
 let () =
-  let l = List.init 100 (fun i -> Util.round_to_word i) in
+  let l = List.init 100 (fun i -> Writer.Util.round_to_word i) in
   assert (List.for_all (fun x -> x mod 8 = 0) l)
 
 let () =
-  assert (Str_ref.inline 0 = 0b0000_0000_0000_0000);
-  assert (Str_ref.inline 1 = 0b1000_0000_0000_0001);
-  assert (Str_ref.inline 6 = 0b1000_0000_0000_0110);
-  assert (Str_ref.inline 31999 = 0b1111_1100_1111_1111);
+  assert (Writer.Str_ref.inline 0 = 0b0000_0000_0000_0000);
+  assert (Writer.Str_ref.inline 1 = 0b1000_0000_0000_0001);
+  assert (Writer.Str_ref.inline 6 = 0b1000_0000_0000_0110);
+  assert (Writer.Str_ref.inline 31999 = 0b1111_1100_1111_1111);
   ()
 
 let () =

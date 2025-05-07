@@ -929,5 +929,4 @@
 {"pid":2,"cat":"","tid": 3,"dur": 217.00,"ts": 1642.00,"name":"Dune__exe__T2.fib2","ph":"X"},
 {"pid":2,"cat":"","tid": 3,"dur": 353.00,"ts": 1507.00,"name":"Dune__exe__T2.fib2","ph":"X"},
 {"pid":2,"cat":"","tid": 3,"dur": 573.00,"ts": 1288.00,"name":"Dune__exe__T2.fib2","ph":"X"},
-{"pid":2,"cat":"","tid": 3,"dur": 929.00,"ts": 933.00,"name":"Dune__exe__T2.fib2","ph":"X"},
-{"pid":2,"cat":"","tid": 1,"ts": 1864.00,"name":"tef-worker.exit","ph":"I"}]
+{"pid":2,"cat":"","tid": 3,"dur": 929.00,"ts": 933.00,"name":"Dune__exe__T2.fib2","ph":"X"}]

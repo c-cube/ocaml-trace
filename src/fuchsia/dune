@@ -6,8 +6,8 @@
  (libraries
   trace.core
   trace.private.util
+  trace.subscriber
   thread-local-storage
-  (re_export trace-fuchsia.write)
   bigarray
   mtime
   mtime.clock.os

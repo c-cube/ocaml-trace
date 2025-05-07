@@ -2,14 +2,10 @@
 
     Reference: https://fuchsia.dev/fuchsia-src/reference/tracing/trace-format *)
 
+open Common_
 module Util = Util
-module Buf = Buf
-module Output = Output
-module Buf_pool = Buf_pool
 
 open struct
-  let spf = Printf.sprintf
-
   let[@inline] int64_of_trace_id_ (id : Trace_core.trace_id) : int64 =
     if id == Trace_core.Collector.dummy_trace_id then
       0L
@@ -19,7 +15,27 @@ end
 
 open Util
 
-type user_data = Trace_core.user_data
+type user_data = Sub.user_data =
+  | U_bool of bool
+  | U_float of float
+  | U_int of int
+  | U_none
+  | U_string of string
+
+type arg =
+  | A_bool of bool
+  | A_float of float
+  | A_int of int
+  | A_none
+  | A_string of string
+  | A_kid of int64
+
+(* NOTE: only works because [user_data] is a prefix of [arg] and is immutable *)
+let arg_of_user_data : user_data -> arg = Obj.magic
+
+(* NOTE: only works because [user_data] is a prefix of [arg] and is immutable *)
+let args_of_user_data : (string * user_data) list -> (string * arg) list =
+  Obj.magic
 
 module I64 = struct
   include Int64
@@ -111,8 +127,8 @@ module Metadata = struct
     let value = 0x0016547846040010L
     let size_word = 1
 
-    let encode (out : Output.t) =
-      let buf = Output.get_buf out ~available_word:size_word in
+    let encode (bufs : Buf_chain.t) =
+      let@ buf = Buf_chain.with_buf bufs ~available_word:size_word in
       Buf.add_i64 buf value
   end
 
@@ -122,8 +138,8 @@ module Metadata = struct
     (** Default: 1 tick = 1 ns *)
     let default_ticks_per_sec = 1_000_000_000L
 
-    let encode (out : Output.t) ~ticks_per_secs () : unit =
-      let buf = Output.get_buf out ~available_word:size_word in
+    let encode (bufs : Buf_chain.t) ~ticks_per_secs () : unit =
+      let@ buf = Buf_chain.with_buf bufs ~available_word:size_word in
       let hd = I64.(1L lor (of_int size_word lsl 4)) in
       Buf.add_i64 buf hd;
       Buf.add_i64 buf ticks_per_secs
@@ -132,10 +148,10 @@ module Metadata = struct
   module Provider_info = struct
     let size_word ~name () = 1 + str_len_word name
 
-    let encode (out : Output.t) ~(id : int) ~name () : unit =
+    let encode (bufs : Buf_chain.t) ~(id : int) ~name () : unit =
       let name = truncate_string name in
       let size = size_word ~name () in
-      let buf = Output.get_buf out ~available_word:size in
+      let@ buf = Buf_chain.with_buf bufs ~available_word:size in
       let hd =
         I64.(
           (of_int size lsl 4)
@@ -152,29 +168,29 @@ module Metadata = struct
 end
 
 module Argument = struct
-  type 'a t = string * ([< user_data | `Kid of int ] as 'a)
+  type t = string * arg
 
-  let check_valid_ : _ t -> unit = function
-    | _, `String s -> assert (String.length s < max_str_len)
+  let check_valid_ : t -> unit = function
+    | _, A_string s -> assert (String.length s < max_str_len)
     | _ -> ()
 
   let[@inline] is_i32_ (i : int) : bool = Int32.(to_int (of_int i) = i)
 
-  let size_word (self : _ t) =
+  let size_word (self : t) =
     let name, data = self in
     match data with
-    | `None | `Bool _ -> 1 + str_len_word name
-    | `Int i when is_i32_ i -> 1 + str_len_word name
-    | `Int _ -> (* int64 *) 2 + str_len_word name
-    | `Float _ -> 2 + str_len_word name
-    | `String s -> 1 + str_len_word_maybe_too_big s + str_len_word name
-    | `Kid _ -> 2 + str_len_word name
+    | A_none | A_bool _ -> 1 + str_len_word name
+    | A_int i when is_i32_ i -> 1 + str_len_word name
+    | A_int _ -> (* int64 *) 2 + str_len_word name
+    | A_float _ -> 2 + str_len_word name
+    | A_string s -> 1 + str_len_word_maybe_too_big s + str_len_word name
+    | A_kid _ -> 2 + str_len_word name
 
   open struct
     external int_of_bool : bool -> int = "%identity"
   end
 
-  let encode (buf : Buf.t) (self : _ t) : unit =
+  let encode (buf : Buf.t) (self : t) : unit =
     let name, data = self in
     let name = truncate_string name in
     let size = size_word self in
@@ -187,26 +203,26 @@ module Argument = struct
     in
 
     match data with
-    | `None ->
+    | A_none ->
       let hd = hd_arg_size in
       Buf.add_i64 buf hd;
       Buf.add_string buf name
-    | `Int i when is_i32_ i ->
+    | A_int i when is_i32_ i ->
       let hd = I64.(1L lor hd_arg_size lor (of_int i lsl 32)) in
       Buf.add_i64 buf hd;
       Buf.add_string buf name
-    | `Int i ->
+    | A_int i ->
       (* int64 *)
       let hd = I64.(3L lor hd_arg_size) in
       Buf.add_i64 buf hd;
       Buf.add_string buf name;
       Buf.add_i64 buf (I64.of_int i)
-    | `Float f ->
+    | A_float f ->
       let hd = I64.(5L lor hd_arg_size) in
       Buf.add_i64 buf hd;
       Buf.add_string buf name;
       Buf.add_i64 buf (I64.bits_of_float f)
-    | `String s ->
+    | A_string s ->
       let s = truncate_string s in
       let hd =
         I64.(
@@ -216,35 +232,35 @@ module Argument = struct
       Buf.add_i64 buf hd;
       Buf.add_string buf name;
       Buf.add_string buf s
-    | `Bool b ->
+    | A_bool b ->
       let hd = I64.(9L lor hd_arg_size lor (of_int (int_of_bool b) lsl 16)) in
       Buf.add_i64 buf hd;
       Buf.add_string buf name
-    | `Kid kid ->
+    | A_kid kid ->
       (* int64 *)
       let hd = I64.(8L lor hd_arg_size) in
       Buf.add_i64 buf hd;
       Buf.add_string buf name;
-      Buf.add_i64 buf (I64.of_int kid)
+      Buf.add_i64 buf kid
 end
 
 module Arguments = struct
-  type 'a t = 'a Argument.t list
+  type t = Argument.t list
 
-  let[@inline] len (self : _ t) : int =
+  let[@inline] len (self : t) : int =
     match self with
     | [] -> 0
     | [ _ ] -> 1
     | _ :: _ :: tl -> 2 + List.length tl
 
-  let check_valid (self : _ t) =
+  let check_valid (self : t) =
     let len = len self in
     if len > 15 then
       invalid_arg (spf "fuchsia: can have at most 15 args, got %d" len);
     List.iter Argument.check_valid_ self;
     ()
 
-  let[@inline] size_word (self : _ t) =
+  let[@inline] size_word (self : t) =
     match self with
     | [] -> 0
     | [ a ] -> Argument.size_word a
@@ -254,7 +270,7 @@ module Arguments = struct
         (Argument.size_word a + Argument.size_word b)
         tl
 
-  let[@inline] encode (buf : Buf.t) (self : _ t) =
+  let[@inline] encode (buf : Buf.t) (self : t) =
     let rec aux buf l =
       match l with
       | [] -> ()
@@ -276,11 +292,11 @@ module Thread_record = struct
   let size_word : int = 3
 
   (** Record that [Thread_ref.ref as_ref] represents the pair [pid, tid] *)
-  let encode (out : Output.t) ~as_ref ~pid ~tid () : unit =
+  let encode (bufs : Buf_chain.t) ~as_ref ~pid ~tid () : unit =
     if as_ref <= 0 || as_ref > 255 then
       invalid_arg "fuchsia: thread_record: invalid ref";
 
-    let buf = Output.get_buf out ~available_word:size_word in
+    let@ buf = Buf_chain.with_buf bufs ~available_word:size_word in
 
     let hd = I64.(3L lor (of_int size_word lsl 4) lor (of_int as_ref lsl 16)) in
     Buf.add_i64 buf hd;
@@ -296,11 +312,11 @@ module Event = struct
       1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args
 
-    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
-        : unit =
+    let encode (bufs : Buf_chain.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args
+        () : unit =
       let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
-      let buf = Output.get_buf out ~available_word:size in
+      let@ buf = Buf_chain.with_buf bufs ~available_word:size in
 
       (* set category = 0 *)
       let hd =
@@ -331,11 +347,11 @@ module Event = struct
       1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args + 1 (* counter id *)
 
-    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
-        : unit =
+    let encode (bufs : Buf_chain.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args
+        () : unit =
       let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
-      let buf = Output.get_buf out ~available_word:size in
+      let@ buf = Buf_chain.with_buf bufs ~available_word:size in
 
       let hd =
         I64.(
@@ -368,11 +384,11 @@ module Event = struct
       1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args
 
-    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
-        : unit =
+    let encode (bufs : Buf_chain.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args
+        () : unit =
       let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
-      let buf = Output.get_buf out ~available_word:size in
+      let@ buf = Buf_chain.with_buf bufs ~available_word:size in
 
       let hd =
         I64.(
@@ -403,11 +419,11 @@ module Event = struct
       1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args
 
-    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args ()
-        : unit =
+    let encode (bufs : Buf_chain.t) ~name ~(t_ref : Thread_ref.t) ~time_ns ~args
+        () : unit =
       let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
-      let buf = Output.get_buf out ~available_word:size in
+      let@ buf = Buf_chain.with_buf bufs ~available_word:size in
 
       let hd =
         I64.(
@@ -438,11 +454,11 @@ module Event = struct
       1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args + 1 (* end timestamp *)
 
-    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
+    let encode (bufs : Buf_chain.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
         ~end_time_ns ~args () : unit =
       let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
-      let buf = Output.get_buf out ~available_word:size in
+      let@ buf = Buf_chain.with_buf bufs ~available_word:size in
 
       (* set category = 0 *)
       let hd =
@@ -475,11 +491,11 @@ module Event = struct
       1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args + 1 (* async id *)
 
-    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
+    let encode (bufs : Buf_chain.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
         ~(async_id : Trace_core.trace_id) ~args () : unit =
       let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
-      let buf = Output.get_buf out ~available_word:size in
+      let@ buf = Buf_chain.with_buf bufs ~available_word:size in
 
       let hd =
         I64.(
@@ -511,11 +527,11 @@ module Event = struct
       1 + Thread_ref.size_word t_ref + 1 (* timestamp *) + str_len_word name
       + Arguments.size_word args + 1 (* async id *)
 
-    let encode (out : Output.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
+    let encode (bufs : Buf_chain.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
         ~(async_id : Trace_core.trace_id) ~args () : unit =
       let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
-      let buf = Output.get_buf out ~available_word:size in
+      let@ buf = Buf_chain.with_buf bufs ~available_word:size in
 
       let hd =
         I64.(
@@ -556,10 +572,11 @@ module Kernel_object = struct
   let ty_process : ty = 1
   let ty_thread : ty = 2
 
-  let encode (out : Output.t) ~name ~(ty : ty) ~(kid : int) ~args () : unit =
+  let encode (bufs : Buf_chain.t) ~name ~(ty : ty) ~(kid : int) ~args () : unit
+      =
     let name = truncate_string name in
     let size = size_word ~name ~args () in
-    let buf = Output.get_buf out ~available_word:size in
+    let@ buf = Buf_chain.with_buf bufs ~available_word:size in
 
     let hd =
       I64.(

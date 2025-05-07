@@ -1,0 +1,7 @@
+
+(library
+ (name trace_event)
+ (public_name trace.event)
+ (synopsis "Turns subscriber callbacks into an event type")
+ (libraries
+  (re_export trace.core) (re_export trace.subscriber)))

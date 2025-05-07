@@ -35,8 +35,7 @@ open struct
     let spans = Span_tbl.to_list spans in
     if spans <> [] then (
       !on_tracing_error
-      @@ Printf.sprintf "trace-tef: warning: %d spans were not closed\n"
-           (List.length spans);
+      @@ Printf.sprintf "warning: %d spans were not closed" (List.length spans);
       let names =
         List.fold_left
           (fun set (_, span) -> Str_set.add span.name set)
@@ -44,7 +43,7 @@ open struct
       in
       Str_set.iter
         (fun name ->
-          !on_tracing_error @@ Printf.sprintf "  span %S was not closed\n" name)
+          !on_tracing_error @@ Printf.sprintf "  span %S was not closed" name)
         names;
       flush stderr
     )

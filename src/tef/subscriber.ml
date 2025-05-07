@@ -23,7 +23,7 @@ open struct
       Bytes.get_int64_le (Bytes.unsafe_of_string id) 0
 end
 
-let on_tracing_error = ref (fun s -> Printf.eprintf "trace-tef error: %s\n%!" s)
+let on_tracing_error = ref (fun s -> Printf.eprintf "%s\n%!" s)
 
 type span_info = {
   tid: int;
@@ -51,7 +51,7 @@ open struct
     let spans = Span_tbl.to_list spans in
     if spans <> [] then (
       !on_tracing_error
-      @@ Printf.sprintf "trace-tef: warning: %d spans were not closed\n"
+      @@ Printf.sprintf "trace-tef: warning: %d spans were not closed"
            (List.length spans);
       let names =
         List.fold_left
@@ -60,7 +60,7 @@ open struct
       in
       Str_set.iter
         (fun name ->
-          !on_tracing_error @@ Printf.sprintf "  span %S was not closed\n" name)
+          !on_tracing_error @@ Printf.sprintf "  span %S was not closed" name)
         names;
       flush stderr
     )
@@ -113,7 +113,8 @@ module Callbacks = struct
 
     match Span_tbl.find_exn self.spans span with
     | exception Not_found ->
-      !on_tracing_error (Printf.sprintf "cannot find span %Ld" span)
+      !on_tracing_error
+        (Printf.sprintf "trace-tef: error: cannot find span %Ld" span)
     | { tid; name; start_us; data } ->
       Span_tbl.remove self.spans span;
       let@ buf = Rpool.with_ self.buf_pool in
@@ -128,7 +129,8 @@ module Callbacks = struct
         let info = Span_tbl.find_exn self.spans span in
         info.data <- List.rev_append data info.data
       with Not_found ->
-        !on_tracing_error (Printf.sprintf "cannot find span %Ld" span)
+        !on_tracing_error
+          (Printf.sprintf "trace-tef: error: cannot find span %Ld" span)
     )
 
   let on_message (self : st) ~time_ns ~tid ~span:_ ~data msg : unit =

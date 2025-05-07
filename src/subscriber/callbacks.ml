@@ -121,7 +121,16 @@ type 'st t = (module S with type st = 'st)
 
 (** Dummy callbacks. It can be useful to reuse some of these functions in a real
     subscriber that doesn't want to handle {b all} events, but only some of
-    them. *)
+    them.
+
+    To write a subscriber that only supports some callbacks, this can be handy:
+    {[
+      module My_callbacks = struct
+      type st = my_own_state
+      include Callbacks.Dummy
+      let on_counter (st:st) ~time_ns ~tid ~data ~name v : unit = ...
+      end
+    ]} *)
 module Dummy = struct
   let on_init _ ~time_ns:_ = ()
   let on_shutdown _ ~time_ns:_ = ()

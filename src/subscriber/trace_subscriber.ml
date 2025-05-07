@@ -1,6 +1,7 @@
 open Trace_core
 module Callbacks = Callbacks
 module Subscriber = Subscriber
+module Span_tbl = Span_tbl
 include Types
 
 type t = Subscriber.t

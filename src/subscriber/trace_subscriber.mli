@@ -4,10 +4,14 @@
     trace event. It also defines a collector that needs to be installed for the
     subscriber(s) to be called.
 
+    Thanks to {!Subscriber.tee_l} it's possible to combine multiple subscribers
+    into a single collector.
+
     @since 0.8 *)
 
 module Callbacks = Callbacks
 module Subscriber = Subscriber
+module Span_tbl = Span_tbl
 
 include module type of struct
   include Types

@@ -1,5 +1,3 @@
-(** A resource pool (for buffers) *)
-
 open struct
   module A = Trace_core.Internal_.Atomic_
 end

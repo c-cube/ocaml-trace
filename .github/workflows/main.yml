@@ -52,7 +52,9 @@ jobs:
       - run: opam exec -- dune build '@install' -p trace,trace-tef,trace-fuchsia
 
       - run: opam install picos_aux
+        if: matrix.ocaml-compiler != '4.08.x' && matrix.ocaml-compiler != '4.12.x'
       - run: opam exec -- dune build '@install' -p trace,trace-tef,trace-fuchsia
+        if: matrix.ocaml-compiler != '4.08.x' && matrix.ocaml-compiler != '4.12.x'
 
       - run: opam install mtime
       - run: opam exec -- dune build '@install' -p trace,trace-tef,trace-fuchsia

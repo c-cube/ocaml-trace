@@ -1,1 +1,1 @@
-val get_time_ns : unit -> float
+val get_time_ns : unit -> int64

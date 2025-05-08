@@ -1,3 +1,7 @@
+module Subscriber = Subscriber
+module Exporter = Exporter
+module Writer = Writer
+
 type output =
   [ `Stdout
   | `Stderr

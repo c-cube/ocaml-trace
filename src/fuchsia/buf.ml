@@ -8,12 +8,14 @@ type t = {
 let empty : t = { buf = Bytes.empty; offset = 0 }
 
 let create (n : int) : t =
+  (* multiple of 8-bytes size *)
   let buf = Bytes.create (round_to_word n) in
   { buf; offset = 0 }
 
 let[@inline] clear self = self.offset <- 0
 let[@inline] available self = Bytes.length self.buf - self.offset
 let[@inline] size self = self.offset
+let[@inline] is_empty self = self.offset = 0
 
 (* see below: we assume little endian *)
 let () = assert (not Sys.big_endian)

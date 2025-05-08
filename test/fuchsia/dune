@@ -1,0 +1,5 @@
+(test
+ (name t1)
+ (package trace-fuchsia)
+ (modules t1)
+ (libraries trace trace-fuchsia))

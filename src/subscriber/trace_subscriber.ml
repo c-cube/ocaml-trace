@@ -1,24 +1,28 @@
 open Trace_core
 module Callbacks = Callbacks
 module Subscriber = Subscriber
+module Span_tbl = Span_tbl
 include Types
 
 type t = Subscriber.t
 
 module Private_ = struct
-  let get_now_ns_ = ref None
-  let get_tid_ = ref None
+  let mock = ref false
+  let get_now_ns_ = ref Time_.get_time_ns
+  let get_tid_ = ref Thread_.get_tid
 
   (** Now, in nanoseconds *)
-  let[@inline] now_ns () : float =
-    match !get_now_ns_ with
-    | Some f -> f ()
-    | None -> Time_.get_time_ns ()
+  let[@inline] now_ns () : int64 =
+    if !mock then
+      !get_now_ns_ ()
+    else
+      Time_.get_time_ns ()
 
   let[@inline] tid_ () : int =
-    match !get_tid_ with
-    | Some f -> f ()
-    | None -> Thread_.get_tid ()
+    if !mock then
+      !get_tid_ ()
+    else
+      Thread_.get_tid ()
 end
 
 open struct

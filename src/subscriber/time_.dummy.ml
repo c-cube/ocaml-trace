@@ -1,1 +1,1 @@
-let[@inline] get_time_ns () : float = 0.
+let[@inline] get_time_ns () : int64 = 0L

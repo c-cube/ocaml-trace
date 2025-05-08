@@ -29,16 +29,16 @@ module type S = sig
   type st
   (** Type of the state passed to every callback. *)
 
-  val on_init : st -> time_ns:float -> unit
+  val on_init : st -> time_ns:int64 -> unit
   (** Called when the subscriber is initialized in a collector *)
 
-  val on_shutdown : st -> time_ns:float -> unit
+  val on_shutdown : st -> time_ns:int64 -> unit
   (** Called when the collector is shutdown *)
 
-  val on_name_thread : st -> time_ns:float -> tid:int -> name:string -> unit
+  val on_name_thread : st -> time_ns:int64 -> tid:int -> name:string -> unit
   (** Current thread is being named *)
 
-  val on_name_process : st -> time_ns:float -> tid:int -> name:string -> unit
+  val on_name_process : st -> time_ns:int64 -> tid:int -> name:string -> unit
   (** Current process is being named *)
 
   val on_enter_span :
@@ -46,7 +46,7 @@ module type S = sig
     __FUNCTION__:string option ->
     __FILE__:string ->
     __LINE__:int ->
-    time_ns:float ->
+    time_ns:int64 ->
     tid:int ->
     data:(string * user_data) list ->
     name:string ->
@@ -54,7 +54,7 @@ module type S = sig
     unit
   (** Enter a regular (sync) span *)
 
-  val on_exit_span : st -> time_ns:float -> tid:int -> span -> unit
+  val on_exit_span : st -> time_ns:int64 -> tid:int -> span -> unit
   (** Exit a span. This and [on_enter_span] must follow strict stack discipline
   *)
 
@@ -63,7 +63,7 @@ module type S = sig
 
   val on_message :
     st ->
-    time_ns:float ->
+    time_ns:int64 ->
     tid:int ->
     span:span option ->
     data:(string * user_data) list ->
@@ -73,7 +73,7 @@ module type S = sig
 
   val on_counter :
     st ->
-    time_ns:float ->
+    time_ns:int64 ->
     tid:int ->
     data:(string * user_data) list ->
     name:string ->
@@ -86,7 +86,7 @@ module type S = sig
     __FUNCTION__:string option ->
     __FILE__:string ->
     __LINE__:int ->
-    time_ns:float ->
+    time_ns:int64 ->
     tid:int ->
     parent:span option ->
     data:(string * user_data) list ->
@@ -99,7 +99,7 @@ module type S = sig
 
   val on_exit_manual_span :
     st ->
-    time_ns:float ->
+    time_ns:int64 ->
     tid:int ->
     name:string ->
     data:(string * user_data) list ->
@@ -110,7 +110,7 @@ module type S = sig
   (** Exit a manual span *)
 
   val on_extension_event :
-    st -> time_ns:float -> tid:int -> extension_event -> unit
+    st -> time_ns:int64 -> tid:int -> extension_event -> unit
   (** Extension event
       @since 0.8 *)
 end
@@ -121,7 +121,16 @@ type 'st t = (module S with type st = 'st)
 
 (** Dummy callbacks. It can be useful to reuse some of these functions in a real
     subscriber that doesn't want to handle {b all} events, but only some of
-    them. *)
+    them.
+
+    To write a subscriber that only supports some callbacks, this can be handy:
+    {[
+      module My_callbacks = struct
+      type st = my_own_state
+      include Callbacks.Dummy
+      let on_counter (st:st) ~time_ns ~tid ~data ~name v : unit = ...
+      end
+    ]} *)
 module Dummy = struct
   let on_init _ ~time_ns:_ = ()
   let on_shutdown _ ~time_ns:_ = ()

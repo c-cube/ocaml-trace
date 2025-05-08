@@ -20,4 +20,4 @@
 (executable
  (name bench_fuchsia_write)
  (modules bench_fuchsia_write)
- (libraries benchmark trace-fuchsia.write))
+ (libraries benchmark trace-fuchsia))

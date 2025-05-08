@@ -1049,5 +1049,4 @@
 {"pid":2,"cat":"","tid": 3,"ts": 1299.00,"name":"world","ph":"I"},
 {"pid":2,"tid":3,"ts":1300.00,"name":"c","ph":"C","args": {"n":200}},
 {"pid":2,"cat":"","tid": 3,"dur": 4.00,"ts": 1297.00,"name":"inner.loop","ph":"X","args": {"i":50}},
-{"pid":2,"cat":"","tid": 3,"dur": 25.00,"ts": 1277.00,"name":"outer.loop","ph":"X"},
-{"pid":2,"cat":"","tid": 1,"ts": 1304.00,"name":"tef-worker.exit","ph":"I"}]
+{"pid":2,"cat":"","tid": 3,"dur": 25.00,"ts": 1277.00,"name":"outer.loop","ph":"X"}]

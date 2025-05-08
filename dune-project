@@ -28,6 +28,7 @@
  (depopts
   hmap
   unix
+  (picos_aux (>= 0.6))
   (mtime
    (>= 2.0)))
  (tags

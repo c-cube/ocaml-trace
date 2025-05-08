@@ -44,7 +44,7 @@ open struct
   let put_in_ready (self : t) buf : unit =
     if Buf.size buf > 0 then (
       let@ q = Lock.with_ self.ready in
-      Atomic.set self.has_ready true;
+      A.set self.has_ready true;
       Queue.push buf q
     )
 

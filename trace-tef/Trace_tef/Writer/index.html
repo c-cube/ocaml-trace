@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Writer (trace-tef.Trace_tef.Writer)</title><link rel="stylesheet" href="../../../_odoc-theme/odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.2.2"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">trace-tef</a> &#x00BB; <a href="../index.html">Trace_tef</a> &#x00BB; Writer</nav><header class="odoc-preamble"><h1>Module <code><span>Trace_tef.Writer</span></code></h1><p>Write JSON events to a buffer.</p><p>This is the part of the code that knows how to emit TEF-compliant JSON from raw event data.</p></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-emit_duration_event"><a href="#val-emit_duration_event" class="anchor"></a><code><span><span class="keyword">val</span> emit_duration_event : 
+  <span>pid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>tid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>start:float <span class="arrow">&#45;&gt;</span></span>
+  <span>end_:float <span class="arrow">&#45;&gt;</span></span>
+  <span>args:<span><span>(string * <a href="../../../trace/Trace_subscriber/index.html#type-user_data">Trace_subscriber.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../ocaml/Stdlib/Buffer/index.html#type-t">Stdlib.Buffer.t</a> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit_manual_begin"><a href="#val-emit_manual_begin" class="anchor"></a><code><span><span class="keyword">val</span> emit_manual_begin : 
+  <span>pid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>tid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>id:<a href="../../../trace/Trace_core/index.html#type-span">Trace_core.span</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>ts:float <span class="arrow">&#45;&gt;</span></span>
+  <span>args:<span><span>(string * <a href="../../../trace/Trace_subscriber/index.html#type-user_data">Trace_subscriber.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>flavor:<span><a href="../../../trace/Trace_subscriber/index.html#type-flavor">Trace_subscriber.flavor</a> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../ocaml/Stdlib/Buffer/index.html#type-t">Stdlib.Buffer.t</a> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit_manual_end"><a href="#val-emit_manual_end" class="anchor"></a><code><span><span class="keyword">val</span> emit_manual_end : 
+  <span>pid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>tid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>id:<a href="../../../trace/Trace_core/index.html#type-span">Trace_core.span</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>ts:float <span class="arrow">&#45;&gt;</span></span>
+  <span>flavor:<span><a href="../../../trace/Trace_subscriber/index.html#type-flavor">Trace_subscriber.flavor</a> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>args:<span><span>(string * <a href="../../../trace/Trace_subscriber/index.html#type-user_data">Trace_subscriber.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../ocaml/Stdlib/Buffer/index.html#type-t">Stdlib.Buffer.t</a> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit_instant_event"><a href="#val-emit_instant_event" class="anchor"></a><code><span><span class="keyword">val</span> emit_instant_event : 
+  <span>pid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>tid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>ts:float <span class="arrow">&#45;&gt;</span></span>
+  <span>args:<span><span>(string * <a href="../../../trace/Trace_subscriber/index.html#type-user_data">Trace_subscriber.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../ocaml/Stdlib/Buffer/index.html#type-t">Stdlib.Buffer.t</a> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit_name_thread"><a href="#val-emit_name_thread" class="anchor"></a><code><span><span class="keyword">val</span> emit_name_thread : 
+  <span>pid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>tid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>name:string <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../ocaml/Stdlib/Buffer/index.html#type-t">Stdlib.Buffer.t</a> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit_name_process"><a href="#val-emit_name_process" class="anchor"></a><code><span><span class="keyword">val</span> emit_name_process : <span>pid:int <span class="arrow">&#45;&gt;</span></span> <span>name:string <span class="arrow">&#45;&gt;</span></span> <span><a href="../../../ocaml/Stdlib/Buffer/index.html#type-t">Stdlib.Buffer.t</a> <span class="arrow">&#45;&gt;</span></span> unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit_counter"><a href="#val-emit_counter" class="anchor"></a><code><span><span class="keyword">val</span> emit_counter : 
+  <span>pid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>tid:int <span class="arrow">&#45;&gt;</span></span>
+  <span>name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>ts:float <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../ocaml/Stdlib/Buffer/index.html#type-t">Stdlib.Buffer.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>float <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div></div></div></body></html>

@@ -6,7 +6,9 @@ synopsis:
 maintainer: ["Simon Cruanes"]
 authors: ["Simon Cruanes"]
 license: "MIT"
-tags: ["trace" "tracing" "catapult" "TEF" "chrome-format"]
+tags: [
+  "trace" "tracing" "catapult" "TEF" "chrome-format" "chrome-trace" "json"
+]
 homepage: "https://github.com/c-cube/ocaml-trace"
 bug-reports: "https://github.com/c-cube/ocaml-trace/issues"
 depends: [

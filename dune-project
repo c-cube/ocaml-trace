@@ -68,7 +68,7 @@
   base-unix
   dune)
  (tags
-  (trace tracing catapult TEF chrome-format)))
+  (trace tracing catapult TEF chrome-format chrome-trace json)))
 
 (package
  (name trace-fuchsia)

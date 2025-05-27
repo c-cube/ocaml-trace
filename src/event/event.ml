@@ -1,3 +1,8 @@
+(** Events.
+
+    Each callback in a subscriber corresponds to an event, which can be for
+    example queued somewhere or batched for further processing. *)
+
 open Trace_core
 module Sub = Trace_subscriber
 

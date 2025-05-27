@@ -1,8 +1,10 @@
+(** Subscriber that emits events *)
+
 open Trace_core
 open Event
 
 type event_consumer = { on_event: Event.t -> unit } [@@unboxed]
-(** Callback for events *)
+(** Callback for events. *)
 
 module Callbacks : Sub.Callbacks.S with type st = event_consumer = struct
   type st = event_consumer
@@ -49,5 +51,7 @@ module Callbacks : Sub.Callbacks.S with type st = event_consumer = struct
     self.on_event @@ E_extension_event { tid; time_ns; ext }
 end
 
+(** A subscriber that turns calls into events that are passed to the
+    {! event_consumer} *)
 let subscriber (consumer : event_consumer) : Sub.t =
   Sub.Subscriber.Sub { st = consumer; callbacks = (module Callbacks) }

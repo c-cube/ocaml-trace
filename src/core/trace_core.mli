@@ -33,7 +33,7 @@ val set_default_level : Level.t -> unit
 
 val ctx_of_span : explicit_span -> explicit_span_ctx
 (** Turn a span into a span context.
-    @since NEXT_RELEASE *)
+    @since 0.10 *)
 
 val with_span :
   ?level:Level.t ->
@@ -111,7 +111,7 @@ val enter_manual_span :
     @param level
       optional level for this span. since 0.7. Default is set via
       {!set_default_level}.
-    @since NEXT_RELEASE *)
+    @since 0.10 *)
 
 val enter_manual_sub_span :
   parent:explicit_span ->
@@ -124,7 +124,7 @@ val enter_manual_sub_span :
   string ->
   explicit_span
 [@@deprecated "use enter_manual_span"]
-(** @deprecated since NEXT_RELEASE, use {!enter_manual_span} *)
+(** @deprecated since 0.10, use {!enter_manual_span} *)
 
 val enter_manual_toplevel_span :
   ?flavor:[ `Sync | `Async ] ->
@@ -136,7 +136,7 @@ val enter_manual_toplevel_span :
   string ->
   explicit_span
 [@@deprecated "use enter_manual_span"]
-(** @deprecated since NEXT_RELEASE, use {!enter_manual_span} *)
+(** @deprecated since 0.10, use {!enter_manual_span} *)
 
 val exit_manual_span : explicit_span -> unit
 (** Exit an explicit span. This can be on another thread, in a fiber or

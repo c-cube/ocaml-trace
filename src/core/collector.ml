@@ -62,7 +62,7 @@ module type S = sig
       hmap in the {!explicit_span}'s [meta] field.
 
       {b NOTE} the [parent] argument is now an {!explicit_span_ctx} and not an
-      {!explicit_span} since NEXT_RELEASE.
+      {!explicit_span} since 0.10.
 
       This means that the collector doesn't need to implement contextual storage
       mapping {!span} to scopes, metadata, etc. on its side; everything can be

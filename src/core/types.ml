@@ -6,7 +6,7 @@ type span = int64
 type trace_id = string
 (** A bytestring representing a (possibly distributed) trace made of async
     spans. With opentelemetry this is 16 bytes.
-    @since NEXT_RELEASE *)
+    @since 0.10 *)
 
 type user_data =
   [ `Int of int
@@ -23,7 +23,7 @@ type explicit_span_ctx = {
   trace_id: trace_id;  (** The trace this belongs to *)
 }
 (** A context, passed around for async traces.
-    @since NEXT_RELEASE *)
+    @since 0.10 *)
 
 type explicit_span = {
   span: span;

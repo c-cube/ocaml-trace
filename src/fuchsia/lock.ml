@@ -25,4 +25,3 @@ let[@inline] update_map l f =
       y)
 
 let[@inline] set_while_locked (self : 'a t) (x : 'a) = self.content <- x
-

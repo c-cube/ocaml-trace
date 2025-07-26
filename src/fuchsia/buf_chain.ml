@@ -102,7 +102,7 @@ let with_buf (self : t) ~(available_word : int) (f : Buf.t -> 'a) : 'a =
   let available = available_word lsl 3 in
   match self.bufs with
   | B_one r ->
-    if Buf.available r.buf < available_word then (
+    if Buf.available r.buf < available then (
       put_in_ready self r.buf;
       r.buf <- Buf_pool.alloc self.buf_pool
     );

@@ -120,11 +120,22 @@ let collector ~out () : collector =
   | None -> assert false
   | Some c -> subscriber_ c |> Trace_subscriber.collector
 
+open struct
+  let register_atexit =
+    let has_registered = ref false in
+    fun () ->
+      if not !has_registered then (
+        has_registered := true;
+        at_exit Trace_core.shutdown
+      )
+end
+
 let setup ?(out = `Env) () =
   let role = find_role ~out () in
   match role with
   | None -> ()
   | Some c ->
+    register_atexit ();
     Trace_core.setup_collector @@ Trace_subscriber.collector @@ subscriber_ c
 
 let with_setup ?out () f =

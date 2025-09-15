@@ -78,7 +78,18 @@ let[@inline] subscriber ~out () : Trace_subscriber.t =
 let[@inline] collector ~out () : collector =
   collector_ ~finally:ignore ~mode:`Single ~out ()
 
+open struct
+  let register_atexit =
+    let has_registered = ref false in
+    fun () ->
+      if not !has_registered then (
+        has_registered := true;
+        at_exit Trace_core.shutdown
+      )
+end
+
 let setup ?(out = `Env) () =
+  register_atexit ();
   match out with
   | `Stderr -> Trace_core.setup_collector @@ collector ~out:`Stderr ()
   | `Stdout -> Trace_core.setup_collector @@ collector ~out:`Stdout ()

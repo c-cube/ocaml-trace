@@ -1,0 +1,15 @@
+
+(library
+ (name trace_tef_lwt)
+ (public_name trace-tef.lwt)
+ (optional) ; lwt
+ (libraries
+  trace.core
+  trace.private.util
+  trace.subscriber
+  trace-tef
+  mtime
+  mtime.clock.os
+  unix
+  lwt
+  lwt.unix))

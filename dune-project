@@ -72,6 +72,7 @@
    (>= 2.0))
   base-unix
   dune)
+ (depopts lwt)
  (tags
   (trace tracing catapult TEF chrome-format chrome-trace json)))
 

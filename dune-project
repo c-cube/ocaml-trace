@@ -28,7 +28,8 @@
  (depopts
   hmap
   unix
-  (picos_aux (>= 0.6))
+  (picos_aux
+   (>= 0.6))
   (mtime
    (>= 2.0)))
  (tags
@@ -39,9 +40,12 @@
  (synopsis "A ppx-based preprocessor for trace")
  (depends
   (ocaml
-   (>= 4.12)) ; we use __FUNCTION__
+   (>= 4.12))
+  ; we use __FUNCTION__
   (ppxlib
-   (and (>= 0.28) (< 0.36)))
+   (and
+    (>= 0.28)
+    (< 0.36)))
   (trace
    (= :version))
   (trace-tef
@@ -50,7 +54,8 @@
     :with-test))
   dune)
  (depopts
-   (mtime (>= 2.0)))
+  (mtime
+   (>= 2.0)))
  (tags
   (trace ppx)))
 

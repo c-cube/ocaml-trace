@@ -45,7 +45,7 @@
   (ppxlib
    (and
     (>= 0.28)
-    (< 0.36)))
+    (< 0.38)))
   (trace
    (= :version))
   (trace-tef

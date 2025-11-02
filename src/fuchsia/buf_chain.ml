@@ -23,6 +23,12 @@ open struct
   let shard_mask = shard - 1
 end
 
+(** Create a buffer chain.
+
+    @param sharded
+      if true, multiple buffers are created, to reduce contention on each buffer
+      in case of concurrent access. This makes the buf chain thread-safe. If
+      false, there is only one (unprotected) buffer. *)
 let create ~(sharded : bool) ~(buf_pool : Buf_pool.t) () : t =
   let bufs =
     if sharded then (

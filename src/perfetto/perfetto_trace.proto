@@ -365,6 +365,7 @@ message AndroidGameInterventionListConfig {
 
 // End of protos/perfetto/config/android/android_game_intervention_list_config.proto
 
+/* COMMENT
 // Begin of protos/perfetto/config/android/android_input_event_config.proto
 
 // Custom configuration for the "android.input.inputevent" data source.
@@ -756,6 +757,8 @@ message PixelModemConfig {
 
 // End of protos/perfetto/config/android/pixel_modem_config.proto
 
+*/
+
 // Begin of protos/perfetto/common/protolog_common.proto
 
 enum ProtoLogLevel {
@@ -1033,6 +1036,7 @@ message FrozenFtraceConfig {
 
 // End of protos/perfetto/config/ftrace/frozen_ftrace_config.proto
 
+/* COMMENTED
 // Begin of protos/perfetto/config/ftrace/ftrace_config.proto
 
 // Next id: 38
@@ -1381,7 +1385,9 @@ message FtraceConfig {
 }
 
 // End of protos/perfetto/config/ftrace/ftrace_config.proto
+*/
 
+/* COMMENTED: GPUs
 // Begin of protos/perfetto/config/gpu/gpu_counter_config.proto
 
 message GpuCounterConfig {
@@ -1432,6 +1438,7 @@ message VulkanMemoryConfig {
 }
 
 // End of protos/perfetto/config/gpu/vulkan_memory_config.proto
+*/
 
 // Begin of protos/perfetto/config/inode_file/inode_file_config.proto
 
@@ -2318,6 +2325,7 @@ message PerfEventConfig {
 // End of protos/perfetto/config/profiling/perf_event_config.proto
 */
 
+/* COMMENTED: statsd
 // Begin of protos/perfetto/config/statsd/atom_ids.proto
 
 // This enum is obtained by post-processing
@@ -3507,6 +3515,7 @@ message StatsdPullAtomConfig {
 }
 
 // End of protos/perfetto/config/statsd/statsd_tracing_config.proto
+*/
 
 // Begin of protos/perfetto/common/sys_stats_counters.proto
 
@@ -4067,7 +4076,7 @@ message DataSourceConfig {
   // Instead they are treated as opaque strings containing raw proto bytes.
 
   // Data source name: linux.ftrace
-  optional FtraceConfig ftrace_config = 100 [lazy = true];
+  // COMMENTED optional FtraceConfig ftrace_config = 100 [lazy = true];
   // Data source name: linux.inode_file_map
   optional InodeFileConfig inode_file_config = 102 [lazy = true];
   // Data source name: linux.process_stats
@@ -4083,32 +4092,32 @@ message DataSourceConfig {
   // Data source name: android.power
   optional AndroidPowerConfig android_power_config = 106 [lazy = true];
   // Data source name: android.log
-  optional AndroidLogConfig android_log_config = 107 [lazy = true];
+  // COMMENTED optional AndroidLogConfig android_log_config = 107 [lazy = true];
   // Data source name: gpu.counters
-  optional GpuCounterConfig gpu_counter_config = 108 [lazy = true];
+  // COMMENTED optional GpuCounterConfig gpu_counter_config = 108 [lazy = true];
   // Data source name: android.game_interventions
   optional AndroidGameInterventionListConfig
       android_game_intervention_list_config = 116 [lazy = true];
   // Data source name: android.packages_list
-  optional PackagesListConfig packages_list_config = 109 [lazy = true];
+  // COMMENTED optional PackagesListConfig packages_list_config = 109 [lazy = true];
   // Data source name: linux.perf
   // COMMENTED optional PerfEventConfig perf_event_config = 111 [lazy = true];
   // Data source name: vulkan.memory_tracker
-  optional VulkanMemoryConfig vulkan_memory_config = 112 [lazy = true];
+  // COMMENTED optional VulkanMemoryConfig vulkan_memory_config = 112 [lazy = true];
   // Data source name: track_event
   optional TrackEventConfig track_event_config = 113 [lazy = true];
   // Data source name: android.polled_state
-  optional AndroidPolledStateConfig android_polled_state_config = 114
-      [lazy = true];
+  // COMMENTED optional AndroidPolledStateConfig android_polled_state_config = 114
+      //[lazy = true];
   // Data source name: android.system_property
-  optional AndroidSystemPropertyConfig android_system_property_config = 118
-      [lazy = true];
+  // COMMENTED optional AndroidSystemPropertyConfig android_system_property_config = 118
+      //[lazy = true];
   // Data source name: android.statsd
-  optional StatsdTracingConfig statsd_tracing_config = 117 [lazy = true];
+  // COMMENTED optional StatsdTracingConfig statsd_tracing_config = 117 [lazy = true];
   // Data source name: linux.system_info
   optional SystemInfoConfig system_info_config = 119;
   // Data source name: linux.frozen_ftrace
-  optional FrozenFtraceConfig frozen_ftrace_config = 136 [lazy = true];
+  // COMMENTED optional FrozenFtraceConfig frozen_ftrace_config = 136 [lazy = true];
 
   // Chrome is special as it doesn't use the perfetto IPC layer. We want to
   // avoid proto serialization and de-serialization there because that would
@@ -4131,8 +4140,8 @@ message DataSourceConfig {
 
   // Data source name: android.network_packets.
   // Introduced in Android 14 (U).
-  optional NetworkPacketTraceConfig network_packet_trace_config = 120
-      [lazy = true];
+  // COMMENTED optional NetworkPacketTraceConfig network_packet_trace_config = 120
+      //[lazy = true];
 
   // Data source name: android.surfaceflinger.layers
   optional SurfaceFlingerLayersConfig surfaceflinger_layers_config = 121
@@ -4144,8 +4153,8 @@ message DataSourceConfig {
 
   // Data source name: android.sdk_sysprop_guard
   // Introduced in Android 14 (U) QPR1.
-  optional AndroidSdkSyspropGuardConfig android_sdk_sysprop_guard_config = 124
-      [lazy = true];
+  // COMMENTED optional AndroidSdkSyspropGuardConfig android_sdk_sysprop_guard_config = 124
+      //[lazy = true];
 
   // Data source name: windows.etw
   optional EtwConfig etw_config = 125 [lazy = true];
@@ -4154,11 +4163,11 @@ message DataSourceConfig {
   optional ProtoLogConfig protolog_config = 126 [lazy = true];
 
   // Data source name: android.input.inputevent
-  optional AndroidInputEventConfig android_input_event_config = 128
-      [lazy = true];
+  // COMMENTED optional AndroidInputEventConfig android_input_event_config = 128
+      //[lazy = true];
 
   // Data source name: android.pixel.modem
-  optional PixelModemConfig pixel_modem_config = 129 [lazy = true];
+  // COMMENTED optional PixelModemConfig pixel_modem_config = 129 [lazy = true];
 
   // Data source name: android.windowmanager
   optional WindowManagerConfig windowmanager_config = 130 [lazy = true];
@@ -4168,20 +4177,20 @@ message DataSourceConfig {
       [lazy = true];
 
   // Data source name: android.kernel_wakelocks
-  optional KernelWakelocksConfig kernel_wakelocks_config = 132 [lazy = true];
+  // COMMENTED optional KernelWakelocksConfig kernel_wakelocks_config = 132 [lazy = true];
 
   // Data source name: gpu.renderstages
-  optional GpuRenderStagesConfig gpu_renderstages_config = 133 [lazy = true];
+  // COMMENTED optional GpuRenderStagesConfig gpu_renderstages_config = 133 [lazy = true];
 
   // Data source name: org.chromium.histogram_samples
   optional ChromiumHistogramSamplesConfig chromium_histogram_samples = 134
       [lazy = true];
 
   // Data source name: android.app_wakelocks
-  optional AppWakelocksConfig app_wakelocks_config = 135 [lazy = true];
+  // COMMENTED optional AppWakelocksConfig app_wakelocks_config = 135 [lazy = true];
 
   // Data source name: android.cpu_per_uid
-  optional CpuPerUidConfig cpu_per_uid_config = 137 [lazy = true];
+  // COMMENTED optional CpuPerUidConfig cpu_per_uid_config = 137 [lazy = true];
 
   // This is a fallback mechanism to send a free-form text config to the
   // producer. In theory this should never be needed. All the code that
@@ -5246,6 +5255,7 @@ message TraceStats {
 
 // End of protos/perfetto/common/trace_stats.proto
 
+/* COMMENTED
 // Begin of protos/perfetto/trace/android/android_game_intervention_list.proto
 
 message AndroidGameInterventionList {
@@ -15189,7 +15199,7 @@ message InternedData {
   repeated InternedString debug_annotation_string_values = 29;
 
   // Interned packet context for android.network_packets.
-  repeated NetworkPacketContext packet_context = 30;
+  // COMMENTED repeated NetworkPacketContext packet_context = 30;
 
   // Interned name of a js function. We only intern js functions as there is a
   // lot of duplication for them, but less so for other strings in the V8 data
@@ -15218,7 +15228,7 @@ message InternedData {
   repeated InternedString viewcapture_class_name = 41;
 
   // Interned context for android.app_wakelocks.
-  repeated AppWakelockInfo app_wakelock_info = 42;
+  // COMMENTED repeated AppWakelockInfo app_wakelock_info = 42;
 
   // Interned correlation ids in track_event.
   repeated InternedString correlation_id_str = 43;
@@ -17479,11 +17489,11 @@ message TracePacket {
     StreamingFree streaming_free = 75;
     BatteryCounters battery = 38;
     PowerRails power_rails = 40;
-    AndroidLogPacket android_log = 39;
+    // COMMENTED AndroidLogPacket android_log = 39;
     SystemInfo system_info = 45;
     Trigger trigger = 46;
     ChromeTrigger chrome_trigger = 109;
-    PackagesList packages_list = 47;
+    // COMMENTED PackagesList packages_list = 47;
     ChromeBenchmarkMetadata chrome_benchmark_metadata = 48;
     PerfettoMetatrace perfetto_metatrace = 49;
     ChromeMetadataPacket chrome_metadata = 51;
@@ -17491,7 +17501,7 @@ message TracePacket {
     GpuRenderStageEvent gpu_render_stage_event = 53;
     StreamingProfilePacket streaming_profile_packet = 54;
     HeapGraph heap_graph = 56;
-    GraphicsFrameEvent graphics_frame_event = 57;
+    // COMMENTED GraphicsFrameEvent graphics_frame_event = 57;
     VulkanMemoryEvent vulkan_memory_event = 62;
     GpuLog gpu_log = 63;
     VulkanApiEvent vulkan_api_event = 65;
@@ -17499,18 +17509,18 @@ message TracePacket {
     CpuInfo cpu_info = 67;
     SmapsPacket smaps_packet = 68;
     TracingServiceEvent service_event = 69;
-    InitialDisplayState initial_display_state = 70;
-    GpuMemTotalEvent gpu_mem_total_event = 71;
+    // COMMENTED InitialDisplayState initial_display_state = 70;
+    // COMMENTED GpuMemTotalEvent gpu_mem_total_event = 71;
     MemoryTrackerSnapshot memory_tracker_snapshot = 73;
-    FrameTimelineEvent frame_timeline_event = 76;
+    // COMMENTED FrameTimelineEvent frame_timeline_event = 76;
     AndroidEnergyEstimationBreakdown android_energy_estimation_breakdown = 77;
     UiState ui_state = 78;
-    AndroidCameraFrameEvent android_camera_frame_event = 80;
-    AndroidCameraSessionStats android_camera_session_stats = 81;
+    // COMMENTED AndroidCameraFrameEvent android_camera_frame_event = 80;
+    // COMMENTED AndroidCameraSessionStats android_camera_session_stats = 81;
     TranslationTable translation_table = 82;
-    AndroidGameInterventionList android_game_intervention_list = 83;
+    // COMMENTED AndroidGameInterventionList android_game_intervention_list = 83;
     StatsdAtom statsd_atom = 84;
-    AndroidSystemProperty android_system_property = 86;
+    // COMMENTED AndroidSystemProperty android_system_property = 86;
     EntityStateResidency entity_state_residency = 91;
 
     // Only used in profile packets.
@@ -17548,10 +17558,10 @@ message TracePacket {
     ExtensionDescriptor extension_descriptor = 72;
 
     // Represents a single packet sent or received by the network.
-    NetworkPacketEvent network_packet = 88;
+    // COMMENTED NetworkPacketEvent network_packet = 88;
 
     // Represents one or more packets sent or received by the network.
-    NetworkPacketBundle network_packet_bundle = 92;
+    // COMMENTED NetworkPacketBundle network_packet_bundle = 92;
 
     // The "range of interest" for track events. See the message definition
     // comments for more details.
@@ -17577,16 +17587,16 @@ message TracePacket {
     // Clock synchronization with remote machines.
     RemoteClockSync remote_clock_sync = 107;
 
-    PixelModemEvents pixel_modem_events = 110;
-    PixelModemTokenDatabase pixel_modem_token_database = 111;
+    // COMMENTED PixelModemEvents pixel_modem_events = 110;
+    // COMMENTED PixelModemTokenDatabase pixel_modem_token_database = 111;
 
     Trigger clone_snapshot_trigger = 113;
 
-    BluetoothTraceEvent bluetooth_trace_event = 114;
+    // COMMENTED BluetoothTraceEvent bluetooth_trace_event = 114;
 
-    KernelWakelockData kernel_wakelock_data = 115;
+    // COMMENTED KernelWakelockData kernel_wakelock_data = 115;
 
-    AppWakelockBundle app_wakelock_bundle = 116;
+    // COMMENTED AppWakelockBundle app_wakelock_bundle = 116;
 
     // Generic events for a standard kernel implementation
     GenericKernelTaskStateEvent generic_kernel_task_state_event = 117;
@@ -17594,7 +17604,7 @@ message TracePacket {
     GenericKernelTaskRenameEvent generic_kernel_task_rename_event = 120;
     GenericKernelProcessTree generic_kernel_process_tree = 122;
 
-    CpuPerUidData cpu_per_uid_data = 119;
+    // COMMENTED CpuPerUidData cpu_per_uid_data = 119;
 
     EvdevEvent evdev_event = 121;
 

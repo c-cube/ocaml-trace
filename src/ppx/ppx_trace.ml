@@ -39,7 +39,7 @@ let extension_let =
     (let open! Ast_pattern in
      single_expr_payload
        (pexp_let nonrecursive
-          (value_binding
+          (value_binding ~constraint_:none
              ~pat:
                (let pat_var = ppat_var __' |> map ~f:(fun f v -> f (`Var v)) in
                 let pat_unit =
@@ -62,8 +62,20 @@ let expand_top_let ~ctxt rec_flag (vbs : _ list) =
     (* go in functions, and add tracing around the body *)
     let rec push_into_fun (e : expression) : expression =
       match e.pexp_desc with
-      | Pexp_fun (lbl, lbl_expr, pat, body) ->
-        pexp_fun ~loc:e.pexp_loc lbl lbl_expr pat @@ push_into_fun body
+      | Pexp_function (args, ty, Pfunction_body body) ->
+        pexp_function ~loc args ty @@ Pfunction_body (push_into_fun body)
+      | Pexp_function (_args, _ty, Pfunction_cases _) ->
+        (* explicitly fail on [let%trace foo = function …], for now *)
+        Ast_helper.Exp.extension
+          ( { txt = "ocaml.error"; loc },
+            PStr
+              [
+                pstr_eval ~loc
+                  (pexp_constant ~loc
+                     (Pconst_string
+                        ("ppxtrace: cannot trace `function`", loc, None)))
+                  [];
+              ] )
       | _ ->
         [%expr
           let _trace_span =

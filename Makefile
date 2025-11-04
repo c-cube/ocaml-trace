@@ -14,6 +14,9 @@ test-autopromote:
 doc:
 	@dune build $(DUNE_OPTS) @doc
 
+genproto:
+	FORCE_GENPROTO=true dune build @lint --auto-promote
+
 WATCH?= @install @runtest
 watch:
 	dune build $(DUNE_OPTS) -w $(WATCH)

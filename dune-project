@@ -94,4 +94,23 @@
  (tags
   (trace tracing fuchsia)))
 
+
+(package
+ (name trace-perfetto)
+ (synopsis
+  "A backend for trace based on perfetto's protobuf format")
+ (depends
+  (ocaml
+   (>= 4.08))
+  (trace
+   (= :version))
+  (mtime
+   (>= 2.0))
+  (thread-local-storage
+   (>= 0.2))
+  pbrt
+  dune)
+ (tags
+  (trace tracing perfetto)))
+
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

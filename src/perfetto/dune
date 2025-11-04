@@ -1,0 +1,25 @@
+
+(library
+  (name trace_perfetto)
+  (public_name trace-perfetto)
+ (synopsis
+  "A high-performance backend for trace, emitting a Fuchsia trace into a file")
+ (libraries
+  trace.core
+  trace.private.util
+  trace.subscriber
+  thread-local-storage
+  mtime
+  mtime.clock.os
+  pbrt
+  ))
+
+(rule
+ (alias lint)
+ (mode promote)
+ (enabled_if %{env:FORCE_GENPROTO=false})
+ (targets perfetto_trace.ml perfetto_trace.mli)
+ (deps
+  (:file perfetto_trace.proto))
+ (action
+  (run ocaml-protoc %{file} --ml_out . --encode-only --pp --make --binary)))

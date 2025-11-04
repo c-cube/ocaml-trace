@@ -39,7 +39,7 @@ let extension_let =
     (let open! Ast_pattern in
      single_expr_payload
        (pexp_let nonrecursive
-          (value_binding
+          (value_binding ~constraint_:none
              ~pat:
                (let pat_var = ppat_var __' |> map ~f:(fun f v -> f (`Var v)) in
                 let pat_unit =
@@ -62,7 +62,7 @@ let expand_top_let ~ctxt rec_flag (vbs : _ list) =
     (* go in functions, and add tracing around the body *)
     let rec push_into_fun (e : expression) : expression =
       match e.pexp_desc with
-      | Pexp_fun (lbl, lbl_expr, pat, body) ->
+      | Pexp_function (lbl, lbl_expr, pat, body) ->
         pexp_fun ~loc:e.pexp_loc lbl lbl_expr pat @@ push_into_fun body
       | _ ->
         [%expr

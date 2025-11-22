@@ -21,3 +21,10 @@
  (name bench_fuchsia_write)
  (modules bench_fuchsia_write)
  (libraries benchmark trace-fuchsia))
+
+(executable
+ (name trace_usdt)
+ (modules trace_usdt)
+ (preprocess
+  (pps ppx_trace))
+ (libraries trace.core trace-usdt))

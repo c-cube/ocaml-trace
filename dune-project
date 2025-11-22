@@ -94,4 +94,23 @@
  (tags
   (trace tracing fuchsia)))
 
+(package
+ (name trace-usdt)
+ (synopsis "A trace backend using USDT probes, activated at runtime")
+ (depends
+  (ocaml
+   (>= 4.08))
+  (trace
+   (= :version))
+  (mtime
+   (>= 2.0))
+  ocaml_usdt
+  (yojson
+   (and
+    (>= 2.0)
+    (< 3.0)))
+  dune)
+ (tags
+  (trace tracing usdt)))
+
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

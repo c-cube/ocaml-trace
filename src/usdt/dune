@@ -1,0 +1,10 @@
+(library
+ (public_name trace-usdt)
+ (name trace_usdt)
+ (libraries
+  trace.core
+  trace.subscriber
+  trace.private.util
+  yojson
+  ocaml_usdt
+  ocaml_usdt.json))

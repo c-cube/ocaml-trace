@@ -18,6 +18,13 @@ type user_data =
 (** User defined data, generally passed as key/value pairs to whatever collector
     is installed (if any). *)
 
+type span_flavor =
+  [ `Sync
+  | `Async
+  ]
+(** Some information about the span.
+    @since NEXT_RELEASE *)
+
 type explicit_span_ctx = {
   span: span;  (** The current span *)
   trace_id: trace_id;  (** The trace this belongs to *)

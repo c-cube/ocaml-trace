@@ -20,6 +20,14 @@ open struct
   module Tee_cb : Callbacks.S with type st = t array = struct
     type nonrec st = t array
 
+    let new_span st =
+      let (Sub { st = s; callbacks = (module CB) }) = Array.get st 0 in
+      CB.new_span s
+
+    let new_trace_id st =
+      let (Sub { st = s; callbacks = (module CB) }) = Array.get st 0 in
+      CB.new_trace_id s
+
     let on_init st ~time_ns =
       for i = 0 to Array.length st - 1 do
         let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
@@ -100,8 +108,11 @@ open struct
   end
 end
 
-(** Tee multiple subscribers, ie return a subscriber that forwards to all the
-    subscribers in [subs]. *)
+(** Tee multiple subscribers, ie return a subscriber that forwards to every
+    subscriber in [subs].
+
+    To generate a new span or trace ID, the first subscriber of the list is
+    used. *)
 let tee_l (subs : t list) : t =
   match subs with
   | [] -> dummy

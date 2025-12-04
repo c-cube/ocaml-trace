@@ -32,6 +32,24 @@ val collector : t -> Trace_core.collector
 
     It uses [mtime] (if available) to obtain timestamps. *)
 
+(** A counter-based span generator.
+    @since NEXT_RELEASE *)
+module Span_generator : sig
+  type t
+
+  val create : unit -> t
+  val mk_span : t -> Trace_core.span
+end
+
+(** A counter-based trace ID generator, producing 8-byte trace IDs.
+    @since NEXT_RELEASE *)
+module Trace_id_8B_generator : sig
+  type t
+
+  val create : unit -> t
+  val mk_trace_id : t -> Trace_core.trace_id
+end
+
 (**/**)
 
 module Private_ : sig

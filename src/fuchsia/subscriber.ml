@@ -21,6 +21,8 @@ type t = {
   spans: span_info Span_tbl.t;
   buf_chain: Buf_chain.t;
   exporter: Exporter.t;
+  span_gen: Sub.Span_generator.t;
+  trace_id_gen: Sub.Trace_id_8B_generator.t;
 }
 (** Subscriber state *)
 
@@ -67,10 +69,23 @@ let flush (self : t) : unit =
 
 let create ?(buf_pool = Buf_pool.create ()) ~pid ~exporter () : t =
   let buf_chain = Buf_chain.create ~sharded:true ~buf_pool () in
-  { active = A.make true; buf_chain; exporter; pid; spans = Span_tbl.create () }
+  {
+    active = A.make true;
+    buf_chain;
+    exporter;
+    pid;
+    spans = Span_tbl.create ();
+    span_gen = Sub.Span_generator.create ();
+    trace_id_gen = Sub.Trace_id_8B_generator.create ();
+  }
 
 module Callbacks = struct
   type st = t
+
+  let new_span (self : st) = Sub.Span_generator.mk_span self.span_gen
+
+  let new_trace_id self =
+    Sub.Trace_id_8B_generator.mk_trace_id self.trace_id_gen
 
   let on_init (self : st) ~time_ns:_ =
     Writer.Metadata.Magic_record.encode self.buf_chain;

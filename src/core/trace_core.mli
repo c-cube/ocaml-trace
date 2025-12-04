@@ -84,7 +84,7 @@ val add_data_to_span : span -> (string * user_data) list -> unit
 
 val enter_manual_span :
   parent:explicit_span_ctx option ->
-  ?flavor:[ `Sync | `Async ] ->
+  ?flavor:span_flavor ->
   ?level:Level.t ->
   ?__FUNCTION__:string ->
   __FILE__:string ->

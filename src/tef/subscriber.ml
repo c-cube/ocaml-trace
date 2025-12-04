@@ -42,6 +42,8 @@ type t = {
   spans: span_info Span_tbl.t;
   buf_pool: Buf_pool.t;
   exporter: Exporter.t;
+  span_gen: Sub.Span_generator.t;
+  trace_id_gen: Sub.Trace_id_8B_generator.t;
 }
 (** Subscriber state *)
 
@@ -76,10 +78,23 @@ let[@inline] active self = A.get self.active
 let[@inline] flush (self : t) : unit = self.exporter.flush ()
 
 let create ?(buf_pool = Buf_pool.create ()) ~pid ~exporter () : t =
-  { active = A.make true; exporter; buf_pool; pid; spans = Span_tbl.create () }
+  {
+    active = A.make true;
+    exporter;
+    buf_pool;
+    pid;
+    spans = Span_tbl.create ();
+    span_gen = Sub.Span_generator.create ();
+    trace_id_gen = Sub.Trace_id_8B_generator.create ();
+  }
 
 module Callbacks = struct
   type st = t
+
+  let new_span (self : st) = Sub.Span_generator.mk_span self.span_gen
+
+  let new_trace_id self =
+    Sub.Trace_id_8B_generator.mk_trace_id self.trace_id_gen
 
   let on_init _ ~time_ns:_ = ()
   let on_shutdown (self : st) ~time_ns:_ = close self

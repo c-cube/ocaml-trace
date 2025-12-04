@@ -63,21 +63,8 @@ let rec conv_data = function
 let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
   let open Private_ in
   let module M = struct
-    let trace_id_gen_ = A.make 0
-
-    let[@inline] mk_trace_id () : trace_id =
-      let n = A.fetch_and_add trace_id_gen_ 1 in
-      let b = Bytes.create 8 in
-      Bytes.set_int64_le b 0 (Int64.of_int n);
-      Bytes.unsafe_to_string b
-
-    (** generator for span ids *)
-    let new_span_ : unit -> int =
-      let span_id_gen_ = A.make 0 in
-      fun [@inline] () -> A.fetch_and_add span_id_gen_ 1
-
     let enter_span ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name : span =
-      let span = Int64.of_int (new_span_ ()) in
+      let span = CB.new_span st in
       let tid = tid_ () in
       let time_ns = now_ns () in
       let data = conv_data data in
@@ -109,7 +96,7 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
 
     let enter_manual_span ~(parent : explicit_span_ctx option) ~flavor
         ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name : explicit_span =
-      let span = Int64.of_int (new_span_ ()) in
+      let span = CB.new_span st in
       let tid = tid_ () in
       let time_ns = now_ns () in
       let data = conv_data data in
@@ -119,7 +106,7 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
       let trace_id, parent =
         match parent with
         | Some m -> m.trace_id, Some m.span
-        | None -> mk_trace_id (), None
+        | None -> CB.new_trace_id st, None
       in
 
       CB.on_enter_manual_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~parent ~data
@@ -190,3 +177,22 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
       CB.on_init st ~time_ns
   end in
   (module M)
+
+module Span_generator = struct
+  type t = int A.t
+
+  let create () = A.make 0
+  let[@inline] mk_span self = A.fetch_and_add self 1 |> Int64.of_int
+end
+
+module Trace_id_8B_generator = struct
+  type t = int A.t
+
+  let create () = A.make 0
+
+  let[@inline] mk_trace_id (self : t) : trace_id =
+    let n = A.fetch_and_add self 1 in
+    let b = Bytes.create 8 in
+    Bytes.set_int64_le b 0 (Int64.of_int n);
+    Bytes.unsafe_to_string b
+end

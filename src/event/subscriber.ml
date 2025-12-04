@@ -6,9 +6,18 @@ open Event
 type event_consumer = { on_event: Event.t -> unit } [@@unboxed]
 (** Callback for events. *)
 
+open struct
+  (* just use the same ones for everyone *)
+
+  let span_gen = Sub.Span_generator.create ()
+  let trace_id_gen = Sub.Trace_id_8B_generator.create ()
+end
+
 module Callbacks : Sub.Callbacks.S with type st = event_consumer = struct
   type st = event_consumer
 
+  let new_span (_self : st) = Sub.Span_generator.mk_span span_gen
+  let new_trace_id _self = Sub.Trace_id_8B_generator.mk_trace_id trace_id_gen
   let on_init (self : st) ~time_ns = self.on_event (E_init { time_ns })
   let on_shutdown (self : st) ~time_ns = self.on_event (E_shutdown { time_ns })
 

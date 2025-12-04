@@ -32,6 +32,14 @@ module type S = sig
   val on_init : st -> time_ns:int64 -> unit
   (** Called when the subscriber is initialized in a collector *)
 
+  val new_span : st -> span
+  (** How to generate a new span?
+      @since NEXT_RELEASE *)
+
+  val new_trace_id : st -> trace_id
+  (** How to generate a new trace ID?
+      @since NEXT_RELEASE *)
+
   val on_shutdown : st -> time_ns:int64 -> unit
   (** Called when the collector is shutdown *)
 
@@ -133,6 +141,8 @@ type 'st t = (module S with type st = 'st)
     ]} *)
 module Dummy = struct
   let on_init _ ~time_ns:_ = ()
+  let new_span _ = Collector.dummy_span
+  let new_trace_id _ = Collector.dummy_trace_id
   let on_shutdown _ ~time_ns:_ = ()
   let on_name_thread _ ~time_ns:_ ~tid:_ ~name:_ = ()
   let on_name_process _ ~time_ns:_ ~tid:_ ~name:_ = ()

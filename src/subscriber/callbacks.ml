@@ -22,7 +22,6 @@
     at least 64 bits. *)
 
 open Trace_core
-open Types
 
 (** First class module signature for callbacks *)
 module type S = sig
@@ -56,7 +55,7 @@ module type S = sig
     __LINE__:int ->
     time_ns:int64 ->
     tid:int ->
-    data:(string * user_data) list ->
+    data:(string * Trace_core.user_data) list ->
     name:string ->
     span ->
     unit
@@ -66,7 +65,8 @@ module type S = sig
   (** Exit a span. This and [on_enter_span] must follow strict stack discipline
   *)
 
-  val on_add_data : st -> data:(string * user_data) list -> span -> unit
+  val on_add_data :
+    st -> data:(string * Trace_core.user_data) list -> span -> unit
   (** Add data to a regular span (which must be active) *)
 
   val on_message :
@@ -74,7 +74,7 @@ module type S = sig
     time_ns:int64 ->
     tid:int ->
     span:span option ->
-    data:(string * user_data) list ->
+    data:(string * Trace_core.user_data) list ->
     string ->
     unit
   (** Emit a log message *)
@@ -83,7 +83,7 @@ module type S = sig
     st ->
     time_ns:int64 ->
     tid:int ->
-    data:(string * user_data) list ->
+    data:(string * Trace_core.user_data) list ->
     name:string ->
     float ->
     unit
@@ -97,9 +97,9 @@ module type S = sig
     time_ns:int64 ->
     tid:int ->
     parent:span option ->
-    data:(string * user_data) list ->
+    data:(string * Trace_core.user_data) list ->
     name:string ->
-    flavor:flavor option ->
+    flavor:Trace_core.span_flavor option ->
     trace_id:trace_id ->
     span ->
     unit
@@ -110,8 +110,8 @@ module type S = sig
     time_ns:int64 ->
     tid:int ->
     name:string ->
-    data:(string * user_data) list ->
-    flavor:flavor option ->
+    data:(string * Trace_core.user_data) list ->
+    flavor:Trace_core.span_flavor option ->
     trace_id:trace_id ->
     span ->
     unit

@@ -12,7 +12,7 @@ val emit_duration_event :
   name:string ->
   start:float ->
   end_:float ->
-  args:(string * Sub.user_data) list ->
+  args:(string * Trace_core.user_data) list ->
   Buffer.t ->
   unit
 
@@ -22,8 +22,8 @@ val emit_manual_begin :
   name:string ->
   id:span ->
   ts:float ->
-  args:(string * Sub.user_data) list ->
-  flavor:Sub.flavor option ->
+  args:(string * Trace_core.user_data) list ->
+  flavor:Trace_core.span_flavor option ->
   Buffer.t ->
   unit
 
@@ -33,8 +33,8 @@ val emit_manual_end :
   name:string ->
   id:span ->
   ts:float ->
-  flavor:Sub.flavor option ->
-  args:(string * Sub.user_data) list ->
+  flavor:Trace_core.span_flavor option ->
+  args:(string * Trace_core.user_data) list ->
   Buffer.t ->
   unit
 
@@ -43,7 +43,7 @@ val emit_instant_event :
   tid:int ->
   name:string ->
   ts:float ->
-  args:(string * Sub.user_data) list ->
+  args:(string * Trace_core.user_data) list ->
   Buffer.t ->
   unit
 

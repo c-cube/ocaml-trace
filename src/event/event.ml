@@ -15,7 +15,7 @@ type t =
       tid: int;
       msg: string;
       time_ns: int64;
-      data: (string * Sub.user_data) list;
+      data: (string * user_data) list;
     }
   | E_define_span of {
       tid: int;
@@ -23,7 +23,7 @@ type t =
       time_ns: int64;
       id: span;
       fun_name: string option;
-      data: (string * Sub.user_data) list;
+      data: (string * user_data) list;
     }
   | E_exit_span of {
       id: span;
@@ -31,23 +31,23 @@ type t =
     }
   | E_add_data of {
       id: span;
-      data: (string * Sub.user_data) list;
+      data: (string * user_data) list;
     }
   | E_enter_manual_span of {
       tid: int;
       name: string;
       time_ns: int64;
       id: trace_id;
-      flavor: Sub.flavor option;
+      flavor: span_flavor option;
       fun_name: string option;
-      data: (string * Sub.user_data) list;
+      data: (string * user_data) list;
     }
   | E_exit_manual_span of {
       tid: int;
       name: string;
       time_ns: int64;
-      flavor: Sub.flavor option;
-      data: (string * Sub.user_data) list;
+      flavor: span_flavor option;
+      data: (string * user_data) list;
       id: trace_id;
     }
   | E_counter of {

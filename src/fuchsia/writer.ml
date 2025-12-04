@@ -15,12 +15,7 @@ end
 
 open Util
 
-type user_data = Sub.user_data =
-  | U_bool of bool
-  | U_float of float
-  | U_int of int
-  | U_none
-  | U_string of string
+type user_data = Trace_core.user_data
 
 type arg =
   | A_bool of bool
@@ -30,12 +25,16 @@ type arg =
   | A_string of string
   | A_kid of int64
 
-(* NOTE: only works because [user_data] is a prefix of [arg] and is immutable *)
-let arg_of_user_data : user_data -> arg = Obj.magic
+let arg_of_user_data : user_data -> arg = function
+  | `Bool b -> A_bool b
+  | `Float f -> A_float f
+  | `Int i -> A_int i
+  | `String s -> A_string s
+  | `None -> A_none
 
-(* NOTE: only works because [user_data] is a prefix of [arg] and is immutable *)
-let args_of_user_data : (string * user_data) list -> (string * arg) list =
-  Obj.magic
+let[@inline] args_of_user_data :
+    (string * user_data) list -> (string * arg) list =
+ fun l -> List.rev_map (fun (k, v) -> k, arg_of_user_data v) l
 
 module I64 = struct
   include Int64

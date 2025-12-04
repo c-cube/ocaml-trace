@@ -21,12 +21,12 @@ let str_val (buf : Buffer.t) (s : string) =
   String.iter encode_char s;
   char buf '"'
 
-let pp_user_data_ (out : Buffer.t) : Sub.user_data -> unit = function
-  | U_none -> raw_string out "null"
-  | U_int i -> Printf.bprintf out "%d" i
-  | U_bool b -> Printf.bprintf out "%b" b
-  | U_string s -> str_val out s
-  | U_float f -> Printf.bprintf out "%g" f
+let pp_user_data_ (out : Buffer.t) : Trace_core.user_data -> unit = function
+  | `None -> raw_string out "null"
+  | `Int i -> Printf.bprintf out "%d" i
+  | `Bool b -> Printf.bprintf out "%b" b
+  | `String s -> str_val out s
+  | `Float f -> Printf.bprintf out "%g" f
 
 (* emit args, if not empty. [ppv] is used to print values. *)
 let emit_args_o_ ppv (out : Buffer.t) args : unit =
@@ -51,24 +51,24 @@ let emit_duration_event ~pid ~tid ~name ~start ~end_ ~args buf : unit =
     args
 
 let emit_manual_begin ~pid ~tid ~name ~(id : int64) ~ts ~args
-    ~(flavor : Sub.flavor option) buf : unit =
+    ~(flavor : Trace_core.span_flavor option) buf : unit =
   Printf.bprintf buf
     {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
     pid id tid ts str_val name
     (match flavor with
-    | None | Some Async -> 'b'
-    | Some Sync -> 'B')
+    | None | Some `Async -> 'b'
+    | Some `Sync -> 'B')
     (emit_args_o_ pp_user_data_)
     args
 
 let emit_manual_end ~pid ~tid ~name ~(id : int64) ~ts
-    ~(flavor : Sub.flavor option) ~args buf : unit =
+    ~(flavor : Trace_core.span_flavor option) ~args buf : unit =
   Printf.bprintf buf
     {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
     pid id tid ts str_val name
     (match flavor with
-    | None | Some Async -> 'e'
-    | Some Sync -> 'E')
+    | None | Some `Async -> 'e'
+    | Some `Sync -> 'E')
     (emit_args_o_ pp_user_data_)
     args
 
@@ -83,15 +83,15 @@ let emit_name_thread ~pid ~tid ~name buf : unit =
   Printf.bprintf buf
     {json|{"pid":%d,"tid": %d,"name":"thread_name","ph":"M"%a}|json} pid tid
     (emit_args_o_ pp_user_data_)
-    [ "name", U_string name ]
+    [ "name", `String name ]
 
 let emit_name_process ~pid ~name buf : unit =
   Printf.bprintf buf {json|{"pid":%d,"name":"process_name","ph":"M"%a}|json} pid
     (emit_args_o_ pp_user_data_)
-    [ "name", U_string name ]
+    [ "name", `String name ]
 
 let emit_counter ~pid ~tid ~name ~ts buf f : unit =
   Printf.bprintf buf
     {json|{"pid":%d,"tid":%d,"ts":%.2f,"name":"c","ph":"C"%a}|json} pid tid ts
     (emit_args_o_ pp_user_data_)
-    [ name, U_float f ]
+    [ name, `Float f ]

@@ -13,10 +13,6 @@ module Callbacks = Callbacks
 module Subscriber = Subscriber
 module Span_tbl = Span_tbl
 
-include module type of struct
-  include Types
-end
-
 (** {2 Main API} *)
 
 type t = Subscriber.t

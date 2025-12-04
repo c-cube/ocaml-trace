@@ -8,7 +8,7 @@ type span_info = {
   tid: int;
   name: string;
   start_ns: int64;
-  mutable data: (string * Sub.user_data) list;
+  mutable data: (string * user_data) list;
       (* NOTE: thread safety: this is supposed to only be modified by the thread
       that's running this (synchronous, stack-abiding) span. *)
 }
@@ -116,7 +116,7 @@ module Callbacks = struct
   let add_fun_name_ fun_name data : _ list =
     match fun_name with
     | None -> data
-    | Some f -> ("function", Sub.U_string f) :: data
+    | Some f -> ("function", `String f) :: data
 
   let[@inline] on_enter_span (self : st) ~__FUNCTION__:fun_name ~__FILE__:_
       ~__LINE__:_ ~time_ns ~tid ~data ~name span : unit =

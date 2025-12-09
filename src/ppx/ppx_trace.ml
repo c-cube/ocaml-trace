@@ -73,7 +73,10 @@ let expand_top_let ~ctxt rec_flag (vbs : _ list) =
                 pstr_eval ~loc
                   (pexp_constant ~loc
                      (Pconst_string
-                        ("ppxtrace: cannot trace `function`", loc, None)))
+                        ( "ppxtrace: cannot trace `function`, please unsugar \
+                           to `fun`+`match`.",
+                          loc,
+                          None )))
                   [];
               ] )
       | _ ->

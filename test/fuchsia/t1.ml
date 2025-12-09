@@ -71,5 +71,6 @@ let () =
    output_string oc data;
    close_out_noerr oc);
 
-  print_endline (to_hex data);
+  (* print_endline (to_hex data); *)
+  Printf.printf "data: %d bytes\n" (String.length data);
   flush stdout

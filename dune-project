@@ -44,7 +44,7 @@
   ; we use __FUNCTION__
   (ppxlib
    (and
-    (>= 0.28)
+    (>= 0.37)
     (< 0.38)))
   (trace
    (= :version))

@@ -22,7 +22,8 @@ type t = {
   buf_chain: Buf_chain.t;
   exporter: Exporter.t;
   span_gen: Sub.Span_generator.t;
-  trace_id_gen: Sub.Trace_id_8B_generator.t;
+  (* use the span generator, it's also 64 bits *)
+  trace_id_gen: Sub.Span_generator.t;
 }
 (** Subscriber state *)
 
@@ -49,6 +50,8 @@ open struct
         names;
       flush stderr
     )
+
+  let k_trace_id : int64 Meta_map.key = Meta_map.Key.create ()
 end
 
 let close (self : t) : unit =
@@ -76,7 +79,8 @@ let create ?(buf_pool = Buf_pool.create ()) ~pid ~exporter () : t =
     pid;
     spans = Span_tbl.create ();
     span_gen = Sub.Span_generator.create ();
-    trace_id_gen = Sub.Trace_id_8B_generator.create ();
+    (* NOTE: we use a span generator because it's also making [int64] values *)
+    trace_id_gen = Sub.Span_generator.create ();
   }
 
 module Callbacks = struct
@@ -84,8 +88,21 @@ module Callbacks = struct
 
   let new_span (self : st) = Sub.Span_generator.mk_span self.span_gen
 
-  let new_trace_id self =
-    Sub.Trace_id_8B_generator.mk_trace_id self.trace_id_gen
+  let get_trace_id_ meta : int64 =
+    try Meta_map.find_exn k_trace_id meta
+    with _ ->
+      failwith "fuchsia subscriber: could not find trace_id in meta-map"
+
+  let new_explicit_span (self : st) ~(parent : explicit_span_ctx option) :
+      explicit_span =
+    let span = Sub.Span_generator.mk_span self.span_gen in
+    let trace_id =
+      match parent with
+      | None -> Sub.Span_generator.mk_span self.trace_id_gen
+      | Some p -> get_trace_id_ p.meta
+    in
+    let meta = Meta_map.(empty |> add k_trace_id trace_id) in
+    { span; meta }
 
   let on_init (self : st) ~time_ns:_ =
     Writer.Metadata.Magic_record.encode self.buf_chain;
@@ -164,7 +181,9 @@ module Callbacks = struct
     write_ready_ self
 
   let on_enter_manual_span (self : st) ~__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_
-      ~time_ns ~tid ~parent:_ ~data ~name ~flavor:_ ~trace_id _span : unit =
+      ~time_ns ~tid ~parent:_ ~data ~name ~flavor:_ (span : explicit_span) :
+      unit =
+    let trace_id = get_trace_id_ span.meta in
     Writer.(
       Event.Async_begin.encode self.buf_chain ~name
         ~args:(args_of_user_data data)
@@ -173,7 +192,8 @@ module Callbacks = struct
     write_ready_ self
 
   let on_exit_manual_span (self : st) ~time_ns ~tid ~name ~data ~flavor:_
-      ~trace_id (_ : span) : unit =
+      (span : explicit_span) : unit =
+    let trace_id = get_trace_id_ span.meta in
     Writer.(
       Event.Async_end.encode self.buf_chain ~name ~args:(args_of_user_data data)
         ~t_ref:(Thread_ref.inline ~pid:self.pid ~tid)

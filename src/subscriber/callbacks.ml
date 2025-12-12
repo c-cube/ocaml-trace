@@ -35,8 +35,9 @@ module type S = sig
   (** How to generate a new span?
       @since NEXT_RELEASE *)
 
-  val new_trace_id : st -> trace_id
-  (** How to generate a new trace ID?
+  val new_explicit_span : st -> parent:explicit_span_ctx option -> explicit_span
+  (** How to generate a new explicit span, with meta-map potentially containing
+      data such as a trace ID or request ID?
       @since NEXT_RELEASE *)
 
   val on_shutdown : st -> time_ns:int64 -> unit
@@ -96,12 +97,11 @@ module type S = sig
     __LINE__:int ->
     time_ns:int64 ->
     tid:int ->
-    parent:span option ->
+    parent:explicit_span_ctx option ->
     data:(string * Trace_core.user_data) list ->
     name:string ->
     flavor:Trace_core.span_flavor option ->
-    trace_id:trace_id ->
-    span ->
+    explicit_span ->
     unit
   (** Enter a manual (possibly async) span *)
 
@@ -112,8 +112,7 @@ module type S = sig
     name:string ->
     data:(string * Trace_core.user_data) list ->
     flavor:Trace_core.span_flavor option ->
-    trace_id:trace_id ->
-    span ->
+    explicit_span ->
     unit
   (** Exit a manual span *)
 
@@ -142,7 +141,7 @@ type 'st t = (module S with type st = 'st)
 module Dummy = struct
   let on_init _ ~time_ns:_ = ()
   let new_span _ = Collector.dummy_span
-  let new_trace_id _ = Collector.dummy_trace_id
+  let new_explicit_span _ ~parent:_ = Collector.dummy_explicit_span
   let on_shutdown _ ~time_ns:_ = ()
   let on_name_thread _ ~time_ns:_ ~tid:_ ~name:_ = ()
   let on_name_process _ ~time_ns:_ ~tid:_ ~name:_ = ()
@@ -157,13 +156,10 @@ module Dummy = struct
   let on_add_data _ ~data:_ _sp = ()
 
   let on_enter_manual_span _ ~__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_ ~time_ns:_
-      ~tid:_ ~parent:_ ~data:_ ~name:_ ~flavor:_ ~trace_id:_ _sp =
+      ~tid:_ ~parent:_ ~data:_ ~name:_ ~flavor:_ _sp =
     ()
 
-  let on_exit_manual_span _ ~time_ns:_ ~tid:_ ~name:_ ~data:_ ~flavor:_
-      ~trace_id:_ _ =
-    ()
-
+  let on_exit_manual_span _ ~time_ns:_ ~tid:_ ~name:_ ~data:_ ~flavor:_ _ = ()
   let on_extension_event _ ~time_ns:_ ~tid:_ _ = ()
 end
 

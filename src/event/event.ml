@@ -37,7 +37,6 @@ type t =
       tid: int;
       name: string;
       time_ns: int64;
-      id: trace_id;
       flavor: span_flavor option;
       fun_name: string option;
       data: (string * user_data) list;
@@ -48,7 +47,6 @@ type t =
       time_ns: int64;
       flavor: span_flavor option;
       data: (string * user_data) list;
-      id: trace_id;
     }
   | E_counter of {
       name: string;

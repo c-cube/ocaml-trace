@@ -10,14 +10,17 @@ open struct
   (* just use the same ones for everyone *)
 
   let span_gen = Sub.Span_generator.create ()
-  let trace_id_gen = Sub.Trace_id_8B_generator.create ()
 end
 
 module Callbacks : Sub.Callbacks.S with type st = event_consumer = struct
   type st = event_consumer
 
   let new_span (_self : st) = Sub.Span_generator.mk_span span_gen
-  let new_trace_id _self = Sub.Trace_id_8B_generator.mk_trace_id trace_id_gen
+
+  let new_explicit_span _self ~parent:_ =
+    let span = Sub.Span_generator.mk_span span_gen in
+    { span; meta = Meta_map.empty }
+
   let on_init (self : st) ~time_ns = self.on_event (E_init { time_ns })
   let on_shutdown (self : st) ~time_ns = self.on_event (E_shutdown { time_ns })
 
@@ -45,16 +48,13 @@ module Callbacks : Sub.Callbacks.S with type st = event_consumer = struct
     self.on_event @@ E_counter { name; n = f; time_ns; tid }
 
   let on_enter_manual_span (self : st) ~__FUNCTION__:fun_name ~__FILE__:_
-      ~__LINE__:_ ~time_ns ~tid ~parent:_ ~data ~name ~flavor ~trace_id _span :
-      unit =
+      ~__LINE__:_ ~time_ns ~tid ~parent:_ ~data ~name ~flavor _span : unit =
     self.on_event
-    @@ E_enter_manual_span
-         { id = trace_id; time_ns; tid; data; name; fun_name; flavor }
+    @@ E_enter_manual_span { time_ns; tid; data; name; fun_name; flavor }
 
   let on_exit_manual_span (self : st) ~time_ns ~tid ~name ~data ~flavor
-      ~trace_id (_ : span) : unit =
-    self.on_event
-    @@ E_exit_manual_span { tid; id = trace_id; name; time_ns; data; flavor }
+      (_ : explicit_span) : unit =
+    self.on_event @@ E_exit_manual_span { tid; name; time_ns; data; flavor }
 
   let on_extension_event (self : st) ~time_ns ~tid ext : unit =
     self.on_event @@ E_extension_event { tid; time_ns; ext }

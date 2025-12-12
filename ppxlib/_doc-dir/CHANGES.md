@@ -1,3 +1,73 @@
+0.37.0
+------
+
+### 5.4 Support
+
+- Add initial OCaml 5.4 support (#570, @patricoferris, @NathanReb)
+
+### Other Changes
+
+- Add `Longident.to/of_compiler` to astlib to simplify maintenance
+  of ppx-es that interacts with other parts of the compiler-libs such
+  as the type checker. (#603, @NathanReb)
+
+- Fix a bug where some infix operators such as `mod` would be printed as
+  raw identifiers by our `Pprintast`. (#601, @NathanReb)
+
+- Fix 5.2 -> 5.3 migration of constants. Those used to always have a `none`
+  location which can lead to unhelpful error messages.
+  (#569, @NathanReb)
+
+- Add a new context-free rule type that replaces AST nodes that have the registered
+  attributes attached to them. (#574, @Skepfyr)
+
+- Allow users to derive code from module bindings and module declarations
+  (#576, @patricoferris)
+
+- Expose `Ppxlib.Location.Error.t = Astlib.Location.Error.t` (#593, @ceastlund)
+
+- Add `@@@ppxlib.inline.end`, deprecate `@@@deriving.end`. (#594, @ceastlund)
+
+- Clean the AST of any ppxlib migration attributes whenever printing using
+  Pretty_print mode and the use_compiler_pp flag. (#598, @patricoferris)
+
+- Add custom printer support to `pp_ast` functions via the `?printer` config
+  parameter. (#526, @pedrobslisboa)
+
+0.36.2
+------
+
+- Make Ast_builder's default `value_binding` constructor generate the proper
+  `pvb_constraint` from the pattern and expression arguments.
+  (#589, @NathanReb)
+- Fix pprintast to output correct syntax from `Ppat_constraint (pat, Ptyp_poly ...)`
+  nodes until they are completely dropped. (#588, @NathanReb)
+
+0.36.1 (2025-07-10)
+-------------------
+
+- Fix ppxlib driver's AST to source printer. Our copy of pprintast was not
+  properly updated which resulted in incorrect printing of value bindings'
+  constraints (#585, @NathanReb)
+
+0.36.0 (2025-03-03)
+-------------------
+
+- Change `Location.none` to match the compiler's `Location.none` as of OCaml
+  4.08. This fixes a bug in `loc_of_attribute` (#540, @ncik-roberts, @patricoferris)
+
+- Bump ppxlib's AST to 5.2.0 (#514, @patricoferris)
+
+- Add the `[@@@expand_inline]` transformation and support for floating attribute context
+  free transformations. (#560, @jaymody)
+
+- Add a `-raise-embedded-errors` flag to the driver. Setting this flag raises the first
+  `ocaml.error` embedded in the final AST.
+
+- Export `Ast_pattern.fail`. (#563, @ceastlund)
+
+- Make `Ast_traverse.sexp_of` more concise, and add a test. (#561, @ceastlund)
+
 0.35.0 (2025-02-03)
 -------------------
 

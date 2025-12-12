@@ -5,7 +5,7 @@
   <span><span class="label">name</span>:string <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">start</span>:float <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">end_</span>:float <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">args</span>:<span><span>(string * <a href="../../../trace/Trace_subscriber/index.html#type-user_data">Trace_subscriber.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">args</span>:<span><span>(string * <a href="../../../trace/Trace_core/index.html#type-user_data">Trace_core.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../../ocaml/Stdlib/Buffer/index.html#type-t">Stdlib.Buffer.t</a> <span class="arrow">&#45;&gt;</span></span>
   unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit_manual_begin"><a href="#val-emit_manual_begin" class="anchor"></a><code><span><span class="keyword">val</span> emit_manual_begin : 
   <span><span class="label">pid</span>:int <span class="arrow">&#45;&gt;</span></span>
@@ -13,8 +13,8 @@
   <span><span class="label">name</span>:string <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">id</span>:<a href="../../../trace/Trace_core/index.html#type-span">Trace_core.span</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">ts</span>:float <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">args</span>:<span><span>(string * <a href="../../../trace/Trace_subscriber/index.html#type-user_data">Trace_subscriber.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">flavor</span>:<span><a href="../../../trace/Trace_subscriber/index.html#type-flavor">Trace_subscriber.flavor</a> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">args</span>:<span><span>(string * <a href="../../../trace/Trace_core/index.html#type-user_data">Trace_core.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">flavor</span>:<span><a href="../../../trace/Trace_core/index.html#type-span_flavor">Trace_core.span_flavor</a> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../../ocaml/Stdlib/Buffer/index.html#type-t">Stdlib.Buffer.t</a> <span class="arrow">&#45;&gt;</span></span>
   unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit_manual_end"><a href="#val-emit_manual_end" class="anchor"></a><code><span><span class="keyword">val</span> emit_manual_end : 
   <span><span class="label">pid</span>:int <span class="arrow">&#45;&gt;</span></span>
@@ -22,15 +22,15 @@
   <span><span class="label">name</span>:string <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">id</span>:<a href="../../../trace/Trace_core/index.html#type-span">Trace_core.span</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">ts</span>:float <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">flavor</span>:<span><a href="../../../trace/Trace_subscriber/index.html#type-flavor">Trace_subscriber.flavor</a> option</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">args</span>:<span><span>(string * <a href="../../../trace/Trace_subscriber/index.html#type-user_data">Trace_subscriber.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">flavor</span>:<span><a href="../../../trace/Trace_core/index.html#type-span_flavor">Trace_core.span_flavor</a> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">args</span>:<span><span>(string * <a href="../../../trace/Trace_core/index.html#type-user_data">Trace_core.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../../ocaml/Stdlib/Buffer/index.html#type-t">Stdlib.Buffer.t</a> <span class="arrow">&#45;&gt;</span></span>
   unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit_instant_event"><a href="#val-emit_instant_event" class="anchor"></a><code><span><span class="keyword">val</span> emit_instant_event : 
   <span><span class="label">pid</span>:int <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">tid</span>:int <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">name</span>:string <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">ts</span>:float <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">args</span>:<span><span>(string * <a href="../../../trace/Trace_subscriber/index.html#type-user_data">Trace_subscriber.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">args</span>:<span><span>(string * <a href="../../../trace/Trace_core/index.html#type-user_data">Trace_core.user_data</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../../ocaml/Stdlib/Buffer/index.html#type-t">Stdlib.Buffer.t</a> <span class="arrow">&#45;&gt;</span></span>
   unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit_name_thread"><a href="#val-emit_name_thread" class="anchor"></a><code><span><span class="keyword">val</span> emit_name_thread : 
   <span><span class="label">pid</span>:int <span class="arrow">&#45;&gt;</span></span>

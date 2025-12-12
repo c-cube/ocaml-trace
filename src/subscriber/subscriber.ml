@@ -24,9 +24,9 @@ open struct
       let (Sub { st = s; callbacks = (module CB) }) = Array.get st 0 in
       CB.new_span s
 
-    let new_trace_id st =
+    let new_explicit_span st =
       let (Sub { st = s; callbacks = (module CB) }) = Array.get st 0 in
-      CB.new_trace_id s
+      CB.new_explicit_span s
 
     let on_init st ~time_ns =
       for i = 0 to Array.length st - 1 do
@@ -85,19 +85,17 @@ open struct
       done
 
     let on_enter_manual_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~time_ns ~tid
-        ~parent ~data ~name ~flavor ~trace_id span =
+        ~parent ~data ~name ~flavor span =
       for i = 0 to Array.length st - 1 do
         let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
         CB.on_enter_manual_span s ~__FUNCTION__ ~__FILE__ ~__LINE__ ~time_ns
-          ~tid ~parent ~data ~name ~flavor ~trace_id span
+          ~tid ~parent ~data ~name ~flavor span
       done
 
-    let on_exit_manual_span st ~time_ns ~tid ~name ~data ~flavor ~trace_id span
-        =
+    let on_exit_manual_span st ~time_ns ~tid ~name ~data ~flavor span =
       for i = 0 to Array.length st - 1 do
         let (Sub { st = s; callbacks = (module CB) }) = Array.get st i in
-        CB.on_exit_manual_span s ~time_ns ~tid ~name ~data ~flavor ~trace_id
-          span
+        CB.on_exit_manual_span s ~time_ns ~tid ~name ~data ~flavor span
       done
 
     let on_extension_event st ~time_ns ~tid ev : unit =

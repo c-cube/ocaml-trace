@@ -37,15 +37,6 @@ module Span_generator : sig
   val mk_span : t -> Trace_core.span
 end
 
-(** A counter-based trace ID generator, producing 8-byte trace IDs.
-    @since NEXT_RELEASE *)
-module Trace_id_8B_generator : sig
-  type t
-
-  val create : unit -> t
-  val mk_trace_id : t -> Trace_core.trace_id
-end
-
 (**/**)
 
 module Private_ : sig
@@ -53,7 +44,7 @@ module Private_ : sig
   (** Global mock flag. If enable, all timestamps, tid, etc should be faked. *)
 
   val get_now_ns_ : (unit -> int64) ref
-  (** The callback used to get the current timestamp *)
+  (** The callback used to get the current timestamp, in nanoseconds *)
 
   val get_tid_ : (unit -> int) ref
   (** The callback used to get the current thread's id *)

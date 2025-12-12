@@ -16,11 +16,11 @@ open struct
   let[@inline] time_us_of_time_ns (t : int64) : float =
     Int64.div t 1_000L |> Int64.to_float
 
-  let[@inline] int64_of_trace_id_ (id : Trace_core.trace_id) : int64 =
-    if id == Trace_core.Collector.dummy_trace_id then
-      0L
-    else
-      Bytes.get_int64_le (Bytes.unsafe_of_string id) 0
+  (** Used to store async spans' trace ID *)
+  let k_trace_id : int64 Meta_map.key = Meta_map.Key.create ()
+
+  (* 8B in both cases *)
+  module Trace_id_8B_generator = Sub.Span_generator
 end
 
 let on_tracing_error = ref (fun s -> Printf.eprintf "%s\n%!" s)
@@ -43,7 +43,7 @@ type t = {
   buf_pool: Buf_pool.t;
   exporter: Exporter.t;
   span_gen: Sub.Span_generator.t;
-  trace_id_gen: Sub.Trace_id_8B_generator.t;
+  trace_id_gen: Trace_id_8B_generator.t;
 }
 (** Subscriber state *)
 
@@ -85,7 +85,7 @@ let create ?(buf_pool = Buf_pool.create ()) ~pid ~exporter () : t =
     pid;
     spans = Span_tbl.create ();
     span_gen = Sub.Span_generator.create ();
-    trace_id_gen = Sub.Trace_id_8B_generator.create ();
+    trace_id_gen = Trace_id_8B_generator.create ();
   }
 
 module Callbacks = struct
@@ -93,8 +93,19 @@ module Callbacks = struct
 
   let new_span (self : st) = Sub.Span_generator.mk_span self.span_gen
 
-  let new_trace_id self =
-    Sub.Trace_id_8B_generator.mk_trace_id self.trace_id_gen
+  let new_explicit_span self ~(parent : explicit_span_ctx option) :
+      explicit_span =
+    let trace_id =
+      match parent with
+      | None -> Trace_id_8B_generator.mk_span self.trace_id_gen
+      | Some p ->
+        (match Meta_map.find k_trace_id p.meta with
+        | Some t -> t
+        | None -> Trace_id_8B_generator.mk_span self.trace_id_gen)
+    in
+    let span = new_span self in
+    let meta = Meta_map.(empty |> add k_trace_id trace_id) in
+    { span; meta }
 
   let on_init _ ~time_ns:_ = ()
   let on_shutdown (self : st) ~time_ns:_ = close self
@@ -162,25 +173,30 @@ module Callbacks = struct
     self.exporter.on_json buf
 
   let on_enter_manual_span (self : st) ~__FUNCTION__:fun_name ~__FILE__:_
-      ~__LINE__:_ ~time_ns ~tid ~parent:_ ~data ~name ~flavor ~trace_id _span :
-      unit =
+      ~__LINE__:_ ~time_ns ~tid ~parent:_ ~data ~name ~flavor
+      (span : explicit_span) : unit =
     let time_us = time_us_of_time_ns @@ time_ns in
+
+    let trace_id =
+      try Meta_map.find_exn k_trace_id span.meta with _ -> assert false
+    in
 
     let data = add_fun_name_ fun_name data in
     let@ buf = Rpool.with_ self.buf_pool in
-    Writer.emit_manual_begin buf ~pid:self.pid ~tid ~name
-      ~id:(int64_of_trace_id_ trace_id)
+    Writer.emit_manual_begin buf ~pid:self.pid ~tid ~name ~id:trace_id
       ~ts:time_us ~args:data ~flavor;
     self.exporter.on_json buf
 
   let on_exit_manual_span (self : st) ~time_ns ~tid ~name ~data ~flavor
-      ~trace_id (_ : span) : unit =
+      (span : explicit_span) : unit =
     let time_us = time_us_of_time_ns @@ time_ns in
+    let trace_id =
+      try Meta_map.find_exn k_trace_id span.meta with _ -> assert false
+    in
 
     let@ buf = Rpool.with_ self.buf_pool in
-    Writer.emit_manual_end buf ~pid:self.pid ~tid ~name
-      ~id:(int64_of_trace_id_ trace_id)
-      ~ts:time_us ~flavor ~args:data;
+    Writer.emit_manual_end buf ~pid:self.pid ~tid ~name ~id:trace_id ~ts:time_us
+      ~flavor ~args:data;
     self.exporter.on_json buf
 
   let on_extension_event _ ~time_ns:_ ~tid:_ _ev = ()

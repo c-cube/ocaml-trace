@@ -4,15 +4,6 @@
 
 open Common_
 module Util = Util
-
-open struct
-  let[@inline] int64_of_trace_id_ (id : Trace_core.trace_id) : int64 =
-    if id == Trace_core.Collector.dummy_trace_id then
-      0L
-    else
-      Bytes.get_int64_le (Bytes.unsafe_of_string id) 0
-end
-
 open Util
 
 type user_data = Trace_core.user_data
@@ -491,7 +482,7 @@ module Event = struct
       + Arguments.size_word args + 1 (* async id *)
 
     let encode (bufs : Buf_chain.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
-        ~(async_id : Trace_core.trace_id) ~args () : unit =
+        ~(async_id : int64) ~args () : unit =
       let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
       let@ buf = Buf_chain.with_buf bufs ~available_word:size in
@@ -516,7 +507,7 @@ module Event = struct
 
       Buf.add_string buf name;
       Arguments.encode buf args;
-      Buf.add_i64 buf (int64_of_trace_id_ async_id);
+      Buf.add_i64 buf async_id;
       ()
   end
 
@@ -527,7 +518,7 @@ module Event = struct
       + Arguments.size_word args + 1 (* async id *)
 
     let encode (bufs : Buf_chain.t) ~name ~(t_ref : Thread_ref.t) ~time_ns
-        ~(async_id : Trace_core.trace_id) ~args () : unit =
+        ~(async_id : int64) ~args () : unit =
       let name = truncate_string name in
       let size = size_word ~name ~t_ref ~args () in
       let@ buf = Buf_chain.with_buf bufs ~available_word:size in
@@ -552,7 +543,7 @@ module Event = struct
 
       Buf.add_string buf name;
       Arguments.encode buf args;
-      Buf.add_i64 buf (int64_of_trace_id_ async_id);
+      Buf.add_i64 buf async_id;
       ()
   end
 end

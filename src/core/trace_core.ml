@@ -18,7 +18,7 @@ let current_level_ = A.make Level.Trace
 (* ## implementation ## *)
 
 let[@inline] ctx_of_span (sp : explicit_span) : explicit_span_ctx =
-  { span = sp.span; trace_id = sp.trace_id }
+  { meta = sp.meta }
 
 let data_empty_build_ () = []
 

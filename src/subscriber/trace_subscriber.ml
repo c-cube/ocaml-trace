@@ -71,36 +71,27 @@ let collector (Sub { st; callbacks = (module CB) } : Subscriber.t) : collector =
 
     let enter_manual_span ~(parent : explicit_span_ctx option) ~flavor
         ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name : explicit_span =
-      let span = CB.new_span st in
       let tid = tid_ () in
       let time_ns = now_ns () in
 
-      (* get the common trace id, or make a new one *)
-      let trace_id, parent =
-        match parent with
-        | Some m -> m.trace_id, Some m.span
-        | None -> CB.new_trace_id st, None
-      in
+      let espan : explicit_span = CB.new_explicit_span st ~parent in
+      espan.meta <-
+        Meta_map.add key_manual_info { name; flavor; data = [] } espan.meta;
 
       CB.on_enter_manual_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~parent ~data
-        ~time_ns ~tid ~name ~flavor ~trace_id span;
-      let meta =
-        Meta_map.empty
-        |> Meta_map.add key_manual_info { name; flavor; data = [] }
-      in
-      { span; trace_id; meta }
+        ~time_ns ~tid ~name ~flavor espan;
+      espan
 
     let exit_manual_span (es : explicit_span) : unit =
       let time_ns = now_ns () in
       let tid = tid_ () in
-      let trace_id = es.trace_id in
       let minfo =
         match Meta_map.find key_manual_info es.meta with
         | None -> assert false
         | Some m -> m
       in
       CB.on_exit_manual_span st ~tid ~time_ns ~data:minfo.data ~name:minfo.name
-        ~flavor:minfo.flavor ~trace_id es.span
+        ~flavor:minfo.flavor es
 
     let add_data_to_manual_span (es : explicit_span) data =
       if data <> [] then (
@@ -153,16 +144,4 @@ module Span_generator = struct
 
   let create () = A.make 0
   let[@inline] mk_span self = A.fetch_and_add self 1 |> Int64.of_int
-end
-
-module Trace_id_8B_generator = struct
-  type t = int A.t
-
-  let create () = A.make 0
-
-  let[@inline] mk_trace_id (self : t) : trace_id =
-    let n = A.fetch_and_add self 1 in
-    let b = Bytes.create 8 in
-    Bytes.set_int64_le b 0 (Int64.of_int n);
-    Bytes.unsafe_to_string b
 end

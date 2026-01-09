@@ -1,3 +1,9 @@
+
+# 0.10.1
+
+- use `at_exit` in `trace_tef` and `tldrs`
+- fix fuchsia: bound check
+
 # 0.10
 
 - breaking: manual spans now take a `explicit_span_ctx` as parent, that

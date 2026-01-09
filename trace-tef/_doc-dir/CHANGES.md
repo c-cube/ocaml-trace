@@ -16,7 +16,6 @@
 - feat `trace.subscriber`: depopt on unix for timestamps
 - refactor `trace-tef`: depopt on unix for TEF timestamps
 
-
 # 0.9.1
 
 

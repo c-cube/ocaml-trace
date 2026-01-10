@@ -89,9 +89,9 @@ let expand_top_let ~ctxt rec_flag (vbs : _ list) =
             Trace_core.exit_span _trace_span;
             res
           | exception exn ->
-            let bt = Printexc.get_raw_backtrace () in
+            let bt = Stdlib.Printexc.get_raw_backtrace () in
             Trace_core.exit_span _trace_span;
-            Printexc.raise_with_backtrace exn bt]
+            Stdlib.Printexc.raise_with_backtrace exn bt]
     in
 
     let tr_vb (vb : value_binding) : value_binding =

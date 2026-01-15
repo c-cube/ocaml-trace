@@ -88,7 +88,7 @@ end
 
 (** Build a set of callbacks.
     @since NEXT_RELEASE *)
-let make ?(on_init = Dummy.on_init) ?(new_span_id = Dummy.new_span_id)
+let make ~new_span_id ?(on_init = Dummy.on_init)
     ?(on_enter_span = Dummy.on_enter_span) ?(on_exit_span = Dummy.on_exit_span)
     ?(on_message = Dummy.on_message) ?(on_counter = Dummy.on_counter)
     ?(on_extension_event = Dummy.on_extension_event)
@@ -105,4 +105,4 @@ let make ?(on_init = Dummy.on_init) ?(new_span_id = Dummy.new_span_id)
   }
 
 (** Dummy callbacks, ignores all events. *)
-let dummy () : _ t = make ()
+let dummy () : _ t = make ~new_span_id:(fun () -> Span_sub.dummy_span_id) ()

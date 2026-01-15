@@ -9,6 +9,8 @@ open Trace_core
 type span_id = int64
 (** Unique ID *)
 
+let dummy_span_id = Int64.min_int
+
 type span_flavor =
   [ `Sync
   | `Async

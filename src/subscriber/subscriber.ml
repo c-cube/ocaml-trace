@@ -23,6 +23,10 @@ open struct
     let (Sub { st; callbacks = cb }) = Array.get st 0 in
     cb.new_span_id st
 
+  let new_trace_id st =
+    let (Sub { st; callbacks = cb }) = Array.get st 0 in
+    cb.new_trace_id st
+
   let on_init st ~time_ns =
     for i = 0 to Array.length st - 1 do
       let (Sub { st; callbacks = cb }) = Array.get st i in
@@ -69,6 +73,7 @@ open struct
     {
       Callbacks.on_init;
       new_span_id;
+      new_trace_id;
       on_enter_span;
       on_exit_span;
       on_message;

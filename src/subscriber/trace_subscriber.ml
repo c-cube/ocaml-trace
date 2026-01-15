@@ -36,6 +36,12 @@ open struct
     let tid = tid_ () in
     let time_ns = now_ns () in
 
+    let trace_id =
+      match parent with
+      | P_some (Span_sub span) -> span.trace_id
+      | _ -> cb.new_trace_id st
+    in
+
     let flavor = ref `Sync in
     List.iter
       (function
@@ -53,6 +59,7 @@ open struct
         __LINE__;
         data;
         parent;
+        trace_id;
         flavor = !flavor;
         params;
         time_ns;
@@ -125,9 +132,16 @@ end
 let collector (self : Subscriber.t) : collector =
   Collector.C_some (self, coll_cbs)
 
-module Span_generator = struct
+module Span_id_generator = struct
   type t = int A.t
 
   let create () = A.make 0
-  let[@inline] mk_span self = A.fetch_and_add self 1 |> Int64.of_int
+  let[@inline] gen self = A.fetch_and_add self 1 |> Int64.of_int
+end
+
+module Trace_id_generator = struct
+  type t = int A.t
+
+  let create () = A.make 0
+  let[@inline] gen self = A.fetch_and_add self 1 |> Int64.of_int
 end

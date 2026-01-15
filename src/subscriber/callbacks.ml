@@ -29,6 +29,9 @@ type 'st t = {
   new_span_id: 'st -> Span_sub.span_id;
       (** How to generate a new span ID?
           @since NEXT_RELEASE *)
+  new_trace_id: 'st -> Span_sub.trace_id;
+      (** How to generate a new trace ID?
+          @since NEXT_RELEASE *)
   on_shutdown: 'st -> time_ns:int64 -> unit;
       (** Called when the collector is shutdown *)
   on_enter_span: 'st -> Span_sub.t -> unit;  (** Enter a span *)
@@ -78,6 +81,7 @@ type 'st t = {
 module Dummy = struct
   let on_init _ ~time_ns:_ = ()
   let new_span_id _ = Int64.min_int
+  let new_trace_id _ = -1L
   let on_shutdown _ ~time_ns:_ = ()
   let on_message _ ~time_ns:_ ~tid:_ ~span:_ ~params:_ ~data:_ _msg = ()
   let on_counter _ ~time_ns:_ ~tid:_ ~params:_ ~data:_ ~name:_ _v = ()
@@ -88,14 +92,16 @@ end
 
 (** Build a set of callbacks.
     @since NEXT_RELEASE *)
-let make ~new_span_id ?(on_init = Dummy.on_init)
-    ?(on_enter_span = Dummy.on_enter_span) ?(on_exit_span = Dummy.on_exit_span)
-    ?(on_message = Dummy.on_message) ?(on_counter = Dummy.on_counter)
+let make ~new_span_id ?(new_trace_id = Dummy.new_trace_id)
+    ?(on_init = Dummy.on_init) ?(on_enter_span = Dummy.on_enter_span)
+    ?(on_exit_span = Dummy.on_exit_span) ?(on_message = Dummy.on_message)
+    ?(on_counter = Dummy.on_counter)
     ?(on_extension_event = Dummy.on_extension_event)
     ?(on_shutdown = Dummy.on_shutdown) () : _ t =
   {
     on_init;
     new_span_id;
+    new_trace_id;
     on_enter_span;
     on_exit_span;
     on_message;

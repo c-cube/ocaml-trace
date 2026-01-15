@@ -29,11 +29,20 @@ val collector : t -> Trace_core.collector
 
 (** A counter-based span generator.
     @since NEXT_RELEASE *)
-module Span_generator : sig
+module Span_id_generator : sig
   type t
 
   val create : unit -> t
-  val mk_span : t -> Span_sub.span_id
+  val gen : t -> Span_sub.span_id
+end
+
+(** A counter-based generator.
+    @since NEXT_RELEASE *)
+module Trace_id_generator : sig
+  type t
+
+  val create : unit -> t
+  val gen : t -> Span_sub.trace_id
 end
 
 (**/**)

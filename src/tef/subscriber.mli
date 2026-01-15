@@ -16,7 +16,8 @@ val flush : t -> unit
 val close : t -> unit
 val active : t -> bool
 
-module Callbacks : Sub.Callbacks.S with type st = t
+val sub_callbacks : t Sub.Callbacks.t
+(** Callbacks used for the subscriber *)
 
 val subscriber : t -> Sub.t
 (** Subscriber that writes json into this writer *)

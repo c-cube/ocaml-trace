@@ -50,25 +50,23 @@ let emit_duration_event ~pid ~tid ~name ~start ~end_ ~args buf : unit =
     (emit_args_o_ pp_user_data_)
     args
 
-let emit_manual_begin ~pid ~tid ~name ~(id : int64) ~ts ~args
-    ~(flavor : Trace_core.span_flavor option) buf : unit =
+let emit_begin ~pid ~tid ~name ~(id : int64) ~ts ~args ~flavor buf : unit =
   Printf.bprintf buf
     {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
     pid id tid ts str_val name
     (match flavor with
-    | None | Some `Async -> 'b'
-    | Some `Sync -> 'B')
+    | `Async -> 'b'
+    | `Sync -> 'B')
     (emit_args_o_ pp_user_data_)
     args
 
-let emit_manual_end ~pid ~tid ~name ~(id : int64) ~ts
-    ~(flavor : Trace_core.span_flavor option) ~args buf : unit =
+let emit_end ~pid ~tid ~name ~(id : int64) ~ts ~args ~flavor buf : unit =
   Printf.bprintf buf
     {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
     pid id tid ts str_val name
     (match flavor with
-    | None | Some `Async -> 'e'
-    | Some `Sync -> 'E')
+    | `Async -> 'e'
+    | `Sync -> 'E')
     (emit_args_o_ pp_user_data_)
     args
 

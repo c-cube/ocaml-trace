@@ -1,7 +1,7 @@
 (library
  (name trace_subscriber)
  (public_name trace.subscriber)
- (private_modules time_ thread_ tbl_)
+ (private_modules time_ thread_)
  (libraries
   (re_export trace.core)
   (select
@@ -9,12 +9,6 @@
    from
    (threads -> thread_.real.ml)
    (-> thread_.dummy.ml))
-  (select
-   tbl_.ml
-   from
-   (picos_aux.htbl -> tbl_.picos.ml)
-   (threads -> tbl_.thread.ml)
-   (-> tbl_.basic.ml))
   (select
    time_.ml
    from

@@ -11,7 +11,7 @@
 
 module Callbacks = Callbacks
 module Subscriber = Subscriber
-module Span_tbl = Span_tbl
+module Span_sub = Span_sub
 
 (** {2 Main API} *)
 
@@ -24,9 +24,8 @@ type t = Subscriber.t
     whenever the trace collector invokes the callbacks. *)
 
 val collector : t -> Trace_core.collector
-(** A collector that calls the subscriber's callbacks.
-
-    It uses [mtime] (if available) to obtain timestamps. *)
+(** A collector that calls the subscriber's callbacks. It uses [mtime] (if
+    available) to obtain timestamps. *)
 
 (** A counter-based span generator.
     @since NEXT_RELEASE *)
@@ -34,16 +33,7 @@ module Span_generator : sig
   type t
 
   val create : unit -> t
-  val mk_span : t -> Trace_core.span
-end
-
-(** A counter-based trace ID generator, producing 8-byte trace IDs.
-    @since NEXT_RELEASE *)
-module Trace_id_8B_generator : sig
-  type t
-
-  val create : unit -> t
-  val mk_trace_id : t -> Trace_core.trace_id
+  val mk_span : t -> Span_sub.span_id
 end
 
 (**/**)

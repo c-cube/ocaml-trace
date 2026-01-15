@@ -4,6 +4,7 @@ let run () =
 
   let n = ref 0 in
 
+  Trace.with_span ~__FILE__ ~__LINE__ "main" @@ fun _sp ->
   for _i = 1 to 50 do
     Trace.with_span ~__FILE__ ~__LINE__ "outer.loop" @@ fun _sp ->
     let pseudo_async_sp =

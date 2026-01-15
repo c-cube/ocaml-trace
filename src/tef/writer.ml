@@ -1,5 +1,3 @@
-open Common_
-
 let char = Buffer.add_char
 let raw_string = Buffer.add_string
 

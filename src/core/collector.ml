@@ -28,10 +28,6 @@ module Callbacks = struct
     exit_span: 'st -> span -> unit;
         (** Exit a span. Must be called exactly once per span. Additional
             constraints on nesting, threads, etc. vary per collector. *)
-    current_span: 'st -> span option;
-        (** Access the current span, if supported. Returns [None] if there is no
-            current span or if the current span isn't tracked by the collector.
-        *)
     add_data_to_span: 'st -> span -> (string * user_data) list -> unit;
     message:
       'st ->
@@ -66,14 +62,12 @@ module Callbacks = struct
   (** Callbacks taking a state ['st] *)
 
   (** Helper to create backends in a future-proof way *)
-  let make ~enter_span ~exit_span ?(current_span = fun _ -> None)
-      ~add_data_to_span ~message ~counter_int ~counter_float
-      ?(extension = fun _ _ -> ()) ?(init = ignore) ?(shutdown = ignore) () :
-      _ t =
+  let make ~enter_span ~exit_span ~add_data_to_span ~message ~counter_int
+      ~counter_float ?(extension = fun _ _ -> ()) ?(init = ignore)
+      ?(shutdown = ignore) () : _ t =
     {
       enter_span;
       exit_span;
-      current_span;
       add_data_to_span;
       message;
       counter_int;

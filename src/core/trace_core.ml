@@ -128,7 +128,12 @@ let setup_collector c : unit =
     | C_none -> not (A.compare_and_set collector cur c)
   do
     ()
-  done
+  done;
+
+  (* initialize collector *)
+  match c with
+  | C_none -> ()
+  | C_some (st, cb) -> cb.init st
 
 let shutdown () =
   match A.exchange collector C_none with

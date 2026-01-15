@@ -58,6 +58,7 @@ module Callbacks = struct
       unit;
     extension: 'st -> extension_event -> unit;
         (** Collector-specific extension *)
+    init: 'st -> unit;  (** Called on initialization *)
     shutdown: 'st -> unit;
         (** Shutdown collector, possibly waiting for it to finish sending data.
         *)
@@ -67,7 +68,8 @@ module Callbacks = struct
   (** Helper to create backends in a future-proof way *)
   let make ~enter_span ~exit_span ?(current_span = fun _ -> None)
       ~add_data_to_span ~message ~counter_int ~counter_float
-      ?(extension = fun _ _ -> ()) ?(shutdown = ignore) () : _ t =
+      ?(extension = fun _ _ -> ()) ?(init = ignore) ?(shutdown = ignore) () :
+      _ t =
     {
       enter_span;
       exit_span;
@@ -77,6 +79,7 @@ module Callbacks = struct
       counter_int;
       counter_float;
       extension;
+      init;
       shutdown;
     }
 end

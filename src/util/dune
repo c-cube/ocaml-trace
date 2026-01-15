@@ -1,14 +1,21 @@
 (library
- (public_name trace.private.util)
- (synopsis "internal utilities for trace. No guarantees of stability.")
- (name trace_private_util)
- (optional) ; depends on mtime
+ (public_name trace.util)
+ (synopsis "Utilities for trace and for collectors")
+ (name trace_util)
  (libraries
   trace.core
-  mtime
-  mtime.clock.os
-  unix
-  threads
+  (select
+   thread_util.ml
+   from
+   (threads -> thread_util.real.ml)
+   (-> thread_util.dummy.ml))
+  (select
+   time_util.ml
+   from
+   (mtime mtime.clock.os -> time_util.mtime.ml)
+   (mtime mtime.clock.jsoo -> time_util.mtime.ml)
+   (unix -> time_util.unix.ml)
+   (-> time_util.dummy.ml))
   (select
    domain_util.ml
    from

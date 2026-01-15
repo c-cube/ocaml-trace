@@ -1,9 +1,6 @@
 open Trace_core
-module Callbacks = Callbacks
-module Subscriber = Subscriber
-module Span_sub = Span_sub
 
-type t = Subscriber.t
+type t = Collector.t
 
 module Private_ = struct
   let mock = ref false
@@ -131,17 +128,3 @@ end
 (** A collector that calls the callbacks of subscriber *)
 let collector (self : Subscriber.t) : collector =
   Collector.C_some (self, coll_cbs)
-
-module Span_id_generator = struct
-  type t = int A.t
-
-  let create () = A.make 0
-  let[@inline] gen self = A.fetch_and_add self 1 |> Int64.of_int
-end
-
-module Trace_id_generator = struct
-  type t = int A.t
-
-  let create () = A.make 0
-  let[@inline] gen self = A.fetch_and_add self 1 |> Int64.of_int
-end

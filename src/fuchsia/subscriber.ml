@@ -8,7 +8,8 @@ type t = {
   pid: int;
   buf_chain: Buf_chain.t;
   exporter: Exporter.t;
-  span_gen: Sub.Span_generator.t;
+  span_id_gen: Sub.Span_id_generator.t;
+  trace_id_gen: Sub.Trace_id_generator.t;
 }
 (** Subscriber state *)
 
@@ -60,11 +61,13 @@ let create ?(buf_pool = Buf_pool.create ()) ~pid ~exporter () : t =
     buf_chain;
     exporter;
     pid;
-    span_gen = Sub.Span_generator.create ();
+    span_id_gen = Sub.Span_id_generator.create ();
+    trace_id_gen = Sub.Trace_id_generator.create ();
   }
 
 open struct
-  let new_span_id (self : t) = Sub.Span_generator.mk_span self.span_gen
+  let new_span_id (self : t) = Sub.Span_id_generator.gen self.span_id_gen
+  let new_trace_id self = Sub.Trace_id_generator.gen self.trace_id_gen
 
   let on_init (self : t) ~time_ns:_ =
     Writer.Metadata.Magic_record.encode self.buf_chain;
@@ -107,7 +110,7 @@ open struct
         Event.Async_begin.encode self.buf_chain ~name
           ~args:(args_of_user_data data)
           ~t_ref:(Thread_ref.inline ~pid:self.pid ~tid)
-          ~time_ns ~async_id:0L ());
+          ~time_ns ~async_id:span.trace_id ());
       write_ready_ self
 
   let on_exit_span (self : t) ~time_ns:end_time_ns ~tid:_
@@ -129,7 +132,7 @@ open struct
         Event.Async_end.encode self.buf_chain ~name
           ~args:(args_of_user_data data)
           ~t_ref:(Thread_ref.inline ~pid:self.pid ~tid)
-          ~time_ns:end_time_ns ~async_id:0L ());
+          ~time_ns:end_time_ns ~async_id:span.trace_id ());
       write_ready_ self
 
   let on_message (self : t) ~time_ns ~tid ~span:_ ~params:_ ~data msg : unit =
@@ -156,8 +159,8 @@ open struct
 end
 
 let sub_callbacks : _ Sub.Callbacks.t =
-  Sub.Callbacks.make ~new_span_id ~on_init ~on_shutdown ~on_enter_span
-    ~on_exit_span ~on_message ~on_counter ~on_extension_event ()
+  Sub.Callbacks.make ~new_span_id ~new_trace_id ~on_init ~on_shutdown
+    ~on_enter_span ~on_exit_span ~on_message ~on_counter ~on_extension_event ()
 
 let subscriber (self : t) : Sub.t =
   Sub.Subscriber.Sub { st = self; callbacks = sub_callbacks }

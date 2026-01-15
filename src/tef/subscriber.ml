@@ -37,7 +37,8 @@ type t = {
   pid: int;
   buf_pool: Buf_pool.t;
   exporter: Exporter.t;
-  span_gen: Sub.Span_generator.t;
+  span_id_gen: Sub.Span_id_generator.t;
+  trace_id_gen: Sub.Trace_id_generator.t;
 }
 (** Subscriber state *)
 
@@ -78,13 +79,15 @@ let create ?(buf_pool = Buf_pool.create ()) ~pid ~exporter () : t =
     exporter;
     buf_pool;
     pid;
-    span_gen = Sub.Span_generator.create ();
+    span_id_gen = Sub.Span_id_generator.create ();
+    trace_id_gen = Sub.Trace_id_generator.create ();
   }
 
 open struct
   type st = t
 
-  let new_span_id (self : st) = Sub.Span_generator.mk_span self.span_gen
+  let new_span_id (self : st) = Sub.Span_id_generator.gen self.span_id_gen
+  let new_trace_id (self : st) = Sub.Trace_id_generator.gen self.trace_id_gen
   let on_init _ ~time_ns:_ = ()
   let on_shutdown (self : st) ~time_ns:_ = close self
 
@@ -101,8 +104,8 @@ open struct
       let time_us = time_us_of_time_ns time_ns in
       let data = add_fun_name_ span.__FUNCTION__ data in
       let@ buf = Rpool.with_ self.buf_pool in
-      Writer.emit_begin buf ~pid:self.pid ~tid ~name ~id:42L ~ts:time_us
-        ~args:data ~flavor:span.flavor;
+      Writer.emit_begin buf ~pid:self.pid ~tid ~name ~id:span.trace_id
+        ~ts:time_us ~args:data ~flavor:span.flavor;
       self.exporter.on_json buf
     | `Sync -> () (* done at exit *)
 
@@ -118,8 +121,8 @@ open struct
       Writer.emit_duration_event buf ~pid:self.pid ~tid ~name
         ~start:start_time_us ~end_:exit_time_us ~args:data
     | `Async ->
-      Writer.emit_end buf ~pid:self.pid ~tid ~name ~id:42L ~ts:exit_time_us
-        ~flavor ~args:data);
+      Writer.emit_end buf ~pid:self.pid ~tid ~name ~id:span.trace_id
+        ~ts:exit_time_us ~flavor ~args:data);
 
     self.exporter.on_json buf
 
@@ -154,8 +157,8 @@ open struct
 end
 
 let sub_callbacks : _ Sub.Callbacks.t =
-  Sub.Callbacks.make ~new_span_id ~on_init ~on_shutdown ~on_enter_span
-    ~on_exit_span ~on_message ~on_counter ~on_extension_event ()
+  Sub.Callbacks.make ~new_span_id ~new_trace_id ~on_init ~on_shutdown
+    ~on_enter_span ~on_exit_span ~on_message ~on_counter ~on_extension_event ()
 
 let subscriber (self : t) : Sub.t =
   Sub.Subscriber.Sub { st = self; callbacks = sub_callbacks }

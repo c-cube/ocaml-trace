@@ -64,12 +64,17 @@ let[@inline] with_span ?level ?__FUNCTION__ ~__FILE__ ~__LINE__ ?parent ?params
     (* fast path: no collector, no span *)
     f Collector.dummy_span
 
-let[@inline] enter_span ?level ?__FUNCTION__ ~__FILE__ ~__LINE__ ?parent ?params
-    ?data name : span =
+let[@inline] enter_span ?level ?__FUNCTION__ ~__FILE__ ~__LINE__ ?flavor ?parent
+    ?(params = []) ?data name : span =
   match A.get collector with
   | C_some (st, cbs) when check_level ?level () ->
+    let params =
+      match flavor with
+      | None -> params
+      | Some f -> Core_ext.Extension_span_flavor f :: params
+    in
     (enter_span_st [@inlined never]) st cbs ?__FUNCTION__ ~__FILE__ ~__LINE__
-      ?parent ?params ?data name
+      ?parent ~params ?data name
   | _ -> Collector.dummy_span
 
 let[@inline] exit_span sp : unit =

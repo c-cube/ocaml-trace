@@ -67,6 +67,7 @@ val enter_span :
   ?__FUNCTION__:string ->
   __FILE__:string ->
   __LINE__:int ->
+  ?flavor:[ `Sync | `Async ] ->
   ?parent:span option ->
   ?params:extension_parameter list ->
   ?data:(unit -> (string * user_data) list) ->

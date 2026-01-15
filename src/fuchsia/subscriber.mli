@@ -7,8 +7,7 @@ val create : ?buf_pool:Buf_pool.t -> pid:int -> exporter:Exporter.t -> unit -> t
 val flush : t -> unit
 val close : t -> unit
 val active : t -> bool
-
-module Callbacks : Trace_subscriber.Callbacks.S with type st = t
+val sub_callbacks : t Trace_subscriber.Callbacks.t
 
 val subscriber : t -> Trace_subscriber.t
 (** Subscriber that writes json into this writer *)

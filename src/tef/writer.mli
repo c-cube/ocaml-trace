@@ -4,6 +4,7 @@
     raw event data. *)
 
 open Common_
+open Types
 
 val emit_duration_event :
   pid:int ->
@@ -15,25 +16,23 @@ val emit_duration_event :
   Buffer.t ->
   unit
 
-val emit_begin :
+val emit_begin_async :
   pid:int ->
   tid:int ->
   name:string ->
-  id:span_id ->
+  trace_id:trace_id ->
   ts:float ->
   args:(string * Trace_core.user_data) list ->
-  flavor:[ `Sync | `Async ] ->
   Buffer.t ->
   unit
 
-val emit_end :
+val emit_end_async :
   pid:int ->
   tid:int ->
   name:string ->
-  id:span_id ->
+  trace_id:trace_id ->
   ts:float ->
   args:(string * Trace_core.user_data) list ->
-  flavor:[ `Sync | `Async ] ->
   Buffer.t ->
   unit
 

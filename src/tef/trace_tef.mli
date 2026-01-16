@@ -1,6 +1,7 @@
-module Subscriber = Subscriber
+module Collector_tef = Collector_tef
 module Exporter = Exporter
 module Writer = Writer
+module Types = Types
 
 type output =
   [ `Stdout
@@ -13,10 +14,6 @@ type output =
     - [`Stderr] will enable tracing and print events on stderr
     - [`File "foo"] will enable tracing and print events into file named "foo"
 *)
-
-val subscriber : out:[< output ] -> unit -> Trace_subscriber.t
-(** A subscriber emitting TEF traces into [out].
-    @since 0.8 *)
 
 val collector : out:[< output ] -> unit -> Trace_core.collector
 (** Make a collector that writes into the given output. See {!setup} for more
@@ -47,12 +44,6 @@ module Private_ : sig
   (** use fake, deterministic timestamps, TID, PID *)
 
   val on_tracing_error : (string -> unit) ref
-
-  val subscriber_jsonl :
-    finally:(unit -> unit) ->
-    out:[ `File_append of string | `Output of out_channel ] ->
-    unit ->
-    Trace_subscriber.t
 
   val collector_jsonl :
     finally:(unit -> unit) ->

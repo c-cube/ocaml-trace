@@ -48,23 +48,17 @@ let emit_duration_event ~pid ~tid ~name ~start ~end_ ~args buf : unit =
     (emit_args_o_ pp_user_data_)
     args
 
-let emit_begin ~pid ~tid ~name ~(id : int64) ~ts ~args ~flavor buf : unit =
+let emit_begin_async ~pid ~tid ~name ~trace_id ~ts ~args buf =
   Printf.bprintf buf
     {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
-    pid id tid ts str_val name
-    (match flavor with
-    | `Async -> 'b'
-    | `Sync -> 'B')
+    pid trace_id tid ts str_val name 'b'
     (emit_args_o_ pp_user_data_)
     args
 
-let emit_end ~pid ~tid ~name ~(id : int64) ~ts ~args ~flavor buf : unit =
+let emit_end_async ~pid ~tid ~name ~(trace_id : int64) ~ts ~args buf : unit =
   Printf.bprintf buf
     {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
-    pid id tid ts str_val name
-    (match flavor with
-    | `Async -> 'e'
-    | `Sync -> 'E')
+    pid trace_id tid ts str_val name 'e'
     (emit_args_o_ pp_user_data_)
     args
 

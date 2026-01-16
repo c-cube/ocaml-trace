@@ -5,10 +5,6 @@ val collector : out:[ `File of string ] -> unit -> Trace_core.collector
 (** Make a collector that writes into the given output. See {!setup} for more
     details. *)
 
-val subscriber : out:[ `File of string ] -> unit -> Trace_subscriber.t
-(** Make a subscriber that writes into the given output.
-    @since 0.8 *)
-
 type output = [ `File of string ]
 (** Output for tracing.
     - [`File "foo"] will enable tracing and print events into file named "foo".

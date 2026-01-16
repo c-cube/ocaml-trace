@@ -3,6 +3,9 @@ module Trace = Trace_core
 let ( let@ ) = ( @@ )
 
 let work ~n () : unit =
+  let@ _sp = Trace.with_span ~__FILE__ ~__LINE__ "work" in
+  Trace.add_data_to_span _sp [ "n", `Int n ];
+
   for _i = 1 to n do
     let@ _sp =
       Trace.with_span ~__FILE__ ~__LINE__ "outer" ~data:(fun () ->
@@ -16,6 +19,7 @@ let work ~n () : unit =
   done
 
 let main ~n ~j () : unit =
+  let@ _sp = Trace.with_span ~__FILE__ ~__LINE__ "main" in
   let domains = Array.init j (fun _ -> Domain.spawn (fun () -> work ~n ())) in
   Array.iter Domain.join domains
 

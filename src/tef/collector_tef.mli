@@ -1,5 +1,4 @@
 open Trace_core
-open Common_
 
 module Buf_pool : sig
   type t

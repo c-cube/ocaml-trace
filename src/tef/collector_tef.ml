@@ -36,7 +36,6 @@ type t = {
   pid: int;
   buf_pool: Buf_pool.t;
   exporter: Exporter.t;
-  span_id_gen: Trace_util.Span_id64.Gen.t;
   trace_id_gen: Trace_util.Trace_id64.Gen.t;
 }
 (** Subscriber state *)
@@ -78,7 +77,6 @@ let create ?(buf_pool = Buf_pool.create ()) ~pid ~exporter () : t =
     exporter;
     buf_pool;
     pid;
-    span_id_gen = Trace_util.Span_id64.Gen.create ();
     trace_id_gen = Trace_util.Trace_id64.Gen.create ();
   }
 
@@ -90,7 +88,6 @@ open struct
     | Core_ext.Extension_span_flavor f :: _ -> f
     | _ :: tl -> flavor_of_params tl
 
-  let new_span_id (self : st) = Trace_util.Span_id64.Gen.gen self.span_id_gen
   let new_trace_id (self : st) = Trace_util.Trace_id64.Gen.gen self.trace_id_gen
   let init _ = ()
   let shutdown (self : st) = close self
@@ -116,6 +113,7 @@ open struct
         | P_some (Span_tef_async sp) -> sp.trace_id
         | _ -> new_trace_id self
       in
+      let data = add_fun_name_ __FUNCTION__ data in
 
       (let@ buf = Trace_util.Rpool.with_ self.buf_pool in
        Writer.emit_begin_async buf ~name ~pid ~tid ~trace_id ~ts:start_us

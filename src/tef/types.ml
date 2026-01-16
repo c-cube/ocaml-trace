@@ -1,4 +1,3 @@
-open Trace_core
 module Trace_id = Trace_util.Trace_id64
 
 type trace_id = Trace_id.t

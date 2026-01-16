@@ -3,7 +3,6 @@
     This is the part of the code that knows how to emit TEF-compliant JSON from
     raw event data. *)
 
-open Common_
 open Types
 
 val emit_duration_event :

@@ -1,0 +1,6 @@
+(library
+ (name trace_debug)
+ (public_name trace.debug)
+ (synopsis "helper to debug unclosed spans")
+ (optional) ; threads
+ (libraries threads trace.core trace.util))

@@ -1,7 +1,8 @@
 open Trace_core
-module Subscriber = Subscriber
+module Collector_tef = Collector_tef
 module Exporter = Exporter
 module Writer = Writer
+module Types = Types
 
 let block_signals () =
   try
@@ -21,11 +22,11 @@ let block_signals () =
 
 (** Thread that simply regularly "ticks", sending events to the background
     thread so it has a chance to write to the file *)
-let tick_thread (sub : Subscriber.t) : unit =
+let tick_thread (c : Collector_tef.t) : unit =
   block_signals ();
-  while Subscriber.active sub do
+  while Collector_tef.active c do
     Thread.delay 0.5;
-    Subscriber.flush sub
+    Collector_tef.flush c
   done
 
 type output =
@@ -34,8 +35,8 @@ type output =
   | `File of string
   ]
 
-let subscriber_ ~finally ~out ~(mode : [ `Single | `Jsonl ]) () :
-    Trace_subscriber.t =
+let collector_ ~(finally : unit -> unit) ~out ~(mode : [ `Single | `Jsonl ]) ()
+    : Collector.t =
   let jsonl = mode = `Jsonl in
   let oc, must_close =
     match out with
@@ -46,12 +47,7 @@ let subscriber_ ~finally ~out ~(mode : [ `Single | `Jsonl ]) () :
       open_out_gen [ Open_creat; Open_wronly; Open_append ] 0o644 path, true
     | `Output oc -> oc, false
   in
-  let pid =
-    if !Trace_subscriber.Private_.mock then
-      2
-    else
-      Unix.getpid ()
-  in
+  let pid = Trace_util.Mock_.get_pid () in
 
   let exporter = Exporter.of_out_channel oc ~jsonl ~close_channel:must_close in
   let exporter =
@@ -63,17 +59,9 @@ let subscriber_ ~finally ~out ~(mode : [ `Single | `Jsonl ]) () :
           finally ());
     }
   in
-  let sub = Subscriber.create ~pid ~exporter () in
-  let _t_tick : Thread.t = Thread.create tick_thread sub in
-  Subscriber.subscriber sub
-
-let collector_ ~(finally : unit -> unit) ~(mode : [ `Single | `Jsonl ]) ~out ()
-    : collector =
-  let sub = subscriber_ ~finally ~mode ~out () in
-  Trace_subscriber.collector sub
-
-let[@inline] subscriber ~out () : Trace_subscriber.t =
-  subscriber_ ~finally:ignore ~mode:`Single ~out ()
+  let coll_st = Collector_tef.create ~pid ~exporter () in
+  let _t_tick : Thread.t = Thread.create tick_thread coll_st in
+  Collector_tef.collector coll_st
 
 let[@inline] collector ~out () : collector =
   collector_ ~finally:ignore ~mode:`Single ~out ()
@@ -111,29 +99,12 @@ let with_setup ?out () f =
   setup ?out ();
   Fun.protect ~finally:Trace_core.shutdown f
 
-module Mock_ = struct
-  let now = ref 0
-
-  (* used to mock timing *)
-  let get_now_ns () : int64 =
-    let x = !now in
-    incr now;
-    Int64.(mul (of_int x) 1000L)
-
-  let get_tid_ () : int = 3
-end
-
 module Private_ = struct
   let mock_all_ () =
-    Trace_subscriber.Private_.mock := true;
-    Trace_subscriber.Private_.get_now_ns_ := Mock_.get_now_ns;
-    Trace_subscriber.Private_.get_tid_ := Mock_.get_tid_;
+    Trace_util.Mock_.mock_all ();
     ()
 
-  let on_tracing_error = Subscriber.on_tracing_error
-
-  let subscriber_jsonl ~finally ~out () =
-    subscriber_ ~finally ~mode:`Jsonl ~out ()
+  let on_tracing_error = Collector_tef.on_tracing_error
 
   let collector_jsonl ~finally ~out () : collector =
     collector_ ~finally ~mode:`Jsonl ~out ()

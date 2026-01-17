@@ -5,8 +5,7 @@
   "A high-performance backend for trace, emitting a Fuchsia trace into a file")
  (libraries
   trace.core
-  trace.private.util
-  trace.subscriber
+  trace.util
   thread-local-storage
   bigarray
   mtime

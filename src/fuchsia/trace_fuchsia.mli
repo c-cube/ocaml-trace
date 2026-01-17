@@ -10,15 +10,13 @@ module Buf = Buf
 module Buf_chain = Buf_chain
 module Buf_pool = Buf_pool
 module Exporter = Exporter
-module Subscriber = Subscriber
+module Collector_fuchsia = Collector_fuchsia
 module Writer = Writer
 
 type output =
   [ `File of string
   | `Exporter of Exporter.t
   ]
-
-val subscriber : out:[< output ] -> unit -> Trace_subscriber.t
 
 val collector : out:[< output ] -> unit -> Trace_core.collector
 (** Make a collector that writes into the given output. See {!setup} for more

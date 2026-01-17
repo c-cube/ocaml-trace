@@ -1,5 +1,3 @@
-open Common_
-
 let char = Buffer.add_char
 let raw_string = Buffer.add_string
 
@@ -50,25 +48,17 @@ let emit_duration_event ~pid ~tid ~name ~start ~end_ ~args buf : unit =
     (emit_args_o_ pp_user_data_)
     args
 
-let emit_manual_begin ~pid ~tid ~name ~(id : int64) ~ts ~args
-    ~(flavor : Trace_core.span_flavor option) buf : unit =
+let emit_begin_async ~pid ~tid ~name ~trace_id ~ts ~args buf =
   Printf.bprintf buf
     {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
-    pid id tid ts str_val name
-    (match flavor with
-    | None | Some `Async -> 'b'
-    | Some `Sync -> 'B')
+    pid trace_id tid ts str_val name 'b'
     (emit_args_o_ pp_user_data_)
     args
 
-let emit_manual_end ~pid ~tid ~name ~(id : int64) ~ts
-    ~(flavor : Trace_core.span_flavor option) ~args buf : unit =
+let emit_end_async ~pid ~tid ~name ~(trace_id : int64) ~ts ~args buf : unit =
   Printf.bprintf buf
     {json|{"pid":%d,"cat":"trace","id":%Ld,"tid": %d,"ts": %.2f,"name":%a,"ph":"%c"%a}|json}
-    pid id tid ts str_val name
-    (match flavor with
-    | None | Some `Async -> 'e'
-    | Some `Sync -> 'E')
+    pid trace_id tid ts str_val name 'e'
     (emit_args_o_ pp_user_data_)
     args
 

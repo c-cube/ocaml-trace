@@ -2,8 +2,6 @@ open Common_
 open Types
 open Trace_core
 
-let on_tracing_error = on_tracing_error
-
 type t = {
   active: bool A.t;
   pid: int;

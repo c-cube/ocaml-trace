@@ -1,4 +1,3 @@
-open Common_
 module Buf = Buf
 module Buf_chain = Buf_chain
 module Buf_pool = Buf_pool
@@ -49,6 +48,4 @@ module Internal_ = struct
   let mock_all_ () =
     Trace_util.Mock_.mock_all ();
     ()
-
-  let on_tracing_error = on_tracing_error
 end

@@ -1,8 +1,5 @@
 module A = Trace_core.Internal_.Atomic_
 
-let on_tracing_error =
-  ref (fun s -> Printf.eprintf "trace-fuchsia error: %s\n%!" s)
-
 let ( let@ ) = ( @@ )
 let spf = Printf.sprintf
 

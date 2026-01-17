@@ -16,21 +16,6 @@ open struct
     Int64.div t 1_000L |> Int64.to_float
 end
 
-let on_tracing_error = ref (fun s -> Printf.eprintf "%s\n%!" s)
-
-(*
-type span_info = {
-  tid: int;
-  name: string;
-  start_us: float;
-  mutable data: (string * user_data) list;
-      (* NOTE: thread safety: this is supposed to only be modified by the thread
-that's running this (synchronous, stack-abiding) span. *)
-}
-(** Information we store about a span begin event, to emit a complete event when
-    we meet the corresponding span end event *)
-*)
-
 type t = {
   active: bool A.t;
   pid: int;
@@ -39,29 +24,6 @@ type t = {
   trace_id_gen: Trace_util.Trace_id64.Gen.t;
 }
 (** Subscriber state *)
-
-(* TODO: this is nice to have, can we make it optional?
-open struct
-  let print_non_closed_spans_warning spans =
-    let module Str_set = Set.Make (String) in
-    let spans = Span_tbl.to_list spans in
-    if spans <> [] then (
-      !on_tracing_error
-      @@ Printf.sprintf "trace-tef: warning: %d spans were not closed"
-           (List.length spans);
-      let names =
-        List.fold_left
-          (fun set (_, span) -> Str_set.add span.name set)
-          Str_set.empty spans
-      in
-      Str_set.iter
-        (fun name ->
-          !on_tracing_error @@ Printf.sprintf "  span %S was not closed" name)
-        names;
-      flush stderr
-    )
-end
-*)
 
 let close (self : t) : unit =
   if A.exchange self.active false then

@@ -104,8 +104,6 @@ module Private_ = struct
     Trace_util.Mock_.mock_all ();
     ()
 
-  let on_tracing_error = Collector_tef.on_tracing_error
-
   let collector_jsonl ~finally ~out () : collector =
     collector_ ~finally ~mode:`Jsonl ~out ()
 

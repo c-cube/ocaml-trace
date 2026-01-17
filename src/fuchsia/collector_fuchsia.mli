@@ -13,9 +13,3 @@ val callbacks : t Collector.Callbacks.t
 
 val collector : t -> Collector.t
 (** Subscriber that writes json into this writer *)
-
-(**/**)
-
-val on_tracing_error : (string -> unit) ref
-
-(**/**)

@@ -20,7 +20,11 @@
 (package
  (name trace)
  (synopsis
-  "A stub for tracing/observability, agnostic in how data is collected")
+  "A lightweight stub for tracing/observability, agnostic in how data is collected")
+ (description "ocaml-trace can be used to instrument libraries and programs with low overhead.
+
+              It doesn't do any IO unless a collector is plugged in, which only
+              the final executable should do.")
  (depends
   (ocaml
    (>= 4.08))
@@ -28,8 +32,6 @@
  (depopts
   hmap
   unix
-  (picos_aux
-   (>= 0.6))
   (mtime
    (>= 2.0)))
  (tags

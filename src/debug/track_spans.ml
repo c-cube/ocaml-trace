@@ -1,7 +1,9 @@
+module A = Trace_core.Internal_.Atomic_
 open Trace_core
 
-let spf = Printf.sprintf
 let ( let@ ) = ( @@ )
+
+type span += Span_tracked of (* id *) int * span
 
 type unclosed_spans = {
   num: int;
@@ -13,108 +15,133 @@ type out =
   | `Call of unclosed_spans -> unit
   ]
 
-module type TRACKED_SPAN = sig
-  include Hashtbl.HashedType
+open struct
+  module Tbl = Hashtbl.Make (struct
+    type t = int
 
-  val of_span : Trace_core.span -> t option
-  val name : t -> string
-end
+    let equal = Stdlib.( = )
+    let hash = Hashtbl.hash
+  end)
 
-module Make_cbs (X : sig
-  module T_span : TRACKED_SPAN
+  type 'state st = {
+    mutex: Mutex.t;
+    tbl_open_spans: string Tbl.t;
+    gen_id: int A.t;
+    state: 'state;
+    cbs: 'state Collector.Callbacks.t;  (** underlying callbacks *)
+    out: out;
+  }
 
-  type st
-
-  val cbs : st Collector.Callbacks.t
-  val out : out
-end) =
-struct
-  module Tbl = Hashtbl.Make (X.T_span)
-
-  let mutex = Mutex.create ()
-  let tbl_open_spans : unit Tbl.t = Tbl.create 32
+  let create_st ~state ~cbs ~out () : _ st =
+    {
+      mutex = Mutex.create ();
+      tbl_open_spans = Tbl.create 32;
+      gen_id = A.make 0;
+      state;
+      cbs;
+      out;
+    }
 
   let with_mutex mut f =
     Mutex.lock mut;
     Fun.protect f ~finally:(fun () -> Mutex.unlock mut)
 
-  let enter_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~params ~data ~parent name
-      : span =
+  let enter_span (self : _ st) ~__FUNCTION__ ~__FILE__ ~__LINE__ ~params ~data
+      ~parent name : span =
     let span =
-      X.cbs.enter_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~params ~data
-        ~parent name
+      self.cbs.enter_span self.state ~__FUNCTION__ ~__FILE__ ~__LINE__ ~params
+        ~data ~parent name
     in
+    let id = A.fetch_and_add self.gen_id 1 in
+    (let@ () = with_mutex self.mutex in
+     Tbl.add self.tbl_open_spans id name);
+    Span_tracked (id, span)
 
-    (match X.T_span.of_span span with
-    | None -> ()
-    | Some t_span ->
-      let@ () = with_mutex mutex in
-      Tbl.add tbl_open_spans t_span ());
-    span
+  let exit_span (self : _ st) span =
+    match span with
+    | Span_tracked (id, span) ->
+      (let@ () = with_mutex self.mutex in
+       Tbl.remove self.tbl_open_spans id);
+      self.cbs.exit_span self.state span
+    | _ -> self.cbs.exit_span self.state span
 
-  let exit_span st span =
-    (match X.T_span.of_span span with
-    | None -> ()
-    | Some t_span ->
-      let@ () = with_mutex mutex in
-      Tbl.remove tbl_open_spans t_span);
-    X.cbs.exit_span st span
+  let add_data_to_span (self : _ st) span data =
+    match span with
+    | Span_tracked (_, span) -> self.cbs.add_data_to_span self.state span data
+    | _ -> self.cbs.add_data_to_span self.state span data
 
-  let emit (us : unclosed_spans) =
+  let emit (self : _ st) (us : unclosed_spans) =
     assert (us.by_name <> []);
-    match X.out with
+    match self.out with
     | `Call f -> f us
     | `Out out ->
-      Printf.fprintf out "trace: warning: %d spans were not closed" us.num;
+      Printf.fprintf out "trace: warning: %d spans were not closed\n" us.num;
       List.iter
         (fun (name, n) ->
-          Printf.fprintf out "  span %S was not closed (%d occurrences)" name n)
+          Printf.fprintf out "  span %S was not closed (%d occurrences)\n" name
+            n)
         us.by_name;
       flush out
 
-  let print_non_closed_spans_warning () =
+  let print_non_closed_spans_warning (self : _ st) =
     let module Str_map = Map.Make (String) in
-    let@ () = with_mutex mutex in
+    let@ () = with_mutex self.mutex in
 
-    let num = Tbl.length tbl_open_spans in
+    let num = Tbl.length self.tbl_open_spans in
     if num > 0 then (
       let names_with_count =
         Tbl.fold
-          (fun span () m ->
-            let name = X.T_span.name span in
+          (fun _id name m ->
             Str_map.add name
               (1 + try Str_map.find name m with Not_found -> 0)
               m)
-          tbl_open_spans Str_map.empty
+          self.tbl_open_spans Str_map.empty
       in
       let unclosed_spans =
         { num; by_name = Str_map.to_list names_with_count }
       in
-      emit unclosed_spans
+      emit self unclosed_spans
     )
 
-  let shutdown st : unit =
-    print_non_closed_spans_warning ();
-    X.cbs.shutdown st
+  let message self ~params ~data ~span msg =
+    let span =
+      match span with
+      | Some (Span_tracked (_, sp)) -> Some sp
+      | _ -> span
+    in
+    self.cbs.message self.state ~params ~data ~span msg
 
-  let new_callbacks : _ Collector.Callbacks.t =
-    { X.cbs with enter_span; exit_span; shutdown }
+  let counter_int self ~params ~data name v =
+    self.cbs.counter_int self.state ~params ~data name v
+
+  let counter_float self ~params ~data name v =
+    self.cbs.counter_float self.state ~params ~data name v
+
+  let init (self : _ st) = self.cbs.init self.state
+
+  let shutdown (self : _ st) : unit =
+    print_non_closed_spans_warning self;
+    self.cbs.shutdown self.state
+
+  let extension self ev = self.cbs.extension self.state ev
+
+  let track_callbacks : _ st Collector.Callbacks.t =
+    {
+      enter_span;
+      exit_span;
+      add_data_to_span;
+      message;
+      counter_int;
+      counter_float;
+      init;
+      shutdown;
+      extension;
+    }
 end
 
-let track_ (type state) ~(out : out) (module T : TRACKED_SPAN) (st : state)
-    (cbs : state Collector.Callbacks.t) : Collector.t =
-  let module CBS = Make_cbs (struct
-    module T_span = T
-
-    type st = state
-
-    let cbs = cbs
-    let out = out
-  end) in
-  C_some (st, CBS.new_callbacks)
-
-let track ?(on_lingering_spans = `Out stderr) (module T : TRACKED_SPAN)
-    (c : Collector.t) : Collector.t =
+let track ?(on_lingering_spans = `Out stderr) (c : Collector.t) : Collector.t =
   match c with
   | C_none -> C_none
-  | C_some (st, cbs) -> track_ ~out:on_lingering_spans (module T) st cbs
+  | C_some (st, cbs) ->
+    let st = create_st ~state:st ~cbs ~out:on_lingering_spans () in
+    C_some (st, track_callbacks)

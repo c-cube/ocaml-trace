@@ -101,7 +101,8 @@ open struct
         {
           num;
           by_name =
-            Str_map.fold (fun name id l -> (name, id) :: l) names_with_count [];
+            Str_map.fold (fun name id l -> (name, id) :: l) names_with_count []
+            |> List.sort Stdlib.compare;
         }
       in
       emit self unclosed_spans

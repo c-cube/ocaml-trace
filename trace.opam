@@ -20,7 +20,6 @@ depends: [
   "odoc" {with-doc}
 ]
 depopts: [
-  "hmap"
   "unix"
   "mtime" {>= "2.0"}
 ]

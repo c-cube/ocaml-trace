@@ -1,0 +1,4 @@
+[{"pid":2,"cat":"","tid": 3,"dur": 4.00,"ts": 0.00,"name":"main","ph":"X"}trace: warning: 3 spans were not closed
+  span "sp1" was not closed (2 occurrences)
+  span "sp2" was not closed (1 occurrences)
+]

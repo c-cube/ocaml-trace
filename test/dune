@@ -15,4 +15,5 @@
 (test
  (name t_debug)
  (modules t_debug)
+ (package trace-tef)
  (libraries trace trace.debug trace-tef))

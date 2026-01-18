@@ -19,7 +19,7 @@ val collector : out:[< output ] -> unit -> Trace_core.collector
 (** Make a collector that writes into the given output. See {!setup} for more
     details. *)
 
-val setup : ?out:[ output | `Env ] -> unit -> unit
+val setup : ?debug:bool -> ?out:[ output | `Env ] -> unit -> unit
 (** [setup ()] installs the collector depending on [out].
 
     @param out
@@ -31,9 +31,12 @@ val setup : ?out:[ output | `Env ] -> unit -> unit
     - If it's set to "stdout", then logging happens on stdout (since 0.2)
     - If it's set to "stderr", then logging happens on stdout (since 0.2)
     - Otherwise, if it's set to a non empty string, the value is taken to be the
-      file path into which to write. *)
+      file path into which to write.
 
-val with_setup : ?out:[ output | `Env ] -> unit -> (unit -> 'a) -> 'a
+    @param debug if true, use {!Trace_debug}. Default [false]. *)
+
+val with_setup :
+  ?debug:bool -> ?out:[ output | `Env ] -> unit -> (unit -> 'a) -> 'a
 (** [with_setup () f] (optionally) sets a collector up, calls [f()], and makes
     sure to shutdown before exiting. since 0.2 a () argument was added. *)
 

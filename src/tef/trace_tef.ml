@@ -76,27 +76,38 @@ open struct
       )
 end
 
-let setup ?(out = `Env) () =
+let setup ?(debug = false) ?(out = `Env) () =
   register_atexit ();
+
+  let setup_col c =
+    let c =
+      if debug then
+        Trace_debug.Track_spans.track c
+      else
+        c
+    in
+    Trace_core.setup_collector c
+  in
+
   match out with
-  | `Stderr -> Trace_core.setup_collector @@ collector ~out:`Stderr ()
-  | `Stdout -> Trace_core.setup_collector @@ collector ~out:`Stdout ()
-  | `File path -> Trace_core.setup_collector @@ collector ~out:(`File path) ()
+  | `Stderr -> setup_col @@ collector ~out:`Stderr ()
+  | `Stdout -> setup_col @@ collector ~out:`Stdout ()
+  | `File path -> setup_col @@ collector ~out:(`File path) ()
   | `Env ->
     (match Sys.getenv_opt "TRACE" with
     | Some ("1" | "true") ->
       let path = "trace.json" in
       let c = collector ~out:(`File path) () in
-      Trace_core.setup_collector c
-    | Some "stdout" -> Trace_core.setup_collector @@ collector ~out:`Stdout ()
-    | Some "stderr" -> Trace_core.setup_collector @@ collector ~out:`Stderr ()
+      setup_col c
+    | Some "stdout" -> setup_col @@ collector ~out:`Stdout ()
+    | Some "stderr" -> setup_col @@ collector ~out:`Stderr ()
     | Some path ->
       let c = collector ~out:(`File path) () in
-      Trace_core.setup_collector c
+      setup_col c
     | None -> ())
 
-let with_setup ?out () f =
-  setup ?out ();
+let with_setup ?debug ?out () f =
+  setup ?debug ?out ();
   Fun.protect ~finally:Trace_core.shutdown f
 
 module Private_ = struct

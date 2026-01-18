@@ -145,6 +145,10 @@ let shutdown () =
   | C_none -> ()
   | C_some (st, cbs) -> cbs.shutdown st
 
+let with_setup_collector c f =
+  setup_collector c;
+  Fun.protect ~finally:shutdown f
+
 type extension_event = Types.extension_event = ..
 
 let[@inline] extension_event ev : unit =

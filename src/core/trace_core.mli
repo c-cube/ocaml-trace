@@ -188,6 +188,11 @@ val shutdown : unit -> unit
 (** [shutdown ()] shutdowns the current collector, if one was installed, and
     waits for it to terminate before returning. *)
 
+val with_setup_collector : Collector.t -> (unit -> 'a) -> 'a
+(** [with_setup_collector c f] installs [c], calls [f()], and shutdowns [c] once
+    [f()] is done.
+    @since NEXT_RELEASE *)
+
 (** {2 Extensions} *)
 
 type extension_event = Types.extension_event = ..

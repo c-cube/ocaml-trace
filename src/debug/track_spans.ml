@@ -98,7 +98,11 @@ open struct
           self.tbl_open_spans Str_map.empty
       in
       let unclosed_spans =
-        { num; by_name = Str_map.to_list names_with_count }
+        {
+          num;
+          by_name =
+            Str_map.fold (fun name id l -> (name, id) :: l) names_with_count [];
+        }
       in
       emit self unclosed_spans
     )

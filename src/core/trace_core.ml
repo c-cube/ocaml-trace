@@ -1,7 +1,6 @@
 include Types
 module A = Atomic_
 module Collector = Collector
-module Meta_map = Meta_map
 module Level = Level
 module Core_ext = Core_ext
 

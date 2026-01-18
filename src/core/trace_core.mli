@@ -2,7 +2,6 @@
 
 include module type of Types
 module Collector = Collector
-module Meta_map = Meta_map
 module Level = Level
 
 (**/**)

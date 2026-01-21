@@ -9,6 +9,8 @@ jobs:
   deploy:
     name: Deploy doc
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@main
 

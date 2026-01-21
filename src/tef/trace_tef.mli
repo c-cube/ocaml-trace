@@ -1,6 +1,7 @@
-module Subscriber = Subscriber
+module Collector_tef = Collector_tef
 module Exporter = Exporter
 module Writer = Writer
+module Types = Types
 
 type output =
   [ `Stdout
@@ -14,15 +15,11 @@ type output =
     - [`File "foo"] will enable tracing and print events into file named "foo"
 *)
 
-val subscriber : out:[< output ] -> unit -> Trace_subscriber.t
-(** A subscriber emitting TEF traces into [out].
-    @since 0.8 *)
-
 val collector : out:[< output ] -> unit -> Trace_core.collector
 (** Make a collector that writes into the given output. See {!setup} for more
     details. *)
 
-val setup : ?out:[ output | `Env ] -> unit -> unit
+val setup : ?debug:bool -> ?out:[ output | `Env ] -> unit -> unit
 (** [setup ()] installs the collector depending on [out].
 
     @param out
@@ -34,9 +31,12 @@ val setup : ?out:[ output | `Env ] -> unit -> unit
     - If it's set to "stdout", then logging happens on stdout (since 0.2)
     - If it's set to "stderr", then logging happens on stdout (since 0.2)
     - Otherwise, if it's set to a non empty string, the value is taken to be the
-      file path into which to write. *)
+      file path into which to write.
 
-val with_setup : ?out:[ output | `Env ] -> unit -> (unit -> 'a) -> 'a
+    @param debug if true, use {!Trace_debug}. Default [false]. *)
+
+val with_setup :
+  ?debug:bool -> ?out:[ output | `Env ] -> unit -> (unit -> 'a) -> 'a
 (** [with_setup () f] (optionally) sets a collector up, calls [f()], and makes
     sure to shutdown before exiting. since 0.2 a () argument was added. *)
 
@@ -45,14 +45,6 @@ val with_setup : ?out:[ output | `Env ] -> unit -> (unit -> 'a) -> 'a
 module Private_ : sig
   val mock_all_ : unit -> unit
   (** use fake, deterministic timestamps, TID, PID *)
-
-  val on_tracing_error : (string -> unit) ref
-
-  val subscriber_jsonl :
-    finally:(unit -> unit) ->
-    out:[ `File_append of string | `Output of out_channel ] ->
-    unit ->
-    Trace_subscriber.t
 
   val collector_jsonl :
     finally:(unit -> unit) ->

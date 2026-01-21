@@ -84,7 +84,7 @@ let find_role ~out () : role =
       | Some path -> Some (write_to_file path)
       | None -> None))
 
-let subscriber_ (client : as_client) : Trace_subscriber.t =
+let collector_ (client : as_client) : Collector.t =
   (* connect to unix socket *)
   let sock = Unix.socket Unix.PF_UNIX Unix.SOCK_STREAM 0 in
   (try Unix.connect sock (Unix.ADDR_UNIX client.socket)
@@ -106,19 +106,13 @@ let subscriber_ (client : as_client) : Trace_subscriber.t =
     (fun file -> fpf out "EMIT_TEF_AT_EXIT %s\n" file)
     client.emit_tef_at_exit;
 
-  Trace_tef.Private_.subscriber_jsonl ~finally ~out:(`Output out) ()
-
-let subscriber ~out () =
-  let role = find_role ~out () in
-  match role with
-  | None -> assert false
-  | Some c -> subscriber_ c
+  Trace_tef.Private_.collector_jsonl ~finally ~out:(`Output out) ()
 
 let collector ~out () : collector =
   let role = find_role ~out () in
   match role with
   | None -> assert false
-  | Some c -> subscriber_ c |> Trace_subscriber.collector
+  | Some c -> collector_ c
 
 open struct
   let register_atexit =
@@ -136,7 +130,7 @@ let setup ?(out = `Env) () =
   | None -> ()
   | Some c ->
     register_atexit ();
-    Trace_core.setup_collector @@ Trace_subscriber.collector @@ subscriber_ c
+    Trace_core.setup_collector @@ collector_ c
 
 let with_setup ?out () f =
   setup ?out ();

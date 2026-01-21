@@ -1,4 +1,4 @@
-open Common_
+open Trace_core
 
 module Buf_pool : sig
   type t
@@ -7,22 +7,17 @@ module Buf_pool : sig
 end
 
 type t
-(** Main subscriber state. *)
+(** Main state. *)
 
 val create : ?buf_pool:Buf_pool.t -> pid:int -> exporter:Exporter.t -> unit -> t
-(** Create a subscriber state. *)
+(** Create a fresh state. *)
 
 val flush : t -> unit
 val close : t -> unit
 val active : t -> bool
 
-module Callbacks : Sub.Callbacks.S with type st = t
+val callbacks_collector : t Collector.Callbacks.t
+(** Callbacks used for the subscriber *)
 
-val subscriber : t -> Sub.t
+val collector : t -> Collector.t
 (** Subscriber that writes json into this writer *)
-
-(**/**)
-
-val on_tracing_error : (string -> unit) ref
-
-(**/**)

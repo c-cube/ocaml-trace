@@ -1,5 +1,5 @@
 open Common_
-open Trace_private_util
+open Trace_util
 
 type t = Buf.t Rpool.t
 

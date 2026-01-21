@@ -1,0 +1,6 @@
+
+(library
+  (name trace_simple)
+  (public_name trace.simple)
+  (synopsis "simple type for spans")
+  (libraries trace.core trace.util))

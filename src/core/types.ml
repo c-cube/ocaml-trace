@@ -1,12 +1,14 @@
-type span = int64
-(** A span identifier.
+(** Main type definitions *)
 
-    The meaning of the identifier depends on the collector. *)
+type span = ..
+(** A span. Its representation is defined by the current collector. *)
 
-type trace_id = string
-(** A bytestring representing a (possibly distributed) trace made of async
-    spans. With opentelemetry this is 16 bytes.
-    @since 0.10 *)
+(** Information about a span's parent span, if any.
+    @since NEXT_RELEASE *)
+type parent =
+  | P_unknown  (** Parent is not specified at this point *)
+  | P_none  (** We know the current span has no parent *)
+  | P_some of span  (** We know the parent of the current span *)
 
 type user_data =
   [ `Int of int
@@ -18,35 +20,15 @@ type user_data =
 (** User defined data, generally passed as key/value pairs to whatever collector
     is installed (if any). *)
 
-type span_flavor =
-  [ `Sync
-  | `Async
-  ]
-(** Some information about the span.
-    @since NEXT_RELEASE *)
-
-type explicit_span_ctx = {
-  span: span;  (** The current span *)
-  trace_id: trace_id;  (** The trace this belongs to *)
-}
-(** A context, passed around for async traces.
-    @since 0.10 *)
-
-type explicit_span = {
-  span: span;
-      (** Identifier for this span. Several explicit spans might share the same
-          identifier since we can differentiate between them via [meta]. *)
-  trace_id: trace_id;  (** The trace this belongs to *)
-  mutable meta: Meta_map.t;
-      (** Metadata for this span (and its context). This can be used by
-          collectors to carry collector-specific information from the beginning
-          of the span, to the end of the span. *)
-}
-(** Explicit span, with collector-specific metadata. This is richer than
-    {!explicit_span_ctx} but not intended to be passed around (or sent across
-    the wire), unlike {!explicit_span_ctx}. *)
+type explicit_span = span [@@deprecated "use span"]
+type explicit_span_ctx = span [@@deprecated "use span"]
 
 type extension_event = ..
 (** An extension event, used to add features that are backend specific or simply
     not envisioned by [trace].
     @since 0.8 *)
+
+type extension_parameter = ..
+(** An extension parameter, used to carry information for spans/messages/metrics
+    that can be backend-specific or just not envisioned by [trace].
+    @since NEXT_RELEASE *)

@@ -6,103 +6,90 @@
 
 open Types
 
-let dummy_span : span = Int64.min_int
-let dummy_trace_id : trace_id = "<dummy>"
+type span += Span_dummy
 
-let dummy_explicit_span : explicit_span =
-  { span = dummy_span; trace_id = dummy_trace_id; meta = Meta_map.empty }
+(** A fake span that never emits data. All collectors should handle this span by
+    doing nothing. *)
+let dummy_span : span = Span_dummy
 
-let dummy_explicit_span_ctx : explicit_span_ctx =
-  { span = dummy_span; trace_id = dummy_trace_id }
+module Callbacks = struct
+  type 'st t = {
+    enter_span:
+      'st ->
+      __FUNCTION__:string option ->
+      __FILE__:string ->
+      __LINE__:int ->
+      params:extension_parameter list ->
+      data:(string * user_data) list ->
+      parent:parent ->
+      string ->
+      span;
+        (** Enter a span *)
+    exit_span: 'st -> span -> unit;
+        (** Exit a span. Must be called exactly once per span. Additional
+            constraints on nesting, threads, etc. vary per collector. *)
+    add_data_to_span: 'st -> span -> (string * user_data) list -> unit;
+    message:
+      'st ->
+      params:extension_parameter list ->
+      data:(string * user_data) list ->
+      span:span option ->
+      string ->
+      unit;
+        (** Emit a message or log *)
+    counter_int:
+      'st ->
+      params:extension_parameter list ->
+      data:(string * user_data) list ->
+      string ->
+      int ->
+      unit;
+        (** Integer counter. *)
+    counter_float:
+      'st ->
+      params:extension_parameter list ->
+      data:(string * user_data) list ->
+      string ->
+      float ->
+      unit;
+    extension: 'st -> extension_event -> unit;
+        (** Collector-specific extension *)
+    init: 'st -> unit;  (** Called on initialization *)
+    shutdown: 'st -> unit;
+        (** Shutdown collector, possibly waiting for it to finish sending data.
+        *)
+  }
+  (** Callbacks taking a state ['st] *)
 
-(** Signature for a collector.
+  (** Helper to create backends in a future-proof way *)
+  let make ~enter_span ~exit_span ~add_data_to_span ~message ~counter_int
+      ~counter_float ?(extension = fun _ _ -> ()) ?(init = ignore)
+      ?(shutdown = ignore) () : _ t =
+    {
+      enter_span;
+      exit_span;
+      add_data_to_span;
+      message;
+      counter_int;
+      counter_float;
+      extension;
+      init;
+      shutdown;
+    }
+end
+
+(** Definition of a collector.
 
     This is only relevant to implementors of tracing backends; to instrument
-    your code you only need to look at the {!Trace} module. *)
-module type S = sig
-  val with_span :
-    __FUNCTION__:string option ->
-    __FILE__:string ->
-    __LINE__:int ->
-    data:(string * user_data) list ->
-    string ->
-    (span -> 'a) ->
-    'a
-  (** Run the function in a new span.
-      @since 0.3 *)
+    your code you only need to look at the {!Trace} module.
 
-  val enter_span :
-    __FUNCTION__:string option ->
-    __FILE__:string ->
-    __LINE__:int ->
-    data:(string * user_data) list ->
-    string ->
-    span
-  (** Enter a new implicit span. For many uses cases, {!with_span} will be
-      easier to use.
-      @since 0.6 *)
+    The definition changed since NEXT_RELEASE to a record of callbacks + a state
+*)
+type t =
+  | C_none  (** No collector. *)
+  | C_some : 'st * 'st Callbacks.t -> t
+      (** Collector with a state and some callbacks. *)
 
-  val exit_span : span -> unit
-  (** Exit span. This should be called on the same thread as the corresponding
-      {!enter_span}, and nest properly with other calls to enter/exit_span and
-      {!with_span}.
-      @since 0.6 *)
-
-  val enter_manual_span :
-    parent:explicit_span_ctx option ->
-    flavor:[ `Sync | `Async ] option ->
-    __FUNCTION__:string option ->
-    __FILE__:string ->
-    __LINE__:int ->
-    data:(string * user_data) list ->
-    string ->
-    explicit_span
-  (** Enter an explicit span. Surrounding scope, if any, is provided by
-      [parent], and this function can store as much metadata as it wants in the
-      hmap in the {!explicit_span}'s [meta] field.
-
-      {b NOTE} the [parent] argument is now an {!explicit_span_ctx} and not an
-      {!explicit_span} since 0.10.
-
-      This means that the collector doesn't need to implement contextual storage
-      mapping {!span} to scopes, metadata, etc. on its side; everything can be
-      transmitted in the {!explicit_span}.
-      @since 0.3 *)
-
-  val exit_manual_span : explicit_span -> unit
-  (** Exit an explicit span.
-      @since 0.3 *)
-
-  val add_data_to_span : span -> (string * user_data) list -> unit
-  (** @since Adds data to the current span.
-
-      0.4 *)
-
-  val add_data_to_manual_span :
-    explicit_span -> (string * user_data) list -> unit
-  (** Adds data to the given span.
-      @since 0.4 *)
-
-  val message : ?span:span -> data:(string * user_data) list -> string -> unit
-  (** Emit a message with associated metadata. *)
-
-  val name_thread : string -> unit
-  (** Give a name to the current thread. *)
-
-  val name_process : string -> unit
-  (** Give a name to the current process. *)
-
-  val counter_int : data:(string * user_data) list -> string -> int -> unit
-  (** Integer counter. *)
-
-  val counter_float : data:(string * user_data) list -> string -> float -> unit
-  (** Float counter. *)
-
-  val extension_event : extension_event -> unit
-  (** Handle an extension event. A collector {b MUST} simple ignore events it
-      doesn't know, and return [()] silently.
-      @since 0.8 *)
-
-  val shutdown : unit -> unit
-  (** Shutdown collector, possibly waiting for it to finish sending data. *)
-end
+let[@inline] is_some = function
+  | C_none -> false
+  | C_some _ -> true

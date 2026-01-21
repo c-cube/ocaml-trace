@@ -5,8 +5,8 @@
   "Simple and lightweight tracing using TEF/Catapult format, in-process")
  (libraries
   trace.core
-  trace.private.util
-  trace.subscriber
+  trace.util
+  trace.debug
   mtime
   mtime.clock.os
   unix

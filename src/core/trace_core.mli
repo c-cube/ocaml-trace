@@ -2,7 +2,6 @@
 
 include module type of Types
 module Collector = Collector
-module Meta_map = Meta_map
 module Level = Level
 
 (**/**)
@@ -31,15 +30,13 @@ val set_default_level : Level.t -> unit
     is [Level.Trace].
     @since 0.7 *)
 
-val ctx_of_span : explicit_span -> explicit_span_ctx
-(** Turn a span into a span context.
-    @since 0.10 *)
-
 val with_span :
   ?level:Level.t ->
   ?__FUNCTION__:string ->
   __FILE__:string ->
   __LINE__:int ->
+  ?parent:span option ->
+  ?params:extension_parameter list ->
   ?data:(unit -> (string * user_data) list) ->
   string ->
   (span -> 'a) ->
@@ -53,106 +50,54 @@ val with_span :
     @param level
       optional level for this span. since 0.7. Default is set via
       {!set_default_level}.
+    @param parent the span's parent, if any. since NEXT_RELEASE.
+    @param params
+      extension parameters, used to communicate additional information to the
+      collector. It might be collector-specific. since NEXT_RELEASE.
 
-    {b NOTE} an important restriction is that this is only supposed to work for
-    synchronous, direct style code. Monadic concurrency, Effect-based fibers,
-    etc. might not play well with this style of spans on some or all backends.
-    If you use cooperative concurrency, see {!enter_manual_span}. *)
+    Depending on the collector, this might clash with some forms of cooperative
+    concurrency in which [with_span (fun span -> …)] might contain a yield
+    point. Effect-based fibers, etc. might not play well with this style of
+    spans on some or all backends. If you use cooperative concurrency, a safer
+    alternative can be {!enter_span}. *)
 
 val enter_span :
   ?level:Level.t ->
   ?__FUNCTION__:string ->
   __FILE__:string ->
   __LINE__:int ->
+  ?flavor:[ `Sync | `Async ] ->
+  ?parent:span option ->
+  ?params:extension_parameter list ->
   ?data:(unit -> (string * user_data) list) ->
   string ->
   span
-(** Enter a span manually.
+(** Enter a span manually. This means the caller is responsible for exiting the
+    span exactly once on every path that exits the current scope. The context
+    must be passed to the exit function as is.
 
     @param level
       optional level for this span. since 0.7. Default is set via
-      {!set_default_level}. *)
+      {!set_default_level}.
+    @param parent the span's parent, if any. since NEXT_RELEASE.
+    @param params see {!with_span}. *)
 
 val exit_span : span -> unit
-(** Exit a span manually. This must run on the same thread as the corresponding
-    {!enter_span}, and spans must nest correctly. *)
+(** Exit a span manually. Spans must be nested correctly (ie form a stack or
+    tree).
+
+    For some collectors, [enter_span] and [exit_span] must run on the same
+    thread (e.g. Tracy). For some others, it doesn't matter. *)
 
 val add_data_to_span : span -> (string * user_data) list -> unit
 (** Add structured data to the given active span (see {!with_span}). Behavior is
     not specified if the span has been exited.
     @since 0.4 *)
 
-val enter_manual_span :
-  parent:explicit_span_ctx option ->
-  ?flavor:span_flavor ->
-  ?level:Level.t ->
-  ?__FUNCTION__:string ->
-  __FILE__:string ->
-  __LINE__:int ->
-  ?data:(unit -> (string * user_data) list) ->
-  string ->
-  explicit_span
-(** Like {!with_span} but the caller is responsible for obtaining the [parent]
-    span from their {e own} caller, and carry the resulting {!explicit_span} to
-    the matching {!exit_manual_span}.
-
-    {b NOTE} this replaces [enter_manual_sub_span] and
-    [enter_manual_toplevel_span] by just making [parent] an explicit option. It
-    is breaking anyway because we now pass an {!explicit_span_ctx} instead of a
-    full {!explicit_span} (the reason being that we might receive this
-    explicit_span_ctx from another process or machine).
-
-    @param flavor
-      a description of the span that can be used by the {!Collector.S} to decide
-      how to represent the span. Typically, [`Sync] spans start and stop on one
-      thread, and are nested purely by their timestamp; and [`Async] spans can
-      overlap, migrate between threads, etc. (as happens in Lwt, Eio, Async,
-      etc.) which impacts how the collector might represent them.
-    @param level
-      optional level for this span. since 0.7. Default is set via
-      {!set_default_level}.
-    @since 0.10 *)
-
-val enter_manual_sub_span :
-  parent:explicit_span ->
-  ?flavor:[ `Sync | `Async ] ->
-  ?level:Level.t ->
-  ?__FUNCTION__:string ->
-  __FILE__:string ->
-  __LINE__:int ->
-  ?data:(unit -> (string * user_data) list) ->
-  string ->
-  explicit_span
-[@@deprecated "use enter_manual_span"]
-(** @deprecated since 0.10, use {!enter_manual_span} *)
-
-val enter_manual_toplevel_span :
-  ?flavor:[ `Sync | `Async ] ->
-  ?level:Level.t ->
-  ?__FUNCTION__:string ->
-  __FILE__:string ->
-  __LINE__:int ->
-  ?data:(unit -> (string * user_data) list) ->
-  string ->
-  explicit_span
-[@@deprecated "use enter_manual_span"]
-(** @deprecated since 0.10, use {!enter_manual_span} *)
-
-val exit_manual_span : explicit_span -> unit
-(** Exit an explicit span. This can be on another thread, in a fiber or
-    lightweight thread, etc. and will be supported by backends nonetheless. The
-    span can be obtained via {!enter_manual_sub_span} or
-    {!enter_manual_toplevel_span}.
-    @since 0.3 *)
-
-val add_data_to_manual_span : explicit_span -> (string * user_data) list -> unit
-(** [add_data_explicit esp data] adds [data] to the span [esp]. The behavior is
-    not specified is the span has been exited already.
-    @since 0.4 *)
-
 val message :
   ?level:Level.t ->
   ?span:span ->
+  ?params:extension_parameter list ->
   ?data:(unit -> (string * user_data) list) ->
   string ->
   unit
@@ -162,31 +107,39 @@ val message :
       optional level for this span. since 0.7. Default is set via
       {!set_default_level}.
     @param span
-      the surrounding span, if any. This might be ignored by the collector. *)
+      the surrounding span, if any. This might be ignored by the collector.
+    @param params
+      extension parameters, used to communicate additional information to the
+      collector. It might be collector-specific. since NEXT_RELEASE. *)
 
 val messagef :
   ?level:Level.t ->
   ?span:span ->
+  ?params:extension_parameter list ->
   ?data:(unit -> (string * user_data) list) ->
   ((('a, Format.formatter, unit, unit) format4 -> 'a) -> unit) ->
   unit
 (** [messagef (fun k->k"hello %s %d!" "world" 42)] is like
     [message "hello world 42!"] but only computes the string formatting if a
     collector is installed.
-    @param level
-      optional level for this span. since 0.7. Default is set via
-      {!set_default_level}. *)
+
+    See {!message} for a description of the other arguments. *)
 
 val set_thread_name : string -> unit
 (** Give a name to the current thread. This might be used by the collector to
-    display traces in a more informative way. *)
+    display traces in a more informative way.
+
+    Uses {!Core_ext.Extension_set_thread_name} since NEXT_RELEASE *)
 
 val set_process_name : string -> unit
 (** Give a name to the current process. This might be used by the collector to
-    display traces in a more informative way. *)
+    display traces in a more informative way.
+
+    Uses {!Core_ext.Extension_set_process_name} since NEXT_RELEASE *)
 
 val counter_int :
   ?level:Level.t ->
+  ?params:extension_parameter list ->
   ?data:(unit -> (string * user_data) list) ->
   string ->
   int ->
@@ -200,6 +153,7 @@ val counter_int :
 
 val counter_float :
   ?level:Level.t ->
+  ?params:extension_parameter list ->
   ?data:(unit -> (string * user_data) list) ->
   string ->
   float ->
@@ -212,10 +166,8 @@ val counter_float :
 
 (** {2 Collector} *)
 
-type collector = (module Collector.S)
-(** An event collector.
-
-    See {!Collector} for more details. *)
+type collector = Collector.t
+(** An event collector. See {!Collector} for more details. *)
 
 val setup_collector : collector -> unit
 (** [setup_collector c] installs [c] as the current collector.
@@ -235,6 +187,11 @@ val shutdown : unit -> unit
 (** [shutdown ()] shutdowns the current collector, if one was installed, and
     waits for it to terminate before returning. *)
 
+val with_setup_collector : Collector.t -> (unit -> 'a) -> 'a
+(** [with_setup_collector c f] installs [c], calls [f()], and shutdowns [c] once
+    [f()] is done.
+    @since NEXT_RELEASE *)
+
 (** {2 Extensions} *)
 
 type extension_event = Types.extension_event = ..
@@ -246,3 +203,58 @@ val extension_event : extension_event -> unit
     defines it. Some collectors will simply ignore it. This does nothing if no
     collector is setup.
     @since 0.8 *)
+
+(** {2 Core extensions} *)
+
+module Core_ext = Core_ext
+
+(** {2 Deprecated} *)
+
+[@@@ocaml.alert "-deprecated"]
+
+val enter_manual_span :
+  parent:explicit_span_ctx option ->
+  ?flavor:[ `Sync | `Async ] ->
+  ?level:Level.t ->
+  ?__FUNCTION__:string ->
+  __FILE__:string ->
+  __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
+  string ->
+  explicit_span
+[@@deprecated "use enter_span"]
+
+val enter_manual_sub_span :
+  parent:explicit_span ->
+  ?flavor:[ `Sync | `Async ] ->
+  ?level:Level.t ->
+  ?__FUNCTION__:string ->
+  __FILE__:string ->
+  __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
+  string ->
+  explicit_span
+[@@deprecated "use enter_span"]
+(** @deprecated since 0.10, use {!enter_span} *)
+
+val enter_manual_toplevel_span :
+  ?flavor:[ `Sync | `Async ] ->
+  ?level:Level.t ->
+  ?__FUNCTION__:string ->
+  __FILE__:string ->
+  __LINE__:int ->
+  ?data:(unit -> (string * user_data) list) ->
+  string ->
+  explicit_span
+[@@deprecated "use enter_span"]
+(** @deprecated since 0.10 use {!enter_span} *)
+
+val exit_manual_span : explicit_span -> unit
+[@@deprecated "use exit_span"]
+(** @deprecated since 0.10 use {!exit_span} *)
+
+val add_data_to_manual_span : explicit_span -> (string * user_data) list -> unit
+[@@deprecated "use add_data_to_span"]
+(** @deprecated since 0.10 use {!add_data_to_span} *)
+
+[@@@ocaml.alert "+deprecated"]

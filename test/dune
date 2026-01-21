@@ -11,3 +11,9 @@
  (preprocess
   (pps ppx_trace))
  (libraries trace-tef))
+
+(test
+ (name t_debug)
+ (modules t_debug)
+ (package trace-tef)
+ (libraries trace trace.debug trace-tef))

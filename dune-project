@@ -85,8 +85,6 @@
    (= :version))
   (mtime
    (>= 2.0))
-  (thread-local-storage
-   (>= 0.2))
   base-bigarray
   base-unix
   dune)

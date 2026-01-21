@@ -3,12 +3,4 @@
  (public_name trace-fuchsia)
  (synopsis
   "A high-performance backend for trace, emitting a Fuchsia trace into a file")
- (libraries
-  trace.core
-  trace.util
-  thread-local-storage
-  bigarray
-  mtime
-  mtime.clock.os
-  unix
-  threads))
+ (libraries trace.core trace.util bigarray mtime mtime.clock.os unix threads))

@@ -1,4 +1,8 @@
-(** Trace. *)
+(** Main tracing interface.
+
+    This interface is intended to be lightweight and usable in both libraries
+    and applications. It has very low overhead if no {!Collector.t} is
+    installed. *)
 
 include module type of Types
 module Collector = Collector

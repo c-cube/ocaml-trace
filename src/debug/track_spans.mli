@@ -1,3 +1,5 @@
+(** Helper to track which spans never get closed. *)
+
 open Trace_core
 
 type unclosed_spans = {

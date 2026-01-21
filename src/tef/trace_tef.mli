@@ -1,3 +1,11 @@
+(** TEF collector for Trace.
+
+    This emits chrome traces
+    (https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/),
+    which are very simple and a known quantity.
+
+    They can be opened in https://ui.perfetto.dev . *)
+
 module Collector_tef = Collector_tef
 module Exporter = Exporter
 module Writer = Writer

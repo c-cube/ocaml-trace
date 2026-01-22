@@ -89,8 +89,8 @@ open struct
     | Core_ext.Extension_span_flavor f :: _ -> f
     | _ :: tl -> flavor_of_params tl
 
-  let enter_span (self : t) ~__FUNCTION__ ~__FILE__ ~__LINE__ ~params ~data
-      ~parent name : span =
+  let enter_span (self : t) ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level:_ ~params
+      ~data ~parent name : span =
     let flavor = flavor_of_params params in
     let time_ns = Trace_util.Mock_.now_ns () in
     let tid = Trace_util.Mock_.get_tid () in
@@ -150,7 +150,7 @@ open struct
     | Span_fuchsia_async sp -> sp.args <- List.rev_append data sp.args
     | _ -> ()
 
-  let message (self : t) ~params:_ ~data ~span:_ msg : unit =
+  let message (self : t) ~level:_ ~params:_ ~data ~span:_ msg : unit =
     let time_ns = Trace_util.Mock_.now_ns () in
     let tid = Trace_util.Mock_.get_tid () in
     Writer.(
@@ -159,7 +159,7 @@ open struct
         ~name:msg ~time_ns ~args:(args_of_user_data data) ());
     write_ready_ self
 
-  let counter_float (self : t) ~params:_ ~data name n : unit =
+  let counter_float_ (self : t) ~data name n : unit =
     let tid = Trace_util.Mock_.get_tid () in
     let time_ns = Trace_util.Mock_.now_ns () in
     Writer.(
@@ -170,7 +170,7 @@ open struct
         ());
     write_ready_ self
 
-  let counter_int self ~params:_ ~data name n =
+  let counter_int_ self ~data name n =
     let tid = Trace_util.Mock_.get_tid () in
     let time_ns = Trace_util.Mock_.now_ns () in
     Writer.(
@@ -180,6 +180,12 @@ open struct
         ~args:((name, A_int n) :: args_of_user_data data)
         ());
     write_ready_ self
+
+  let metric self ~level:_ ~params:_ ~data name m =
+    match m with
+    | Core_ext.Metric_int i -> counter_int_ self ~data name i
+    | Core_ext.Metric_float n -> counter_float_ self ~data name n
+    | _ -> ()
 
   let name_process_ (self : t) name : unit =
     Writer.Kernel_object.(
@@ -193,7 +199,7 @@ open struct
         ());
     write_ready_ self
 
-  let extension (self : t) ev =
+  let extension (self : t) ~level:_ ev =
     match ev with
     | Core_ext.Extension_set_thread_name name ->
       let tid = Trace_util.Mock_.get_tid () in
@@ -204,6 +210,6 @@ end
 
 let callbacks : t Collector.Callbacks.t =
   Collector.Callbacks.make ~init ~shutdown ~enter_span ~exit_span
-    ~add_data_to_span ~message ~counter_int ~counter_float ~extension ()
+    ~add_data_to_span ~message ~metric ~extension ()
 
 let collector (self : t) : Collector.t = Collector.C_some (self, callbacks)

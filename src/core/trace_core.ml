@@ -24,7 +24,7 @@ let[@inline] set_default_level l = A.set default_level_ l
 let[@inline] set_current_level l = A.set current_level_ l
 let[@inline] get_current_level () = A.get current_level_
 
-let[@inline] check_level ?(level = A.get default_level_) () : bool =
+let[@inline] check_level_ ~level () : bool =
   Level.leq level (A.get current_level_)
 
 let parent_of_span_opt_opt = function
@@ -33,16 +33,18 @@ let parent_of_span_opt_opt = function
   | Some (Some p) -> P_some p
 
 let enter_span_st st (cbs : _ Collector.Callbacks.t) ?__FUNCTION__ ~__FILE__
-    ~__LINE__ ?parent ?(params = []) ?(data = data_empty_build_) name : span =
+    ~__LINE__ ~level ?parent ?(params = []) ?(data = data_empty_build_) name :
+    span =
   let parent = parent_of_span_opt_opt parent in
   let data = data () in
-  cbs.enter_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~parent ~params ~data name
+  cbs.enter_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level ~parent ~params
+    ~data name
 
 let with_span_collector_ st (cbs : _ Collector.Callbacks.t) ?__FUNCTION__
-    ~__FILE__ ~__LINE__ ?parent ?params ?data name f =
+    ~__FILE__ ~__LINE__ ~level ?parent ?params ?data name f =
   let sp : span =
-    enter_span_st st cbs ?__FUNCTION__ ~__FILE__ ~__LINE__ ?parent ?params ?data
-      name
+    enter_span_st st cbs ?__FUNCTION__ ~__FILE__ ~__LINE__ ~level ?parent
+      ?params ?data name
   in
   match f sp with
   | res ->
@@ -53,27 +55,27 @@ let with_span_collector_ st (cbs : _ Collector.Callbacks.t) ?__FUNCTION__
     cbs.exit_span st sp;
     Printexc.raise_with_backtrace exn bt
 
-let[@inline] with_span ?level ?__FUNCTION__ ~__FILE__ ~__LINE__ ?parent ?params
-    ?data name f =
+let[@inline] with_span ?(level = A.get default_level_) ?__FUNCTION__ ~__FILE__
+    ~__LINE__ ?parent ?params ?data name f =
   match A.get collector with
-  | C_some (st, cbs) when check_level ?level () ->
-    with_span_collector_ st cbs ?__FUNCTION__ ~__FILE__ ~__LINE__ ?parent
+  | C_some (st, cbs) when check_level_ ~level () ->
+    with_span_collector_ st cbs ?__FUNCTION__ ~__FILE__ ~__LINE__ ~level ?parent
       ?params ?data name f
   | _ ->
     (* fast path: no collector, no span *)
     f Collector.dummy_span
 
-let[@inline] enter_span ?level ?__FUNCTION__ ~__FILE__ ~__LINE__ ?flavor ?parent
-    ?(params = []) ?data name : span =
+let[@inline] enter_span ?(level = A.get default_level_) ?__FUNCTION__ ~__FILE__
+    ~__LINE__ ?flavor ?parent ?(params = []) ?data name : span =
   match A.get collector with
-  | C_some (st, cbs) when check_level ?level () ->
+  | C_some (st, cbs) when check_level_ ~level () ->
     let params =
       match flavor with
       | None -> params
       | Some f -> Core_ext.Extension_span_flavor f :: params
     in
     (enter_span_st [@inlined never]) st cbs ?__FUNCTION__ ~__FILE__ ~__LINE__
-      ?parent ~params ?data name
+      ~level ?parent ~params ?data name
   | _ -> Collector.dummy_span
 
 let[@inline] exit_span sp : unit =
@@ -88,41 +90,40 @@ let[@inline] add_data_to_span sp data : unit =
     | C_some (st, cbs) -> cbs.add_data_to_span st sp data
   )
 
-let message_collector_ st (cbs : _ Collector.Callbacks.t) ?span ?(params = [])
-    ?(data = data_empty_build_) msg : unit =
+let message_collector_ st (cbs : _ Collector.Callbacks.t) ~level ?span
+    ?(params = []) ?(data = data_empty_build_) msg : unit =
   let data = data () in
-  cbs.message st ~span ~params ~data msg
+  cbs.message st ~level ~span ~params ~data msg
 
-let[@inline] message ?level ?span ?params ?data msg : unit =
+let[@inline] message ?(level = A.get default_level_) ?span ?params ?data msg :
+    unit =
   match A.get collector with
-  | C_some (st, cbs) when check_level ?level () ->
-    (message_collector_ [@inlined never]) st cbs ?span ?params ?data msg
+  | C_some (st, cbs) when check_level_ ~level () ->
+    (message_collector_ [@inlined never]) st cbs ~level ?span ?params ?data msg
   | _ -> ()
 
-let messagef ?level ?span ?params ?data k =
+let messagef ?(level = A.get default_level_) ?span ?params ?data k =
   match A.get collector with
-  | C_some (st, cbs) when check_level ?level () ->
+  | C_some (st, cbs) when check_level_ ~level () ->
     k (fun fmt ->
         Format.kasprintf
-          (fun str -> message_collector_ st cbs ?span ?params ?data str)
+          (fun str -> message_collector_ st cbs ~level ?span ?params ?data str)
           fmt)
   | _ -> ()
 
-let counter_int ?level ?(params = []) ?(data = data_empty_build_) name n : unit
-    =
+let metric ?(level = A.get default_level_) ?(params = [])
+    ?(data = data_empty_build_) name m : unit =
   match A.get collector with
-  | C_some (st, cbs) when check_level ?level () ->
+  | C_some (st, cbs) when check_level_ ~level () ->
     let data = data () in
-    cbs.counter_int st ~params ~data name n
+    cbs.metric st ~level ~params ~data name m
   | _ -> ()
 
-let counter_float ?level ?(params = []) ?(data = data_empty_build_) name f :
-    unit =
-  match A.get collector with
-  | C_some (st, cbs) when check_level ?level () ->
-    let data = data () in
-    cbs.counter_float st ~params ~data name f
-  | _ -> ()
+let counter_int ?level ?params ?data name n : unit =
+  metric ?level ?params ?data name (Core_ext.Metric_int n)
+
+let counter_float ?level ?params ?data name n : unit =
+  metric ?level ?params ?data name (Core_ext.Metric_float n)
 
 let setup_collector c : unit =
   while
@@ -150,10 +151,10 @@ let with_setup_collector c f =
 
 type extension_event = Types.extension_event = ..
 
-let[@inline] extension_event ev : unit =
+let[@inline] extension_event ?(level = A.get default_level_) ev : unit =
   match A.get collector with
-  | C_none -> ()
-  | C_some (st, cbs) -> cbs.extension st ev
+  | C_some (st, cbs) when check_level_ ~level () -> cbs.extension st ~level ev
+  | _ -> ()
 
 let set_thread_name name : unit =
   extension_event @@ Core_ext.Extension_set_thread_name name

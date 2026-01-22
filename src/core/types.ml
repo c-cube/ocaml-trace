@@ -25,10 +25,15 @@ type explicit_span_ctx = span [@@deprecated "use span"]
 
 type extension_event = ..
 (** An extension event, used to add features that are backend specific or simply
-    not envisioned by [trace].
+    not envisioned by [trace]. See {!Core_ext} for some builtin extension
+    events.
     @since 0.8 *)
 
 type extension_parameter = ..
 (** An extension parameter, used to carry information for spans/messages/metrics
     that can be backend-specific or just not envisioned by [trace].
+    @since NEXT_RELEASE *)
+
+type metric = ..
+(** A metric, can be of many types. See {!Core_ext} for some builtin metrics.
     @since NEXT_RELEASE *)

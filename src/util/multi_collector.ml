@@ -18,14 +18,14 @@ open struct
     done
     [@ocaml.warning "-8"]
 
-  let enter_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~params ~data ~parent name
-      : span =
+  let enter_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level ~params ~data
+      ~parent name : span =
     let spans =
       Array.map
         (fun [@ocaml.warning "-8"] coll ->
           let (Collector.C_some (st, cb)) = coll in
-          cb.enter_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~params ~data
-            ~parent name)
+          cb.enter_span st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level ~params
+            ~data ~parent name)
         st
     in
     Span_combine spans
@@ -52,31 +52,24 @@ open struct
       [@ocaml.warning "-8"]
     | _ -> ()
 
-  let message st ~params ~data ~span msg =
+  let message st ~level ~params ~data ~span msg =
     for i = 0 to Array.length st - 1 do
       let (Collector.C_some (st, cb)) = Array.get st i in
-      cb.message st ~span ~params ~data msg
+      cb.message st ~level ~span ~params ~data msg
     done
     [@ocaml.warning "-8"]
 
-  let counter_int st ~params ~data name n =
+  let metric st ~level ~params ~data name m =
     for i = 0 to Array.length st - 1 do
       let (Collector.C_some (st, cb)) = Array.get st i in
-      cb.counter_int st ~params ~data name n
+      cb.metric st ~level ~params ~data name m
     done
     [@ocaml.warning "-8"]
 
-  let counter_float st ~params ~data name n =
+  let extension st ~level ev : unit =
     for i = 0 to Array.length st - 1 do
       let (Collector.C_some (st, cb)) = Array.get st i in
-      cb.counter_float st ~params ~data name n
-    done
-    [@ocaml.warning "-8"]
-
-  let extension st ev : unit =
-    for i = 0 to Array.length st - 1 do
-      let (Collector.C_some (st, cb)) = Array.get st i in
-      cb.extension st ev
+      cb.extension st ~level ev
     done
     [@ocaml.warning "-8"]
 
@@ -87,8 +80,7 @@ open struct
       exit_span;
       message;
       add_data_to_span;
-      counter_int;
-      counter_float;
+      metric;
       extension;
       shutdown;
     }

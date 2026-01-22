@@ -141,6 +141,17 @@ val set_process_name : string -> unit
 
     Uses {!Core_ext.Extension_set_process_name} since NEXT_RELEASE *)
 
+val metric :
+  ?level:Level.t ->
+  ?params:extension_parameter list ->
+  ?data:(unit -> (string * user_data) list) ->
+  string ->
+  metric ->
+  unit
+(** Emit a metric. Metrics are an extensible type, each collector might support
+    a different subset.
+    @since NEXT_RELEASE *)
+
 val counter_int :
   ?level:Level.t ->
   ?params:extension_parameter list ->
@@ -148,8 +159,8 @@ val counter_int :
   string ->
   int ->
   unit
-(** Emit a counter of type [int]. Counters represent the evolution of some
-    quantity over time.
+(** Emit a counter of type [int] via {!metric}. Counters represent the evolution
+    of some quantity over time.
     @param level
       optional level for this span. since 0.7. Default is set via
       {!set_default_level}.
@@ -162,7 +173,8 @@ val counter_float :
   string ->
   float ->
   unit
-(** Emit a counter of type [float]. See {!counter_int} for more details.
+(** Emit a counter of type [float] via {!metric}. See {!counter_int} for more
+    details.
     @param level
       optional level for this span. since 0.7. Default is set via
       {!set_default_level}.
@@ -202,10 +214,11 @@ type extension_event = Types.extension_event = ..
 (** Extension event
     @since 0.8 *)
 
-val extension_event : extension_event -> unit
+val extension_event : ?level:Level.t -> extension_event -> unit
 (** Trigger an extension event, whose meaning depends on the library that
     defines it. Some collectors will simply ignore it. This does nothing if no
     collector is setup.
+    @param level filtering level, since NEXT_RELEASE
     @since 0.8 *)
 
 (** {2 Core extensions} *)

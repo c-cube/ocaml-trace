@@ -46,11 +46,11 @@ open struct
     Mutex.lock mut;
     Fun.protect f ~finally:(fun () -> Mutex.unlock mut)
 
-  let enter_span (self : _ st) ~__FUNCTION__ ~__FILE__ ~__LINE__ ~params ~data
-      ~parent name : span =
+  let enter_span (self : _ st) ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level ~params
+      ~data ~parent name : span =
     let span =
-      self.cbs.enter_span self.state ~__FUNCTION__ ~__FILE__ ~__LINE__ ~params
-        ~data ~parent name
+      self.cbs.enter_span self.state ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level
+        ~params ~data ~parent name
     in
     let id = A.fetch_and_add self.gen_id 1 in
     (let@ () = with_mutex self.mutex in
@@ -108,19 +108,16 @@ open struct
       emit self unclosed_spans
     )
 
-  let message self ~params ~data ~span msg =
+  let message self ~level ~params ~data ~span msg =
     let span =
       match span with
       | Some (Span_tracked (_, sp)) -> Some sp
       | _ -> span
     in
-    self.cbs.message self.state ~params ~data ~span msg
+    self.cbs.message self.state ~level ~params ~data ~span msg
 
-  let counter_int self ~params ~data name v =
-    self.cbs.counter_int self.state ~params ~data name v
-
-  let counter_float self ~params ~data name v =
-    self.cbs.counter_float self.state ~params ~data name v
+  let metric self ~level ~params ~data name v =
+    self.cbs.metric self.state ~level ~params ~data name v
 
   let init (self : _ st) = self.cbs.init self.state
 
@@ -128,7 +125,7 @@ open struct
     print_non_closed_spans_warning self;
     self.cbs.shutdown self.state
 
-  let extension self ev = self.cbs.extension self.state ev
+  let extension self ~level ev = self.cbs.extension self.state ~level ev
 
   let track_callbacks : _ st Collector.Callbacks.t =
     {
@@ -136,8 +133,7 @@ open struct
       exit_span;
       add_data_to_span;
       message;
-      counter_int;
-      counter_float;
+      metric;
       init;
       shutdown;
       extension;

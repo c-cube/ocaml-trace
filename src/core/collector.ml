@@ -19,6 +19,7 @@ module Callbacks = struct
       __FUNCTION__:string option ->
       __FILE__:string ->
       __LINE__:int ->
+      level:Level.t ->
       params:extension_parameter list ->
       data:(string * user_data) list ->
       parent:parent ->
@@ -31,29 +32,24 @@ module Callbacks = struct
     add_data_to_span: 'st -> span -> (string * user_data) list -> unit;
     message:
       'st ->
+      level:Level.t ->
       params:extension_parameter list ->
       data:(string * user_data) list ->
       span:span option ->
       string ->
       unit;
         (** Emit a message or log *)
-    counter_int:
+    metric:
       'st ->
+      level:Level.t ->
       params:extension_parameter list ->
       data:(string * user_data) list ->
       string ->
-      int ->
+      metric ->
       unit;
-        (** Integer counter. *)
-    counter_float:
-      'st ->
-      params:extension_parameter list ->
-      data:(string * user_data) list ->
-      string ->
-      float ->
-      unit;
-    extension: 'st -> extension_event -> unit;
-        (** Collector-specific extension *)
+        (** Metric . *)
+    extension: 'st -> level:Level.t -> extension_event -> unit;
+        (** Collector-specific extension. It now has a level as well. *)
     init: 'st -> unit;  (** Called on initialization *)
     shutdown: 'st -> unit;
         (** Shutdown collector, possibly waiting for it to finish sending data.
@@ -62,16 +58,15 @@ module Callbacks = struct
   (** Callbacks taking a state ['st] *)
 
   (** Helper to create backends in a future-proof way *)
-  let make ~enter_span ~exit_span ~add_data_to_span ~message ~counter_int
-      ~counter_float ?(extension = fun _ _ -> ()) ?(init = ignore)
+  let make ~enter_span ~exit_span ~add_data_to_span ~message ~metric
+      ?(extension = fun _ ~level:_ _ -> ()) ?(init = ignore)
       ?(shutdown = ignore) () : _ t =
     {
       enter_span;
       exit_span;
       add_data_to_span;
       message;
-      counter_int;
-      counter_float;
+      metric;
       extension;
       init;
       shutdown;

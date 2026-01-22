@@ -60,8 +60,8 @@ open struct
     | None -> data
     | Some f -> ("function", `String f) :: data
 
-  let enter_span (self : st) ~__FUNCTION__ ~__FILE__ ~__LINE__ ~params ~data
-      ~parent name : span =
+  let enter_span (self : st) ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level:_ ~params
+      ~data ~parent name : span =
     let start_us = time_us_of_time_ns @@ Trace_util.Mock_.now_ns () in
     let flavor = flavor_of_params params in
 
@@ -104,7 +104,7 @@ open struct
 
     if did_write then self.exporter.on_json buf
 
-  let message (self : st) ~params:_ ~data ~span:_ msg : unit =
+  let message (self : st) ~level:_ ~params:_ ~data ~span:_ msg : unit =
     let tid = Trace_util.Mock_.get_tid () in
     let time_us = time_us_of_time_ns @@ Trace_util.Mock_.now_ns () in
     let@ buf = Trace_util.Rpool.with_ self.buf_pool in
@@ -119,8 +119,12 @@ open struct
     Writer.emit_counter buf ~pid:self.pid ~name ~tid ~ts:time_us n;
     self.exporter.on_json buf
 
-  let counter_int (self : st) ~params ~data name n : unit =
-    counter_float self ~params ~data name (float_of_int n)
+  let metric (self : st) ~level:_ ~params ~data name m : unit =
+    match m with
+    | Core_ext.Metric_float n -> counter_float self ~params ~data name n
+    | Core_ext.Metric_int i ->
+      counter_float self ~params ~data name (float_of_int i)
+    | _ -> ()
 
   let add_data_to_span _st sp data =
     match sp with
@@ -138,7 +142,7 @@ open struct
     Writer.emit_name_process ~pid:self.pid ~name buf;
     self.exporter.on_json buf
 
-  let extension (self : st) ev =
+  let extension (self : st) ~level:_ ev =
     match ev with
     | Core_ext.Extension_set_thread_name name ->
       let tid = Trace_util.Mock_.get_tid () in
@@ -149,7 +153,7 @@ end
 
 let callbacks_collector : _ Collector.Callbacks.t =
   Collector.Callbacks.make ~init ~shutdown ~enter_span ~exit_span ~message
-    ~add_data_to_span ~counter_int ~counter_float ~extension ()
+    ~add_data_to_span ~metric ~extension ()
 
 let collector (self : t) : Collector.t =
   Collector.C_some (self, callbacks_collector)

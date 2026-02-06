@@ -1,3 +1,20 @@
+# 0.11
+
+- entire rework of the collector, now lighter, and using an open sum type
+    for `span`. No global state is required anymore.
+- add `enabled` to the collector
+- extensible `metric`; pass level around in collector
+- remove unused deps on hmap, thread-local-storage
+- add `Trace.with_setup_collector`
+- add `trace.debug` to find what spans were not closed on exit
+- remove dead code and `on_tracing_error`
+- remove subscriber entirely
+- core: remove `current_span` from collector
+- update deps to ppxlib=0.37~
+- breaking: use poly variants for `user_data/span_flavor`
+- use `at_exit` in `trace_tef` and `tldrs`
+- fix fuchsia: bound check
+
 # 0.10
 
 - breaking: manual spans now take a `explicit_span_ctx` as parent, that

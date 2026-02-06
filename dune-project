@@ -4,10 +4,10 @@
 
 (generate_opam_files true)
 
-(version 0.10)
+(version 0.11)
 
 (source
- (github c-cube/ocaml-trace))
+ (github ocaml-tracing/ocaml-trace))
 
 (authors "Simon Cruanes")
 

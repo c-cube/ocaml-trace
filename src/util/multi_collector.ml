@@ -73,11 +73,17 @@ open struct
     done
     [@ocaml.warning "-8"]
 
+  let enabled st level : bool =
+    Array.exists
+      (fun (Collector.C_some (st, cb)) -> cb.enabled st level)
+      st [@ocaml.warning "-8"]
+
   let combine_cb : st Collector.Callbacks.t =
     {
       Collector.Callbacks.init;
       enter_span;
       exit_span;
+      enabled;
       message;
       add_data_to_span;
       metric;

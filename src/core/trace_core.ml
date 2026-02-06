@@ -24,8 +24,8 @@ let[@inline] set_default_level l = A.set default_level_ l
 let[@inline] set_current_level l = A.set current_level_ l
 let[@inline] get_current_level () = A.get current_level_
 
-let[@inline] check_level_ ~level () : bool =
-  Level.leq level (A.get current_level_)
+let[@inline] check_level_ ~level st (cbs : _ Collector.Callbacks.t) : bool =
+  Level.leq level (A.get current_level_) && cbs.enabled st level
 
 let parent_of_span_opt_opt = function
   | None -> P_unknown
@@ -58,7 +58,7 @@ let with_span_collector_ st (cbs : _ Collector.Callbacks.t) ?__FUNCTION__
 let[@inline] with_span ?(level = A.get default_level_) ?__FUNCTION__ ~__FILE__
     ~__LINE__ ?parent ?params ?data name f =
   match A.get collector with
-  | C_some (st, cbs) when check_level_ ~level () ->
+  | C_some (st, cbs) when check_level_ ~level st cbs ->
     with_span_collector_ st cbs ?__FUNCTION__ ~__FILE__ ~__LINE__ ~level ?parent
       ?params ?data name f
   | _ ->
@@ -68,7 +68,7 @@ let[@inline] with_span ?(level = A.get default_level_) ?__FUNCTION__ ~__FILE__
 let[@inline] enter_span ?(level = A.get default_level_) ?__FUNCTION__ ~__FILE__
     ~__LINE__ ?flavor ?parent ?(params = []) ?data name : span =
   match A.get collector with
-  | C_some (st, cbs) when check_level_ ~level () ->
+  | C_some (st, cbs) when check_level_ ~level st cbs ->
     let params =
       match flavor with
       | None -> params
@@ -98,13 +98,13 @@ let message_collector_ st (cbs : _ Collector.Callbacks.t) ~level ?span
 let[@inline] message ?(level = A.get default_level_) ?span ?params ?data msg :
     unit =
   match A.get collector with
-  | C_some (st, cbs) when check_level_ ~level () ->
+  | C_some (st, cbs) when check_level_ ~level st cbs ->
     (message_collector_ [@inlined never]) st cbs ~level ?span ?params ?data msg
   | _ -> ()
 
 let messagef ?(level = A.get default_level_) ?span ?params ?data k =
   match A.get collector with
-  | C_some (st, cbs) when check_level_ ~level () ->
+  | C_some (st, cbs) when check_level_ ~level st cbs ->
     k (fun fmt ->
         Format.kasprintf
           (fun str -> message_collector_ st cbs ~level ?span ?params ?data str)
@@ -114,7 +114,7 @@ let messagef ?(level = A.get default_level_) ?span ?params ?data k =
 let metric ?(level = A.get default_level_) ?(params = [])
     ?(data = data_empty_build_) name m : unit =
   match A.get collector with
-  | C_some (st, cbs) when check_level_ ~level () ->
+  | C_some (st, cbs) when check_level_ ~level st cbs ->
     let data = data () in
     cbs.metric st ~level ~params ~data name m
   | _ -> ()
@@ -153,7 +153,8 @@ type extension_event = Types.extension_event = ..
 
 let[@inline] extension_event ?(level = A.get default_level_) ev : unit =
   match A.get collector with
-  | C_some (st, cbs) when check_level_ ~level () -> cbs.extension st ~level ev
+  | C_some (st, cbs) when check_level_ ~level st cbs ->
+    cbs.extension st ~level ev
   | _ -> ()
 
 let set_thread_name name : unit =

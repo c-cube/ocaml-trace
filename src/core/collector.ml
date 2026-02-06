@@ -30,6 +30,9 @@ module Callbacks = struct
         (** Exit a span. Must be called exactly once per span. Additional
             constraints on nesting, threads, etc. vary per collector. *)
     add_data_to_span: 'st -> span -> (string * user_data) list -> unit;
+    enabled: 'st -> Level.t -> bool;
+        (** Is the collector accepting spans/messages/metrics with this level?
+        *)
     message:
       'st ->
       level:Level.t ->
@@ -58,13 +61,14 @@ module Callbacks = struct
   (** Callbacks taking a state ['st] *)
 
   (** Helper to create backends in a future-proof way *)
-  let make ~enter_span ~exit_span ~add_data_to_span ~message ~metric
-      ?(extension = fun _ ~level:_ _ -> ()) ?(init = ignore)
+  let make ?(enabled = fun _ _ -> true) ~enter_span ~exit_span ~add_data_to_span
+      ~message ~metric ?(extension = fun _ ~level:_ _ -> ()) ?(init = ignore)
       ?(shutdown = ignore) () : _ t =
     {
       enter_span;
       exit_span;
       add_data_to_span;
+      enabled;
       message;
       metric;
       extension;

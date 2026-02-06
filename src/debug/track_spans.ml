@@ -119,6 +119,7 @@ open struct
   let metric self ~level ~params ~data name v =
     self.cbs.metric self.state ~level ~params ~data name v
 
+  let enabled _ _ = true
   let init (self : _ st) = self.cbs.init self.state
 
   let shutdown (self : _ st) : unit =
@@ -132,6 +133,7 @@ open struct
       enter_span;
       exit_span;
       add_data_to_span;
+      enabled;
       message;
       metric;
       init;

@@ -8,12 +8,12 @@ type gc_info = {
 (** Basic GC statistics *)
 
 (** Convert gc_info to yojson *)
-let gc_info_to_yojson (gc : gc_info) : Yojson.Safe.t =
+let gc_info_to_yojson (self : gc_info) : Yojson.Safe.t =
   `Assoc
     [
-      "minor_words", `Float gc.minor_words;
-      "promoted_words", `Float gc.promoted_words;
-      "major_words", `Float gc.major_words;
+      "minor_words", `Float self.minor_words;
+      "promoted_words", `Float self.promoted_words;
+      "major_words", `Float self.major_words;
     ]
 
 type timing = {
@@ -25,13 +25,13 @@ type timing = {
 (** Timing information *)
 
 (** Convert timing to yojson *)
-let timing_to_yojson (t : timing) : Yojson.Safe.t =
+let timing_to_yojson (self : timing) : Yojson.Safe.t =
   `Assoc
     [
-      "start_time", `Float t.start_time;
-      "end_time", `Float t.end_time;
-      "duration", `Float t.duration;
-      "cpu_time", `Float t.cpu_time;
+      "start_time", `Float self.start_time;
+      "end_time", `Float self.end_time;
+      "duration", `Float self.duration;
+      "cpu_time", `Float self.cpu_time;
     ]
 
 type landmark = {
@@ -45,17 +45,17 @@ type landmark = {
 (** A single landmark measurement *)
 
 (** Convert landmark to yojson *)
-let landmark_to_yojson (lm : landmark) : Yojson.Safe.t =
+let landmark_to_yojson (self : landmark) : Yojson.Safe.t =
   `Assoc
     ([
-       "name", `String lm.name;
-       "timing", timing_to_yojson lm.timing;
-       "gc_before", gc_info_to_yojson lm.gc_before;
-       "gc_after", gc_info_to_yojson lm.gc_after;
-       "call_count", `Int lm.call_count;
+       "name", `String self.name;
+       "timing", timing_to_yojson self.timing;
+       "gc_before", gc_info_to_yojson self.gc_before;
+       "gc_after", gc_info_to_yojson self.gc_after;
+       "call_count", `Int self.call_count;
      ]
     @
-    match lm.location with
+    match self.location with
     | None -> []
     | Some loc -> [ "location", `String loc ])
 

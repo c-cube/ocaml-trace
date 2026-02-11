@@ -1,0 +1,8 @@
+(library
+ (name trace_runtime_events)
+ (public_name trace-runtime-events)
+ (synopsis "Simple collector that emits events via Runtime_events")
+ (libraries
+  trace.core
+  trace.util
+  (re_export runtime_events)))

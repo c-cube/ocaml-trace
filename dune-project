@@ -91,4 +91,19 @@
  (tags
   (trace tracing fuchsia)))
 
+(package
+ (name trace-runtime-events)
+ (synopsis
+  "A simple collector relying on runtime-events for OCaml 5. Some assembly required.")
+ (depends
+  (ocaml
+   (>= 5.0))
+  (trace
+   (= :version))
+  base-bigarray
+  base-unix
+  dune)
+ (tags
+  (trace tracing trace runtime-events)))
+
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

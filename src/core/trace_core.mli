@@ -54,10 +54,10 @@ val with_span :
     @param level
       optional level for this span. since 0.7. Default is set via
       {!set_default_level}.
-    @param parent the span's parent, if any. since NEXT_RELEASE.
+    @param parent the span's parent, if any. since 0.11.
     @param params
       extension parameters, used to communicate additional information to the
-      collector. It might be collector-specific. since NEXT_RELEASE.
+      collector. It might be collector-specific. since 0.11.
 
     Depending on the collector, this might clash with some forms of cooperative
     concurrency in which [with_span (fun span -> …)] might contain a yield
@@ -83,7 +83,7 @@ val enter_span :
     @param level
       optional level for this span. since 0.7. Default is set via
       {!set_default_level}.
-    @param parent the span's parent, if any. since NEXT_RELEASE.
+    @param parent the span's parent, if any. since 0.11.
     @param params see {!with_span}. *)
 
 val exit_span : span -> unit
@@ -114,7 +114,7 @@ val message :
       the surrounding span, if any. This might be ignored by the collector.
     @param params
       extension parameters, used to communicate additional information to the
-      collector. It might be collector-specific. since NEXT_RELEASE. *)
+      collector. It might be collector-specific. since 0.11. *)
 
 val messagef :
   ?level:Level.t ->
@@ -133,13 +133,13 @@ val set_thread_name : string -> unit
 (** Give a name to the current thread. This might be used by the collector to
     display traces in a more informative way.
 
-    Uses {!Core_ext.Extension_set_thread_name} since NEXT_RELEASE *)
+    Uses {!Core_ext.Extension_set_thread_name} since 0.11 *)
 
 val set_process_name : string -> unit
 (** Give a name to the current process. This might be used by the collector to
     display traces in a more informative way.
 
-    Uses {!Core_ext.Extension_set_process_name} since NEXT_RELEASE *)
+    Uses {!Core_ext.Extension_set_process_name} since 0.11 *)
 
 val metric :
   ?level:Level.t ->
@@ -150,7 +150,7 @@ val metric :
   unit
 (** Emit a metric. Metrics are an extensible type, each collector might support
     a different subset.
-    @since NEXT_RELEASE *)
+    @since 0.11 *)
 
 val counter_int :
   ?level:Level.t ->
@@ -206,7 +206,7 @@ val shutdown : unit -> unit
 val with_setup_collector : Collector.t -> (unit -> 'a) -> 'a
 (** [with_setup_collector c f] installs [c], calls [f()], and shutdowns [c] once
     [f()] is done.
-    @since NEXT_RELEASE *)
+    @since 0.11 *)
 
 (** {2 Extensions} *)
 
@@ -218,7 +218,7 @@ val extension_event : ?level:Level.t -> extension_event -> unit
 (** Trigger an extension event, whose meaning depends on the library that
     defines it. Some collectors will simply ignore it. This does nothing if no
     collector is setup.
-    @param level filtering level, since NEXT_RELEASE
+    @param level filtering level, since 0.11
     @since 0.8 *)
 
 (** {2 Core extensions} *)

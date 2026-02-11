@@ -2,7 +2,7 @@
 
     This is a concrete representation of spans that is convenient to manipulate.
 
-    @since NEXT_RELEASE *)
+    @since 0.11 *)
 
 open Trace_core
 

@@ -1,6 +1,6 @@
 (** A few core extensions.
 
-    @since NEXT_RELEASE *)
+    @since 0.11 *)
 
 open Types
 

@@ -4,7 +4,7 @@ type span = ..
 (** A span. Its representation is defined by the current collector. *)
 
 (** Information about a span's parent span, if any.
-    @since NEXT_RELEASE *)
+    @since 0.11 *)
 type parent =
   | P_unknown  (** Parent is not specified at this point *)
   | P_none  (** We know the current span has no parent *)
@@ -32,8 +32,8 @@ type extension_event = ..
 type extension_parameter = ..
 (** An extension parameter, used to carry information for spans/messages/metrics
     that can be backend-specific or just not envisioned by [trace].
-    @since NEXT_RELEASE *)
+    @since 0.11 *)
 
 type metric = ..
 (** A metric, can be of many types. See {!Core_ext} for some builtin metrics.
-    @since NEXT_RELEASE *)
+    @since 0.11 *)

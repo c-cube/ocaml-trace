@@ -46,6 +46,8 @@ val emit_instant_event :
 
 val emit_name_thread : pid:int -> tid:int -> name:string -> Buffer.t -> unit
 val emit_name_process : pid:int -> name:string -> Buffer.t -> unit
+val emit_process_sort_index : pid:int -> int -> Buffer.t -> unit
+val emit_thread_sort_index : pid:int -> tid:int -> int -> Buffer.t -> unit
 
 val emit_counter :
   pid:int -> tid:int -> name:string -> ts:float -> Buffer.t -> float -> unit

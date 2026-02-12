@@ -8,6 +8,10 @@ open Types
 type extension_event +=
   | Extension_set_thread_name of string
   | Extension_set_process_name of string
+  | Extension_set_thread_sort_index of int
+        (** https://github.com/google/perfetto/pull/3273/changes#diff-ecec88c33adb7591ee6aa88e29b62ad52ef443611cba5e0f0ecac9b5725afdba
+        *)
+  | Extension_set_process_sort_index of int
 
 (** Specialized parameters *)
 type extension_parameter +=

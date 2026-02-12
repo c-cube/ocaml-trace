@@ -142,12 +142,27 @@ open struct
     Writer.emit_name_process ~pid:self.pid ~name buf;
     self.exporter.on_json buf
 
+  let on_thread_sort_index_ (self : st) ~tid i : unit =
+    let@ buf = Trace_util.Rpool.with_ self.buf_pool in
+    Writer.emit_thread_sort_index ~pid:self.pid ~tid i buf;
+    self.exporter.on_json buf
+
+  let on_process_sort_index_ (self : st) i : unit =
+    let@ buf = Trace_util.Rpool.with_ self.buf_pool in
+    Writer.emit_process_sort_index ~pid:self.pid i buf;
+    self.exporter.on_json buf
+
   let extension (self : st) ~level:_ ev =
     match ev with
     | Core_ext.Extension_set_thread_name name ->
       let tid = Trace_util.Mock_.get_tid () in
       on_name_thread_ self ~tid name
     | Core_ext.Extension_set_process_name name -> on_name_process_ self name
+    | Core_ext.Extension_set_process_sort_index idx ->
+      on_process_sort_index_ self idx
+    | Core_ext.Extension_set_thread_sort_index idx ->
+      let tid = Trace_util.Mock_.get_tid () in
+      on_thread_sort_index_ self ~tid idx
     | _ -> ()
 end
 

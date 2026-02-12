@@ -75,6 +75,19 @@ let emit_name_thread ~pid ~tid ~name buf : unit =
     (emit_args_o_ pp_user_data_)
     [ "name", `String name ]
 
+let emit_process_sort_index ~pid i buf : unit =
+  Printf.bprintf buf
+    {json|{"pid":%d,"name":"process_sort_index","ph":"M"%a}|json} pid
+    (emit_args_o_ pp_user_data_)
+    [ "sort_index", `Int i ]
+
+let emit_thread_sort_index ~pid ~tid i buf : unit =
+  Printf.bprintf buf
+    {json|{"pid":%d,"tid": %d,"name":"thread_sort_index","ph":"M"%a}|json} pid
+    tid
+    (emit_args_o_ pp_user_data_)
+    [ "sort_index", `Int i ]
+
 let emit_name_process ~pid ~name buf : unit =
   Printf.bprintf buf {json|{"pid":%d,"name":"process_name","ph":"M"%a}|json} pid
     (emit_args_o_ pp_user_data_)

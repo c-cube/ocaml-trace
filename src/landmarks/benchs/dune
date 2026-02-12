@@ -1,0 +1,10 @@
+(executable
+ (name atomic_tbl_race)
+ (modules atomic_tbl_race)
+ (optional) ; domains
+ (libraries trace_landmarks unix))
+
+(executable
+ (name atomic_tbl_sequential)
+ (modules atomic_tbl_sequential)
+ (libraries trace_landmarks unix))

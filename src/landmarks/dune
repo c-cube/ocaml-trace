@@ -1,0 +1,6 @@
+(library
+ (name trace_landmarks)
+ (public_name trace.landmarks)
+ (modules data atomic_tbl)
+ (optional) ; mtime
+ (libraries trace.util yojson mtime mtime.clock.os))

@@ -1,0 +1,4 @@
+(test
+ (name atomic_tbl_test)
+ (modules atomic_tbl_test)
+ (libraries trace_landmarks))
